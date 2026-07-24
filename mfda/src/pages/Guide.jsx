@@ -204,6 +204,10 @@ const MANUAL = [
         b: 'Zillow doesn\'t publish an index for every ZIP (thin rental markets get skipped). Use nearby ZIPs and the listing\'s own asking rents as your guide.',
       },
       {
+        t: 'The map was blank for a while — what happened?',
+        b: 'The original map engine drew with WebGL (GPU graphics), which some Mac graphics drivers silently refuse to paint — everything loads, nothing shows. The map now uses Leaflet, which renders plain image tiles with no GPU involvement, on the same engine the alot.land lot maps use. If tiles ever fail to appear, it\'s a network block on openstreetmap.org (VPN/DNS filters) — the pins and cards still work.',
+      },
+      {
         t: 'The magic-link email didn\'t arrive',
         b: 'Check spam first. The built-in mailer also rate-limits to a few links per hour — wait a bit and retry. Only invited emails can sign in at all.',
       },
