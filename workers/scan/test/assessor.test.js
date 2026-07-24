@@ -173,6 +173,46 @@ describe('assessorToParcels — Maricopa preset', () => {
   });
 });
 
+describe('assessorToParcels — Nashville ArcGIS Hub export shape', () => {
+  // Header names verbatim from the field parse report (2026-07-24).
+  const NASH_HUB = [
+    'OBJECTID,ParID,Owner,OwnDate,SalePrice,OwnAddr1,OwnCity,OwnState,OwnZip,PropAddr,PropCity,PropZip,Acres,LUDesc,TotlAppr',
+    '1,001-002.00,"NASHVILLE RENTALS, LP",2018-05-12,750000,100 BROADWAY,NASHVILLE,TN,37201,200 CHURCH ST,NASHVILLE,37219,0.5,DUPLEX,820000',
+    '2,001-003.00,DOE JANE,2021-01-02,410000,300 PINE ST,NASHVILLE,TN,37203,300 PINE ST,NASHVILLE,37203,0.25,SINGLE FAMILY,395000',
+    '3,001-004.00,MUSIC CITY LLC,2015-06-30,2100000,PO BOX 5,FRANKLIN,TN,37064,400 OAK AVE,NASHVILLE,37210,1.2,APARTMENT: LOW RISE,2400000',
+  ].join('\n');
+  const res = assessorToParcels(NASH_HUB, PRESETS.tn, { countyFips: '47037' });
+
+  it('resolves the Own*/Prop*/LUDesc column family', () => {
+    expect(res.unresolved).not.toContain('mailing_address');
+    expect(res.unresolved).not.toContain('situs_address');
+    expect(res.unresolved).not.toContain('property_class');
+    expect(res.unresolved).not.toContain('last_sale_price');
+    expect(res.unresolved).not.toContain('assessed_value');
+  });
+
+  it('keeps DUPLEX and APARTMENT via LUDesc, drops single-family', () => {
+    expect(res.kept).toBe(2);
+    expect(res.parcels.map((p) => p.apn)).toEqual(['001-002.00', '001-004.00']);
+  });
+
+  it('maps ownership, sale, and appraisal fields', () => {
+    const p = res.parcels[0];
+    expect(p.owner_name).toBe('NASHVILLE RENTALS, LP');
+    expect(p.mailing_address).toBe('100 BROADWAY');
+    expect(p.situs_address).toBe('200 CHURCH ST');
+    expect(p.last_sale_date).toBe('2018-05-12');
+    expect(p.last_sale_price).toBe(750000);
+    expect(p.assessed_value).toBe(820000);
+    expect(p.absentee).toBe(true);
+  });
+
+  it('converts an Acres lot column to square feet', () => {
+    expect(res.parcels[0].lot_sqft).toBe(Math.round(0.5 * 43560));
+    expect(res.parcels[1].lot_sqft).toBe(Math.round(1.2 * 43560));
+  });
+});
+
 describe('assessorToParcels — TN preset', () => {
   const res = assessorToParcels(TN_FIXTURE, PRESETS.tn, { countyFips: '47037' });
 

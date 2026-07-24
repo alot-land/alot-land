@@ -103,11 +103,13 @@ export function nriMap(csvText) {
   return out;
 }
 
-/** Census Gazetteer counties file (tab-delimited) → Map fips → geo facts. */
+/** Census Gazetteer counties file (tab- OR pipe-delimited — the 2025
+ * edition ships pipes, field-verified 2026-07-24) → Map fips → geo facts. */
 export function gazetteerMap(text) {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length);
   if (lines.length < 2) return new Map();
-  const headers = lines[0].split('\t').map((h) => h.trim().toUpperCase());
+  const delim = lines[0].includes('|') ? '|' : '\t';
+  const headers = lines[0].split(delim).map((h) => h.trim().toUpperCase());
   const iGeoid = headers.indexOf('GEOID');
   const iName = headers.indexOf('NAME');
   const iUsps = headers.indexOf('USPS');
@@ -117,7 +119,7 @@ export function gazetteerMap(text) {
   if (iGeoid < 0 || iLat < 0) throw new Error('Gazetteer file missing GEOID/INTPTLAT');
   const out = new Map();
   for (let r = 1; r < lines.length; r++) {
-    const row = lines[r].split('\t').map((c) => c.trim());
+    const row = lines[r].split(delim).map((c) => c.trim());
     const f = String(row[iGeoid] || '').padStart(5, '0');
     if (f.length !== 5) continue;
     out.set(f, {

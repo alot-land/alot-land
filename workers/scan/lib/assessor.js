@@ -38,21 +38,22 @@ export function parseDSV(text, delim) {
 const GENERIC = {
   apn: ['apn', 'parcel', 'parcel_number', 'parcelid', 'parcel_id', 'parid', 'parcel_no', 'parcelno', 'parcel_num', 'assessor_parcel_number'],
   owner_name: ['owner_name', 'owner', 'ownername', 'owner1', 'current_owner', 'taxpayer_name', 'taxpayer'],
-  mailing_address: ['mailing_address', 'mail_address', 'mail_addr', 'owner_address', 'mailing_addr1', 'mail_line1', 'taxpayer_address'],
-  mailing_city: ['mailing_city', 'mail_city', 'owner_city', 'taxpayer_city'],
-  mailing_state: ['mailing_state', 'mail_state', 'owner_state', 'taxpayer_state'],
-  mailing_zip: ['mailing_zip', 'mail_zip', 'owner_zip', 'mail_zipcode', 'taxpayer_zip'],
-  situs_address: ['situs_address', 'situs_addr', 'situs', 'property_address', 'prop_address', 'site_address', 'location', 'property_location'],
-  situs_city: ['situs_city', 'property_city', 'prop_city', 'site_city', 'city'],
-  situs_zip: ['situs_zip', 'property_zip', 'prop_zip', 'site_zip', 'zip', 'zip_code'],
+  // 'ownaddr1'/'propaddr' style: Nashville ArcGIS Hub parcel export (2026-07)
+  mailing_address: ['mailing_address', 'mail_address', 'mail_addr', 'owner_address', 'mailing_addr1', 'mail_line1', 'taxpayer_address', 'ownaddr1', 'own_addr1'],
+  mailing_city: ['mailing_city', 'mail_city', 'owner_city', 'taxpayer_city', 'owncity'],
+  mailing_state: ['mailing_state', 'mail_state', 'owner_state', 'taxpayer_state', 'ownstate'],
+  mailing_zip: ['mailing_zip', 'mail_zip', 'owner_zip', 'mail_zipcode', 'taxpayer_zip', 'ownzip'],
+  situs_address: ['situs_address', 'situs_addr', 'situs', 'property_address', 'prop_address', 'site_address', 'location', 'property_location', 'propaddr'],
+  situs_city: ['situs_city', 'property_city', 'prop_city', 'site_city', 'propcity', 'city'],
+  situs_zip: ['situs_zip', 'property_zip', 'prop_zip', 'site_zip', 'propzip', 'zip', 'zip_code'],
   units: ['units', 'unit_count', 'number_of_units', 'num_units', 'no_of_units', 'total_units', 'numberofunits', 'living_units', 'number_of_living_units', 'dwelling_units', 'res_units'],
   year_built: ['year_built', 'yearbuilt', 'const_year', 'year_constructed', 'yr_built', 'eff_year_built'],
-  property_class: ['property_class', 'class', 'property_use', 'use_code', 'puc', 'land_use', 'land_use_desc', 'land_use_description', 'use_description', 'property_use_description', 'property_type', 'classification', 'prop_class'],
-  last_sale_date: ['last_sale_date', 'sale_date', 'deed_date', 'sale_dt', 'last_sold', 'transfer_date'],
-  last_sale_price: ['last_sale_price', 'sale_price', 'sale_amount', 'consideration', 'last_sale_amount', 'price'],
-  assessed_value: ['assessed_value', 'total_assessed', 'assessed_total', 'full_cash_value', 'fcv', 'total_value', 'appraised_value', 'total_appraisal'],
+  property_class: ['property_class', 'class', 'property_use', 'use_code', 'puc', 'land_use', 'land_use_desc', 'land_use_description', 'use_description', 'property_use_description', 'ludesc', 'lucode', 'property_type', 'classification', 'prop_class'],
+  last_sale_date: ['last_sale_date', 'sale_date', 'deed_date', 'sale_dt', 'last_sold', 'transfer_date', 'owndate'],
+  last_sale_price: ['last_sale_price', 'sale_price', 'saleprice', 'sale_amount', 'consideration', 'last_sale_amount', 'price'],
+  assessed_value: ['assessed_value', 'total_assessed', 'assessed_total', 'full_cash_value', 'fcv', 'total_value', 'appraised_value', 'total_appraisal', 'totlappr', 'totlassd'],
   building_sqft: ['building_sqft', 'improvement_sqft', 'living_area', 'bldg_sqft', 'sqft', 'finished_area', 'total_living_area'],
-  lot_sqft: ['lot_sqft', 'land_sqft', 'lot_size', 'land_area', 'acreage', 'lot_area'],
+  lot_sqft: ['lot_sqft', 'land_sqft', 'lot_size', 'land_area', 'lot_area', 'acreage', 'acres'],
 };
 
 export const PRESETS = {
@@ -166,6 +167,8 @@ export function assessorToParcels(text, preset, opts = {}) {
     .filter(([, i]) => i < 0)
     .map(([f]) => f);
   const get = (r, f) => (idx[f] >= 0 ? String(r[idx[f]] ?? '').trim() : '');
+  // Some files publish lot size in ACRES (header says so) — convert to sqft.
+  const lotIsAcres = idx.lot_sqft >= 0 && /acre/i.test(String(headers[idx.lot_sqft]));
 
   const parcels = [];
   let dropped = 0;
@@ -207,7 +210,10 @@ export function assessorToParcels(text, preset, opts = {}) {
       units: logical.units,
       year_built: num(get(r, 'year_built')),
       building_sqft: num(get(r, 'building_sqft')),
-      lot_sqft: num(get(r, 'lot_sqft')),
+      lot_sqft: (() => {
+        const v = num(get(r, 'lot_sqft'));
+        return v == null ? null : lotIsAcres ? Math.round(v * 43560) : v;
+      })(),
       last_sale_date: parseDate(get(r, 'last_sale_date')),
       last_sale_price: num(get(r, 'last_sale_price')),
       assessed_value: num(get(r, 'assessed_value')),

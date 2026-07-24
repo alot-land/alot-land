@@ -53,6 +53,30 @@ export function extractLinks(html, baseUrl) {
 }
 
 /**
+ * All data-file URLs in ANY text — hrefs plus absolute/relative URLs
+ * embedded in scripts or JSON (client-rendered pages like Maricopa's keep
+ * their download links out of the static HTML). JSON escaping (\/) is
+ * unescaped before matching.
+ */
+export function extractFileUrls(text, baseUrl) {
+  const t = String(text).replace(/\\\//g, '/');
+  const out = new Set(extractLinks(t, baseUrl).filter((u) => /\.(zip|txt|csv|dat)(\?|$)/i.test(u)));
+  const abs = /https?:\/\/[^\s"'<>\\)]+\.(?:zip|txt|csv|dat)\b/gi;
+  let m;
+  while ((m = abs.exec(t))) out.add(m[0]);
+  // "/file/…/x.zip" style relative paths quoted in JS/JSON
+  const rel = /["']((?:\/[A-Za-z0-9._~-]+)+\.(?:zip|txt|csv|dat))["']/g;
+  while ((m = rel.exec(t))) {
+    try {
+      out.add(new URL(m[1], baseUrl).href);
+    } catch {
+      /* skip */
+    }
+  }
+  return [...out];
+}
+
+/**
  * Categorize Maricopa download links. Returns { apartment, ownership } —
  * best candidate URL for each, or null. Apartment Master is the primary
  * multifamily file; an ownership/parcel-master file backfills owner mailing

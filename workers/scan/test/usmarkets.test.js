@@ -73,12 +73,24 @@ describe('gazetteerMap', () => {
     'USPS\tGEOID\tANSICODE\tNAME\tALAND\tAWATER\tALAND_SQMI\tAWATER_SQMI\tINTPTLAT\tINTPTLONG',
     'AZ\t04013\t00025806\tMaricopa County\t23890000000\t65000000\t9224.27\t25.1\t33.348359\t-112.491815',
   ].join('\n');
-  it('extracts centroid and land area', () => {
+  it('extracts centroid and land area (tab-delimited editions)', () => {
     const g = gazetteerMap(txt).get('04013');
     expect(g.lat).toBeCloseTo(33.348359);
     expect(g.lng).toBeCloseTo(-112.491815);
     expect(g.land_sqmi).toBeCloseTo(9224.27);
     expect(g.state).toBe('AZ');
+  });
+
+  it('handles the pipe-delimited 2025 edition (with GEOIDFQ column)', () => {
+    const pipe = [
+      'USPS|GEOID|GEOIDFQ|ANSICODE|NAME|ALAND|AWATER|ALAND_SQMI|AWATER_SQMI|INTPTLAT|INTPTLONG',
+      'TN|47037|0500000US47037|01639789|Davidson County|1300000000|30000000|504.03|11.6|36.169809|-86.784566',
+    ].join('\n');
+    const g = gazetteerMap(pipe).get('47037');
+    expect(g.lat).toBeCloseTo(36.169809);
+    expect(g.lng).toBeCloseTo(-86.784566);
+    expect(g.land_sqmi).toBeCloseTo(504.03);
+    expect(g.state).toBe('TN');
   });
 });
 

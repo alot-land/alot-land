@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   extractLinks,
+  extractFileUrls,
   pickMaricopaFiles,
   socrataPickDataset,
   socrataCsvUrl,
@@ -24,6 +25,23 @@ describe('extractLinks', () => {
   it('dedupes and skips malformed hrefs', () => {
     const html = '<a href="a.zip"></a><a href="a.zip"></a><a href="http://[bad">x</a>';
     expect(extractLinks(html, 'https://x.test/')).toEqual(['https://x.test/a.zip']);
+  });
+});
+
+describe('extractFileUrls', () => {
+  it('finds file URLs embedded in scripts and JSON, not just hrefs', () => {
+    const page = `
+      <a href="/data-sales/Sales.zip">sales</a>
+      <script>var files = {"apartment":"https:\\/\\/ftp.mcassessor.maricopa.gov\\/data-sales\\/Apartment_Master.zip",
+        "own": "/file/data-sales/Ownership.zip"};</script>`;
+    const urls = extractFileUrls(page, 'https://www.mcassessor.maricopa.gov/page/data_sales/');
+    expect(urls).toContain('https://www.mcassessor.maricopa.gov/data-sales/Sales.zip');
+    expect(urls).toContain('https://ftp.mcassessor.maricopa.gov/data-sales/Apartment_Master.zip');
+    expect(urls).toContain('https://www.mcassessor.maricopa.gov/file/data-sales/Ownership.zip');
+  });
+
+  it('ignores non-data links', () => {
+    expect(extractFileUrls('<a href="/help.html">x</a> see https://x.test/page', 'https://x.test/')).toEqual([]);
   });
 });
 

@@ -39,9 +39,34 @@ const ACS_FIELDS = {
 };
 const acsUrl = (year, codes) =>
   `https://api.census.gov/data/${year}/acs/acs5?get=NAME,${codes.join(',')}&for=county:*`;
-const NRI_URLS = [
-  'https://hazards.fema.gov/nri/Content/StaticDocuments/DataDownload/NRI_Table_Counties/NRI_Table_Counties.zip',
+// FEMA publishes the NRI counties table BOTH as a zip on hazards.fema.gov
+// (403s from datacenter IPs) and as an ArcGIS-hosted dataset ("National
+// Risk Index Counties", item 39485e8035d446a5bff03259508ae355) — the Hub
+// CSV route is the same API that works for the Nashville parcels, so it
+// goes first.
+const NRI_SOURCES = [
+  { kind: 'csv', url: 'https://hub.arcgis.com/api/v3/datasets/39485e8035d446a5bff03259508ae355_0/downloads/data?format=csv&spatialRefId=4326' },
+  { kind: 'zip', url: 'https://hazards.fema.gov/nri/Content/StaticDocuments/DataDownload/NRI_Table_Counties/NRI_Table_Counties.zip' },
 ];
+
+async function fetchNriCsv() {
+  let lastErr = null;
+  for (const s of NRI_SOURCES) {
+    try {
+      if (s.kind === 'csv') {
+        const text = await fetchText(s.url);
+        if (text.trimStart().startsWith('<')) throw new Error('HTML instead of CSV');
+        console.log(`  nri via ${s.url}`);
+        return text;
+      }
+      return await fetchZipText([s.url], 'nri', /NRI_Table_Counties\.csv$/i);
+    } catch (e) {
+      lastErr = e;
+      console.warn(`  nri: ${s.url}: ${e.message}`);
+    }
+  }
+  throw lastErr || new Error('all NRI sources failed');
+}
 // NB: capital "Gaz" in the filename — the lowercase variant 404s (verified
 // in the field 2026-07-24).
 const GAZ_URLS = [2025, 2024, 2023].map(
@@ -161,7 +186,7 @@ try {
   let nri = new Map();
   try {
     console.log('→ FEMA National Risk Index…');
-    nri = nriMap(await fetchZipText(NRI_URLS, 'nri', /NRI_Table_Counties\.csv$/i));
+    nri = nriMap(await fetchNriCsv());
     console.log(`  ${nri.size} counties`);
   } catch (e) {
     console.warn(`  NRI unavailable this cycle: ${e.message}`);

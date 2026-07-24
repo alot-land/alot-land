@@ -34,7 +34,7 @@ import {
   NASHVILLE_CATALOG_URL,
   NASHVILLE_HUB_DATASETS,
   hubDownloadUrl,
-  extractLinks,
+  extractFileUrls,
   pickMaricopaFiles,
   socrataPickDataset,
   socrataCsvUrl,
@@ -93,8 +93,15 @@ function insecureGet(url, redirects = 0) {
 const UA_STRING =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
-const isTlsChainError = (e) =>
-  /UNABLE_TO_VERIFY|unable to verify|certificate|CERT_/i.test(String(e?.cause?.code || e?.cause?.message || e?.message || ''));
+// Node buries TLS codes at varying depths (err.cause.cause…) — unwrap fully.
+function isTlsChainError(e) {
+  let cur = e;
+  for (let i = 0; cur && i < 6; i++) {
+    if (/UNABLE_TO_VERIFY|unable to verify|certificate|CERT_/i.test(`${cur.code || ''} ${cur.message || ''}`)) return true;
+    cur = cur.cause;
+  }
+  return false;
+}
 
 /** Fetch a Maricopa URL: normal path first, TLS-tolerant fallback second. */
 async function maricopaFetch(url, asBuffer = false) {
@@ -147,11 +154,16 @@ async function maricopaLane() {
     try {
       console.log(`  reading ${page}`);
       const html = await maricopaFetch(page);
-      const files = pickMaricopaFiles(extractLinks(html, page));
+      const files = pickMaricopaFiles(extractFileUrls(html, page));
       console.log(`  found ${files.all.length} data links · apartment=${files.apartment || 'none'} · ownership=${files.ownership || 'none'}`);
       if (files.apartment) {
         picked = files;
         break;
+      }
+      if (!files.all.length) {
+        // The page fetched but exposed no file URLs — show what it actually
+        // is so the next report pinpoints where the links moved.
+        console.log(`  page snippet: ${html.replace(/\s+/g, ' ').slice(0, 400)}`);
       }
     } catch (e) {
       console.warn(`  ${page}: ${e.message}`);
