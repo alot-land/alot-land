@@ -29,10 +29,21 @@ export default function ListingsMap({ rows, onAnalyze }) {
   const markersRef = useRef([]);
   const [selected, setSelected] = useState(null);
   const [mapError, setMapError] = useState(null);
+  // Temporary field diagnostics: shown as a small badge so a screenshot tells
+  // us exactly which stage fails (webgl / construction / style / tiles).
+  const [diag, setDiag] = useState({ webgl: null, created: false, loaded: false, tilesOk: 0, tileErr: 0, lastErr: '' });
 
   // Init once. Failures here (usually WebGL unavailable) must be VISIBLE —
   // a silent white box is undebuggable from a screenshot.
   useEffect(() => {
+    // Probe WebGL support directly — Brave/strict setups can farble it.
+    let webgl = false;
+    try {
+      const c = document.createElement('canvas');
+      webgl = Boolean(c.getContext('webgl2') || c.getContext('webgl'));
+    } catch { webgl = false; }
+    setDiag((d) => ({ ...d, webgl }));
+
     let map;
     try {
       map = new MlMap({
@@ -47,10 +58,14 @@ export default function ListingsMap({ rows, onAnalyze }) {
       return undefined;
     }
     map.addControl(new NavigationControl({ showCompass: false }), 'top-right');
+    setDiag((d) => ({ ...d, created: true }));
+    map.on('load', () => setDiag((d) => ({ ...d, loaded: true })));
+    map.on('data', (e) => {
+      if (e.tile) setDiag((d) => ({ ...d, tilesOk: d.tilesOk + 1 }));
+    });
     map.on('error', (e) => {
-      // Tile fetch errors are normal noise (adblockers etc.); only surface
-      // errors that prevent the map itself from working.
-      const msg = String(e?.error?.message || '');
+      const msg = String(e?.error?.message || e?.error || 'unknown');
+      setDiag((d) => ({ ...d, tileErr: d.tileErr + 1, lastErr: msg.slice(0, 120) }));
       if (/webgl|context/i.test(msg)) setMapError(msg);
     });
     // Belt & suspenders: if the container was mid-layout at init, a resize
@@ -116,6 +131,12 @@ export default function ListingsMap({ rows, onAnalyze }) {
   return (
     <div className="relative card overflow-hidden" style={{ height: '70vh' }}>
       <div ref={containerRef} className="absolute inset-0" />
+
+      <div className="absolute right-2 bottom-2 z-20 bg-ink/85 text-white text-[10px] font-mono rounded-lg px-2 py-1 pointer-events-none">
+        webgl:{diag.webgl == null ? '?' : diag.webgl ? 'yes' : 'NO'} · map:{diag.created ? 'created' : 'NOT-CREATED'} ·
+        style:{diag.loaded ? 'loaded' : 'pending'} · tiles:{diag.tilesOk}ok/{diag.tileErr}err · pins:{rows.filter((r) => r.lat != null).length}
+        {diag.lastErr ? ` · ${diag.lastErr}` : ''}
+      </div>
 
       {selected && (
         <div className="absolute left-3 bottom-3 z-10 w-72 card shadow-xl overflow-hidden">
