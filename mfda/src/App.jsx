@@ -5,6 +5,7 @@ import { supabaseConfigured } from './lib/supabase';
 import SignIn from './pages/SignIn';
 import Deals from './pages/Deals';
 import OnMarket from './pages/OnMarket';
+import OffMarket from './pages/OffMarket';
 import DealNew from './pages/DealNew';
 import DealResults from './pages/DealResults';
 import Compare from './pages/Compare';
@@ -27,6 +28,7 @@ function TopBar() {
   const loc = useLocation();
   const nav = [
     ['/on-market', 'On-Market'],
+    ['/off-market', 'Off-Market'],
     ['/deals', 'Deals'],
     ['/guide', 'Guide'],
     ['/settings', 'Settings'],
@@ -105,6 +107,16 @@ export default function App() {
           <Protected>
             <Shell>
               <OnMarket />
+            </Shell>
+          </Protected>
+        }
+      />
+      <Route
+        path="/off-market"
+        element={
+          <Protected>
+            <Shell>
+              <OffMarket />
             </Shell>
           </Protected>
         }

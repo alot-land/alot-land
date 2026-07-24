@@ -1,0 +1,105 @@
+#!/usr/bin/env node
+/**
+ * Assessor import — county parcel files → the parcels table (multifamily only).
+ *
+ * Usage:
+ *   node bin/assessor.mjs --source maricopa --file ~/Downloads/parcels.csv --inspect
+ *   node bin/assessor.mjs --source maricopa --file ~/Downloads/parcels.csv
+ *   node bin/assessor.mjs --source tn --file ~/Downloads/davidson.csv --county-fips 47037
+ *   node bin/assessor.mjs --source custom --file x.csv --state AR --county-fips 05007
+ *
+ * Workflow for a NEW file format: run --inspect first (no DB writes) — it
+ * prints the headers, sample rows, which logical fields resolved, and a
+ * multifamily-filter preview. Paste that into the build chat if fields are
+ * missing; the column candidates get extended and you re-run.
+ */
+import { readFile } from 'node:fs/promises';
+import { assessorToParcels, resolveColumns, PRESETS, sniffDelimiter, parseDSV } from '../lib/assessor.js';
+import { makeDb } from '../lib/db.js';
+
+function arg(name, dflt) {
+  const i = process.argv.indexOf(`--${name}`);
+  if (i < 0) return dflt;
+  const v = process.argv[i + 1];
+  return v && !v.startsWith('--') ? v : true;
+}
+
+const source = String(arg('source', ''));
+const file = arg('file', null);
+const INSPECT = Boolean(arg('inspect', false));
+const state = arg('state', null);
+const countyFips = arg('county-fips', null);
+
+const preset = PRESETS[source];
+if (!preset || !file) {
+  console.error('Usage: node bin/assessor.mjs --source maricopa|tn|custom --file <path> [--inspect] [--state XX] [--county-fips NNNNN]');
+  process.exit(1);
+}
+if (source === 'tn' && !countyFips && !INSPECT) {
+  console.error('TN files are per-county — pass --county-fips (e.g. Davidson=47037, Perry=47135).');
+  process.exit(1);
+}
+
+console.log(`Reading ${file} …`);
+const text = await readFile(file, 'utf8');
+console.log(`  ${(text.length / 1e6).toFixed(1)}MB`);
+
+if (INSPECT) {
+  const delim = sniffDelimiter(text);
+  const rows = parseDSV(text, delim);
+  const headers = rows[0] || [];
+  const idx = resolveColumns(headers, preset.columns);
+  console.log(`\nDelimiter: ${JSON.stringify(delim)} · ${rows.length - 1} data rows`);
+  console.log(`\nHeaders (${headers.length}):\n  ${headers.join(' | ')}`);
+  console.log('\nField resolution:');
+  for (const [f, i] of Object.entries(idx)) {
+    console.log(`  ${f.padEnd(16)} → ${i >= 0 ? headers[i] : '✗ NOT FOUND'}`);
+  }
+  console.log('\nSample rows:');
+  for (const r of rows.slice(1, 4)) console.log(`  ${r.slice(0, 12).join(' | ')}`);
+  const res = assessorToParcels(text, preset, { state, countyFips });
+  console.log(`\nMultifamily filter preview: ${res.kept} of ${res.total} rows kept, ${res.dropped} dropped (no APN)`);
+  if (res.parcels[0]) console.log('First parsed parcel:', JSON.stringify(res.parcels[0], null, 1));
+  console.log('\nInspect only — nothing written. Paste this output into the build chat if fields are missing.');
+  process.exit(0);
+}
+
+const res = assessorToParcels(text, preset, { state, countyFips });
+console.log(`Parsed: ${res.kept} multifamily parcels of ${res.total} rows (${res.dropped} without APN)`);
+if (res.unresolved.length) {
+  console.warn(`⚠ Unresolved fields (will import as null): ${res.unresolved.join(', ')}`);
+  console.warn('  Run with --inspect and paste the output into the build chat to map them.');
+}
+if (!res.kept) {
+  console.error('✗ Nothing matched the multifamily filter — run --inspect to check the class/units columns.');
+  process.exit(1);
+}
+
+const db = makeDb();
+const orgId = await db.resolveOrgId();
+const rows = res.parcels.map((p) => ({
+  org_id: orgId,
+  dedupe_key: `apn:${p.county_fips || 'na'}:${p.apn}`.toLowerCase(),
+  ...p,
+}));
+
+const CHUNK = 500;
+for (let i = 0; i < rows.length; i += CHUNK) {
+  const { error } = await db.supabase
+    .from('parcels')
+    .upsert(rows.slice(i, i + CHUNK), { onConflict: 'org_id,dedupe_key' });
+  if (error) {
+    console.error('✗ upsert failed:', error.message);
+    process.exit(1);
+  }
+  process.stdout.write(`  upserted ${Math.min(i + CHUNK, rows.length)}/${rows.length}\r`);
+}
+console.log('');
+await db.logCost(orgId, `assessor import ${source}: ${rows.length} MF parcels`);
+
+const absentee = rows.filter((r) => r.absentee).length;
+const entity = rows.filter((r) => r.owner_is_entity).length;
+const withUnits = rows.filter((r) => r.units != null).length;
+console.log(`✓ Imported ${rows.length} multifamily parcels.`);
+console.log(`  absentee: ${absentee} · entity-owned: ${entity} · with real unit counts: ${withUnits}`);
+console.log('  Open the app → Off-Market to build lists and export FreedomSoft CSVs.');

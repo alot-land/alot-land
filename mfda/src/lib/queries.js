@@ -180,6 +180,99 @@ export async function saveScenario(orgId, userId, dealId, { label, inputs, outpu
   return data;
 }
 
+// ---- Off-market parcels (Phase 2) ----------------------------------------
+// Filters run server-side so a county-sized table stays cheap; the 5000 cap
+// is a mail-campaign-sized page, not the dataset limit.
+export async function listParcels(orgId, f = {}) {
+  let q = supabase
+    .from('parcels')
+    .select(
+      'id, apn, state, county_fips, situs_address, situs_city, situs_zip, owner_name, owner_is_entity, mailing_address, mailing_city, mailing_state, mailing_zip, absentee, property_class, units, year_built, building_sqft, last_sale_date, last_sale_price, assessed_value',
+      { count: 'exact' },
+    )
+    .eq('org_id', orgId);
+  if (f.state && f.state !== 'all') q = q.eq('state', f.state);
+  if (f.countyFips && f.countyFips !== 'all') q = q.eq('county_fips', f.countyFips);
+  if (f.absentee) q = q.eq('absentee', true);
+  if (f.entity) q = q.eq('owner_is_entity', true);
+  if (f.minUnits) q = q.gte('units', Number(f.minUnits));
+  if (f.maxUnits) q = q.lte('units', Number(f.maxUnits));
+  if (f.soldBefore) q = q.lte('last_sale_date', f.soldBefore);
+  if (f.search && f.search.trim()) {
+    const s = f.search.trim().replace(/[%,]/g, ' ');
+    q = q.or(`situs_address.ilike.%${s}%,owner_name.ilike.%${s}%,situs_city.ilike.%${s}%,apn.ilike.%${s}%`);
+  }
+  const { data, error, count } = await q
+    .order('units', { ascending: false, nullsFirst: false })
+    .limit(5000);
+  if (error) throw error;
+  return { rows: data, count };
+}
+
+// Distinct state/county pairs actually imported (drives the filter dropdowns).
+export async function listParcelCounties(orgId) {
+  const { data, error } = await supabase
+    .from('parcels')
+    .select('state, county_fips')
+    .eq('org_id', orgId)
+    .limit(10000);
+  if (error) throw error;
+  const seen = new Map();
+  for (const r of data) seen.set(`${r.state}:${r.county_fips}`, r);
+  return [...seen.values()].sort((a, b) => `${a.state}${a.county_fips}`.localeCompare(`${b.state}${b.county_fips}`));
+}
+
+export async function listMailLists(orgId) {
+  const { data, error } = await supabase
+    .from('mail_lists')
+    .select('id, name, filters, created_at, mail_list_items(count)')
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function createMailList(orgId, userId, { name, filters, parcelIds }) {
+  const { data: list, error } = await supabase
+    .from('mail_lists')
+    .insert({ org_id: orgId, name, filters, created_by: userId })
+    .select()
+    .single();
+  if (error) throw error;
+  const CHUNK = 500;
+  for (let i = 0; i < parcelIds.length; i += CHUNK) {
+    const rows = parcelIds.slice(i, i + CHUNK).map((pid) => ({
+      list_id: list.id,
+      parcel_id: pid,
+      org_id: orgId,
+    }));
+    const { error: e2 } = await supabase.from('mail_list_items').insert(rows);
+    if (e2) throw e2;
+  }
+  return list;
+}
+
+export async function listParcelsForMailList(listId) {
+  const { data, error } = await supabase
+    .from('mail_list_items')
+    .select('parcels(*)')
+    .eq('list_id', listId)
+    .limit(5000);
+  if (error) throw error;
+  return data.map((r) => r.parcels).filter(Boolean);
+}
+
+export async function logMailExport(orgId, userId, { listId, rowCount }) {
+  const { error } = await supabase.from('mail_exports').insert({
+    org_id: orgId,
+    list_id: listId || null,
+    format: 'freedomsoft',
+    row_count: rowCount,
+    created_by: userId,
+  });
+  if (error) console.error('mail_exports', error);
+}
+
 // ---- Markets --------------------------------------------------------------
 export async function listMarkets(orgId) {
   const { data, error } = await supabase

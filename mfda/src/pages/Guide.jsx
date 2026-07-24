@@ -160,6 +160,43 @@ const MANUAL = [
     ],
   },
   {
+    section: 'Off-Market (finding sellers before they list)',
+    entries: [
+      {
+        t: 'What the Off-Market page is',
+        b: 'County assessor records for multifamily parcels — every duplex-to-apartment building the county knows about, with the owner\'s real name and mailing address. Unlike Redfin data, these have REAL unit counts. Filter down to a target list and export it for a direct-mail campaign.',
+      },
+      {
+        t: 'Getting parcels in (the import)',
+        b: 'Download the county\'s parcel file (free public records), then run the assessor importer from the repo: node bin/assessor.mjs --source maricopa --file parcels.csv --inspect. Inspect mode writes nothing — it shows how the file\'s columns mapped so you can verify before importing. Drop --inspect to import for real. Tennessee files are per-county, so add --county-fips.',
+      },
+      {
+        t: 'Absentee',
+        b: 'The owner\'s mailing address differs from the property address — they don\'t live there. Absentee owners of aging multifamily are the classic direct-mail audience: they feel management pain and often respond to a credible offer.',
+      },
+      {
+        t: 'Entity-owned',
+        b: 'The owner name looks like an LLC, corporation, or trust. These are investors — the mail copy should talk numbers, not memories. Principal names behind LLCs can be resolved through Secretary of State records (coming next in Phase 2).',
+      },
+      {
+        t: 'Held ≥ years',
+        b: 'Filters to owners whose last recorded sale is at least that many years back. Long holds mean big equity and often depreciation that\'s fully used up — both classic reasons to sell, and seller-finance candidates since there\'s no mortgage to pay off.',
+      },
+      {
+        t: 'FreedomSoft export',
+        b: 'The Export button downloads a CSV with clean column names (Owner Name, Property Address, Mailing Address, Tags…). FreedomSoft\'s importer lets you map columns on upload, so it accepts this file directly. Tags like absentee/entity-owned/6u come along so you can segment campaigns inside FreedomSoft.',
+      },
+      {
+        t: 'Saved mail lists',
+        b: 'Save as mail list freezes the current filter results under a name. Re-exporting a saved list always gives the same parcels, even after fresh county imports — so a campaign\'s audience stays auditable. Every export is logged.',
+      },
+      {
+        t: 'Calling hours are enforced by design',
+        b: 'The database stores legal calling windows per state (federal telemarketing rule: 8am–9pm in the owner\'s local time). When the call queue lands in a later phase, it will refuse to surface numbers outside the window.',
+      },
+    ],
+  },
+  {
     section: 'Behind the scenes (automation)',
     entries: [
       {

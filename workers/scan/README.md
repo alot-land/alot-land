@@ -61,6 +61,42 @@ node bin/digest.mjs --transport ghl  # send via GoHighLevel (env above)
 New leads created in the last 26h (one line each: photo, address, bucket,
 price, agent when captured, link into the app) + scan-health footer.
 
+## Off-market imports (Phase 2)
+
+County assessor files → the `parcels` table → the app's **Off-Market** page
+(filter → FreedomSoft CSV export). Run migration_006 in Supabase first.
+
+Where the files come from (free public records, one-time manual download):
+
+- **Maricopa, AZ** — [Maricopa County Open Data](https://data-maricopa.opendata.arcgis.com/)
+  → search "parcels" → download the full parcel/assessor table as CSV. The
+  PUC field drives the multifamily filter (03xx = MF residential).
+- **Tennessee** — the Comptroller's [Real Estate Assessment Data](https://www.assessment.cot.tn.gov/RE_Assessment/)
+  publishes per-county CAMA extracts; some counties (Davidson, Shelby) also
+  post their own downloads. One file per county — pass `--county-fips`
+  (Davidson 47037, Shelby 47157, Hamilton 47065, Knox 47093).
+
+First contact with ANY new file — inspect before importing (writes nothing):
+
+```bash
+node bin/assessor.mjs --source maricopa --file ~/Downloads/parcels.csv --inspect
+```
+
+It prints the delimiter, headers, which logical fields resolved (APN, owner,
+mailing address, units…), sample rows, and a multifamily-filter preview.
+If fields show `✗ NOT FOUND`, paste the whole output into the build chat —
+the column candidates get extended and you re-run. When the mapping looks
+right:
+
+```bash
+node bin/assessor.mjs --source maricopa --file ~/Downloads/parcels.csv
+node bin/assessor.mjs --source tn --file ~/Downloads/davidson.csv --county-fips 47037
+node bin/assessor.mjs --source custom --file other.csv --state AR --county-fips 05007
+```
+
+Re-running is safe: parcels upsert on `apn:<fips>:<apn>`, so a fresh county
+file updates in place. Assessor files change yearly at most — no cron needed.
+
 ## Droplet cron (later)
 
 ```cron
@@ -81,8 +117,10 @@ unit — not in the crontab line.
 ## Tests
 
 ```bash
-npm test   # 26 assertions: CSV quirks (PAST SALE trap, disclaimer row,
-           # non-MF leakage), URL parameter contract, band-splitting coverage
+npm test   # 78 tests: CSV quirks (PAST SALE trap, disclaimer row, non-MF
+           # leakage), URL contract, band splitting, photo/agent extraction,
+           # rents, digest, assessor parsing (delimiters, column mapping,
+           # absentee/entity detection, MF filters)
 ```
 
 Adding a market = one entry in `lib/markets.js` (closed polygon ring
