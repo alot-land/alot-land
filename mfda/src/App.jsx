@@ -6,6 +6,7 @@ import SignIn from './pages/SignIn';
 import Deals from './pages/Deals';
 import OnMarket from './pages/OnMarket';
 import OffMarket from './pages/OffMarket';
+import Markets from './pages/Markets';
 import DealNew from './pages/DealNew';
 import DealResults from './pages/DealResults';
 import Compare from './pages/Compare';
@@ -27,6 +28,7 @@ function TopBar() {
   const { org, orgs, setOrg, role } = useOrg();
   const loc = useLocation();
   const nav = [
+    ['/markets', 'Markets'],
     ['/on-market', 'On-Market'],
     ['/off-market', 'Off-Market'],
     ['/deals', 'Deals'],
@@ -107,6 +109,16 @@ export default function App() {
           <Protected>
             <Shell>
               <OnMarket />
+            </Shell>
+          </Protected>
+        }
+      />
+      <Route
+        path="/markets"
+        element={
+          <Protected>
+            <Shell>
+              <Markets />
             </Shell>
           </Protected>
         }

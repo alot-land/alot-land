@@ -129,6 +129,25 @@ node bin/assessor.mjs --source custom --file other.csv --state AR --county-fips 
 Re-running is safe: parcels upsert on `apn:<fips>:<apn>`, so a fresh county
 file updates in place. Assessor files change yearly at most — no cron needed.
 
+## US market finder (Phase 3)
+
+`bin/usmarkets.mjs` pulls national county-level data (~6 requests, ~3,000
+rows) into `market_stats`: Zillow ZHVI/ZORI series snapshots, Census ACS
+(population, tenure counts, tax/value medians), FEMA National Risk Index,
+and Census Gazetteer centroids. RAW values only — every derived number
+(yields, CAGRs, scores) is computed by `@alot/mf-calc` in the app, so the
+arithmetic has one home. Run migration_007 first.
+
+```bash
+node bin/usmarkets.mjs           # no-ops if data is <90 days old
+node bin/usmarkets.mjs --force
+```
+
+The morning phoenix scan runs this automatically (it self-skips when
+fresh), then runs `bin/targets.mjs`, which scans any counties added from
+the app's **Markets → Add to targets** button (scan polygon generated from
+the county centroid + land area). Disable both with `MFDA_USMARKETS_AUTO=0`.
+
 ## Droplet cron (later)
 
 ```cron

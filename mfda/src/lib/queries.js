@@ -273,6 +273,54 @@ export async function logMailExport(orgId, userId, { listId, rowCount }) {
   if (error) console.error('mail_exports', error);
 }
 
+// ---- US market finder (Phase 3) ------------------------------------------
+// Raw county stats — ALL derived numbers (yields, CAGRs, scores) come from
+// @alot/mf-calc in the page, so the math stays in the frozen engine.
+export async function listMarketStats(orgId) {
+  const { data, error } = await supabase
+    .from('market_stats')
+    .select(
+      'geo_id, name, state, lat, lng, land_sqmi, population, pop_5y_ago, zhvi_now, zhvi_1y, zhvi_5y, zori_now, zori_1y, zori_5y, median_re_tax, median_home_value_acs, renters, occupied_units, vacant_for_rent, nri_score, nri_rating, retrieved_at',
+    )
+    .eq('org_id', orgId)
+    .eq('geo_level', 'county')
+    .limit(4000);
+  if (error) throw error;
+  return data;
+}
+
+// Counties already added as scan targets (marks rows in the finder).
+export async function listTargetGeoIds(orgId) {
+  const { data, error } = await supabase
+    .from('markets')
+    .select('geo_id')
+    .eq('org_id', orgId)
+    .not('geo_id', 'is', null);
+  if (error) throw error;
+  return new Set(data.map((r) => r.geo_id));
+}
+
+export async function addMarketTarget(orgId, target) {
+  const { data, error } = await supabase
+    .from('markets')
+    .insert({
+      org_id: orgId,
+      state: target.state,
+      county: target.county || null,
+      name: target.name,
+      geo_id: target.geo_id,
+      poly: target.poly,
+      scan_enabled: true,
+      source: 'finder',
+      property_tax_rate: target.property_tax_rate ?? 0.01,
+      appreciation_rate: target.appreciation_rate ?? 0.03,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 // ---- Markets --------------------------------------------------------------
 export async function listMarkets(orgId) {
   const { data, error } = await supabase

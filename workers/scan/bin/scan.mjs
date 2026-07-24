@@ -137,25 +137,42 @@ try {
   }
 }
 
-// Phase 2 bootstrap: while the parcels table is empty, each scan run tries
-// the county auto-import (this machine has open internet; the build sandbox
-// doesn't). Failures never affect the scan — it just retries tomorrow.
-// Disable with MFDA_PARCELS_AUTO=0.
-if (!dryRun && !blocked && process.env.MFDA_PARCELS_AUTO !== '0') {
-  try {
-    const { parcelCount } = await import('../lib/parcelimport.js');
-    if ((await parcelCount(db, orgId)) === 0) {
-      console.log('\n→ parcels table is empty — bootstrapping county assessor data …');
-      const { spawnSync } = await import('node:child_process');
-      const script = new URL('./parcels.mjs', import.meta.url).pathname;
-      const r = spawnSync(process.execPath, [script, '--source', 'all'], {
-        stdio: 'inherit',
-        timeout: 45 * 60_000,
-      });
-      if (r.status !== 0) console.warn('  parcels bootstrap incomplete — will retry on the next scan (details above).');
+// Post-scan chores (droplet has open internet; the build sandbox doesn't).
+// Failures never affect the scan itself.
+if (!dryRun && !blocked) {
+  const { spawnSync } = await import('node:child_process');
+  const runChild = (name, args = []) => {
+    const script = new URL(`./${name}`, import.meta.url).pathname;
+    const r = spawnSync(process.execPath, [script, ...args], { stdio: 'inherit', timeout: 45 * 60_000 });
+    if (r.status !== 0) console.warn(`  ${name} incomplete — retries on the next scan (details above).`);
+  };
+
+  // Phase 2 bootstrap: while the parcels table is empty, try the county
+  // assessor auto-import. Disable with MFDA_PARCELS_AUTO=0.
+  if (process.env.MFDA_PARCELS_AUTO !== '0') {
+    try {
+      const { parcelCount } = await import('../lib/parcelimport.js');
+      if ((await parcelCount(db, orgId)) === 0) {
+        console.log('\n→ parcels table is empty — bootstrapping county assessor data …');
+        runChild('parcels.mjs', ['--source', 'all']);
+      }
+    } catch (e) {
+      console.warn(`  parcels bootstrap skipped: ${e.message}`);
     }
-  } catch (e) {
-    console.warn(`  parcels bootstrap skipped: ${e.message}`);
+  }
+
+  // Phase 3: refresh national market stats when empty/stale (the script
+  // itself no-ops when data is <90 days old), then scan any target markets
+  // added from the Markets finder. Only after the first market of the day
+  // (phoenix) so the nashville run doesn't repeat them.
+  if (marketKey === 'phoenix' && process.env.MFDA_USMARKETS_AUTO !== '0') {
+    try {
+      console.log('\n→ US market stats refresh check …');
+      runChild('usmarkets.mjs');
+      runChild('targets.mjs');
+    } catch (e) {
+      console.warn(`  usmarkets/targets skipped: ${e.message}`);
+    }
   }
 }
 

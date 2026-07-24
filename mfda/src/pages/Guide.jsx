@@ -160,6 +160,35 @@ const MANUAL = [
     ],
   },
   {
+    section: 'Markets (finding the best pockets in the US)',
+    entries: [
+      {
+        t: 'What the Markets page is',
+        b: 'Every US county (~3,000) ranked for multifamily investing from free national data: Zillow home values and rents, Census population/taxes/vacancy, and FEMA natural-hazard risk. Pick a lens — Cash flow, Balanced, or Appreciation — and the ranking reorders instantly under the same data.',
+      },
+      {
+        t: 'How the score works',
+        b: 'Each metric becomes a national percentile (direction-aware: high yield helps, high taxes hurt), then the profile\'s weights blend them 0–100. All arithmetic runs in the tested calc engine — the same frozen-math discipline as underwriting. A county missing some data is scored on what it has and flagged "thin data" rather than silently punished.',
+      },
+      {
+        t: 'Gross yield — the cash-flow compass',
+        b: 'Annual rent divided by home value. It\'s computed from all-homes data, not apartment buildings, so treat it as a compass: above ~7% markets usually pencil for cash flow, below 5% they rarely do. The deal math on real listings is always the final word.',
+      },
+      {
+        t: 'The risk column',
+        b: 'FEMA\'s National Risk Index: expected losses from hurricanes, tornadoes, wildfire, flood, quake and more. High-risk counties carry rising insurance costs — a direct hit to cash flow that listing photos never show.',
+      },
+      {
+        t: 'Add to targets',
+        b: 'Found a pocket you like? Add to targets generates a scan polygon for that county and the droplet starts pulling its Redfin listings and sold comps in the next morning run — photos, agents, comps, and reports all work there automatically. Its tax rate and appreciation defaults seed the underwriting presets too.',
+      },
+      {
+        t: 'Where the data comes from and how fresh it is',
+        b: 'Zillow research CSVs, the Census ACS API, FEMA NRI, and the Census gazetteer — all free, refreshed automatically every ~90 days (these series only update monthly). The data date shows top-right on the page.',
+      },
+    ],
+  },
+  {
     section: 'Off-Market (finding sellers before they list)',
     entries: [
       {
