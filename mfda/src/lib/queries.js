@@ -1,5 +1,21 @@
 import { supabase } from './supabase';
 
+// Supabase truncates every request to 1000 rows regardless of .limit()
+// (PostgREST max-rows) — field-verified when a 6,800-parcel export came back
+// as exactly 1,000. Anything that can exceed 1000 rows must page.
+async function fetchPaged(buildQuery, max = 10000) {
+  const out = [];
+  let total = null;
+  for (let from = 0; from < max; from += 1000) {
+    const { data, error, count } = await buildQuery().range(from, Math.min(from + 999, max - 1));
+    if (error) throw error;
+    if (count != null) total = count;
+    out.push(...data);
+    if (data.length < 1000) break;
+  }
+  return { rows: out, count: total ?? out.length };
+}
+
 /** Canonical property key = APN + county FIPS, fallback normalized address hash. */
 export function dedupeKey({ apn, county_fips, address, city, state, zip }) {
   if (apn && county_fips) return `apn:${county_fips}:${apn}`.toLowerCase();
@@ -51,14 +67,17 @@ export async function setDealFavorite(id, favorite) {
 
 // Sold comps for a state (bucket/radius filtering happens client-side via mf-calc).
 export async function listCompsForState(orgId, state) {
-  const { data, error } = await supabase
-    .from('comps')
-    .select('price, lat, lng, beds_total, sqft, unit_bucket, sold_date, address, city, url')
-    .eq('org_id', orgId)
-    .eq('state', state)
-    .limit(2000);
-  if (error) throw error;
-  return data;
+  const { rows } = await fetchPaged(
+    () =>
+      supabase
+        .from('comps')
+        .select('price, lat, lng, beds_total, sqft, unit_bucket, sold_date, address, city, url')
+        .eq('org_id', orgId)
+        .eq('state', state)
+        .order('sold_date', { ascending: false }),
+    4000,
+  );
+  return rows;
 }
 
 export async function getRentBands(orgId, zip) {
@@ -189,41 +208,40 @@ export async function saveScenario(orgId, userId, dealId, { label, inputs, outpu
 // Filters run server-side so a county-sized table stays cheap; the 5000 cap
 // is a mail-campaign-sized page, not the dataset limit.
 export async function listParcels(orgId, f = {}) {
-  let q = supabase
-    .from('parcels')
-    .select(
-      'id, apn, state, county_fips, situs_address, situs_city, situs_zip, owner_name, owner_is_entity, mailing_address, mailing_city, mailing_state, mailing_zip, absentee, property_class, units, year_built, building_sqft, last_sale_date, last_sale_price, assessed_value',
-      { count: 'exact' },
-    )
-    .eq('org_id', orgId);
-  if (f.state && f.state !== 'all') q = q.eq('state', f.state);
-  if (f.countyFips && f.countyFips !== 'all') q = q.eq('county_fips', f.countyFips);
-  if (f.absentee) q = q.eq('absentee', true);
-  if (f.entity) q = q.eq('owner_is_entity', true);
-  if (f.minUnits) q = q.gte('units', Number(f.minUnits));
-  if (f.maxUnits) q = q.lte('units', Number(f.maxUnits));
-  if (f.soldBefore) q = q.lte('last_sale_date', f.soldBefore);
-  if (f.search && f.search.trim()) {
-    const s = f.search.trim().replace(/[%,]/g, ' ');
-    q = q.or(`situs_address.ilike.%${s}%,owner_name.ilike.%${s}%,situs_city.ilike.%${s}%,apn.ilike.%${s}%`);
-  }
-  const { data, error, count } = await q
-    .order('units', { ascending: false, nullsFirst: false })
-    .limit(5000);
-  if (error) throw error;
-  return { rows: data, count };
+  const build = () => {
+    let q = supabase
+      .from('parcels')
+      .select(
+        'id, apn, state, county_fips, situs_address, situs_city, situs_zip, owner_name, owner_is_entity, mailing_address, mailing_city, mailing_state, mailing_zip, absentee, property_class, units, year_built, building_sqft, last_sale_date, last_sale_price, assessed_value',
+        { count: 'exact' },
+      )
+      .eq('org_id', orgId);
+    if (f.state && f.state !== 'all') q = q.eq('state', f.state);
+    if (f.countyFips && f.countyFips !== 'all') q = q.eq('county_fips', f.countyFips);
+    if (f.absentee) q = q.eq('absentee', true);
+    if (f.entity) q = q.eq('owner_is_entity', true);
+    if (f.minUnits) q = q.gte('units', Number(f.minUnits));
+    if (f.maxUnits) q = q.lte('units', Number(f.maxUnits));
+    if (f.soldBefore) q = q.lte('last_sale_date', f.soldBefore);
+    if (f.search && f.search.trim()) {
+      const s = f.search.trim().replace(/[%,]/g, ' ');
+      q = q.or(`situs_address.ilike.%${s}%,owner_name.ilike.%${s}%,situs_city.ilike.%${s}%,apn.ilike.%${s}%`);
+    }
+    return q.order('units', { ascending: false, nullsFirst: false }).order('id', { ascending: true });
+  };
+  return fetchPaged(build, 10000);
 }
 
 // Distinct state/county pairs actually imported (drives the filter dropdowns).
 export async function listParcelCounties(orgId) {
-  const { data, error } = await supabase
-    .from('parcels')
-    .select('state, county_fips')
-    .eq('org_id', orgId)
-    .limit(10000);
-  if (error) throw error;
+  // Distinct pairs via aggregation-free pagination over an ordered scan
+  // would be wasteful at county scale — lean on the geo index instead.
+  const { rows } = await fetchPaged(
+    () => supabase.from('parcels').select('state, county_fips').eq('org_id', orgId).order('state').order('county_fips'),
+    50000,
+  );
   const seen = new Map();
-  for (const r of data) seen.set(`${r.state}:${r.county_fips}`, r);
+  for (const r of rows) seen.set(`${r.state}:${r.county_fips}`, r);
   return [...seen.values()].sort((a, b) => `${a.state}${a.county_fips}`.localeCompare(`${b.state}${b.county_fips}`));
 }
 
@@ -258,13 +276,11 @@ export async function createMailList(orgId, userId, { name, filters, parcelIds }
 }
 
 export async function listParcelsForMailList(listId) {
-  const { data, error } = await supabase
-    .from('mail_list_items')
-    .select('parcels(*)')
-    .eq('list_id', listId)
-    .limit(5000);
-  if (error) throw error;
-  return data.map((r) => r.parcels).filter(Boolean);
+  const { rows } = await fetchPaged(
+    () => supabase.from('mail_list_items').select('parcels(*)').eq('list_id', listId).order('parcel_id'),
+    10000,
+  );
+  return rows.map((r) => r.parcels).filter(Boolean);
 }
 
 export async function logMailExport(orgId, userId, { listId, rowCount }) {
@@ -282,16 +298,19 @@ export async function logMailExport(orgId, userId, { listId, rowCount }) {
 // Raw county stats — ALL derived numbers (yields, CAGRs, scores) come from
 // @alot/mf-calc in the page, so the math stays in the frozen engine.
 export async function listMarketStats(orgId) {
-  const { data, error } = await supabase
-    .from('market_stats')
-    .select(
-      'geo_id, name, state, lat, lng, land_sqmi, population, pop_5y_ago, zhvi_now, zhvi_1y, zhvi_5y, zori_now, zori_1y, zori_5y, median_re_tax, median_home_value_acs, renters, occupied_units, vacant_for_rent, nri_score, nri_rating, retrieved_at',
-    )
-    .eq('org_id', orgId)
-    .eq('geo_level', 'county')
-    .limit(4000);
-  if (error) throw error;
-  return data;
+  const { rows } = await fetchPaged(
+    () =>
+      supabase
+        .from('market_stats')
+        .select(
+          'geo_id, name, state, lat, lng, land_sqmi, population, pop_5y_ago, zhvi_now, zhvi_1y, zhvi_5y, zori_now, zori_1y, zori_5y, median_re_tax, median_home_value_acs, renters, occupied_units, vacant_for_rent, nri_score, nri_rating, retrieved_at',
+        )
+        .eq('org_id', orgId)
+        .eq('geo_level', 'county')
+        .order('geo_id'),
+    5000,
+  );
+  return rows;
 }
 
 // Counties already added as scan targets (marks rows in the finder).

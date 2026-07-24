@@ -158,10 +158,11 @@ function num(v) {
 function parseDate(v) {
   if (!v) return null;
   const s = String(v).trim();
-  // YYYYMMDD | YYYY-MM-DD | MM/DD/YYYY
-  let m = s.match(/^(\d{4})[-/]?(\d{2})[-/]?(\d{2})$/);
+  // YYYYMMDD | YYYY-MM-DD | with optional trailing time ("2018/05/12 00:00:00+00"
+  // — ArcGIS CSV exports ship timestamps, field-verified on Nashville OwnDate)
+  let m = s.match(/^(\d{4})[-/]?(\d{2})[-/]?(\d{2})([ T].*)?$/);
   if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})([ T].*)?$/);
   if (m) return `${m[3]}-${String(m[1]).padStart(2, '0')}-${String(m[2]).padStart(2, '0')}`;
   return null;
 }

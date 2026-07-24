@@ -248,6 +248,17 @@ describe('assessorToParcels — TN preset', () => {
     expect(res.parcels[0].owner_is_entity).toBe(true);
   });
 
+  it('parses ArcGIS-style timestamps down to the date', () => {
+    const csv = [
+      'ParID,Owner,OwnAddr1,OwnZip,PropAddr,PropZip,LUDesc,OwnDate',
+      '1,X LLC,PO BOX 1,00001,1 A ST,00002,DUPLEX,2018/05/12 00:00:00+00',
+      '2,Y LLC,PO BOX 2,00001,2 A ST,00002,DUPLEX,2021-03-04T05:06:07Z',
+    ].join('\n');
+    const r = assessorToParcels(csv, PRESETS.tn, { countyFips: '47037' });
+    expect(r.parcels[0].last_sale_date).toBe('2018-05-12');
+    expect(r.parcels[1].last_sale_date).toBe('2021-03-04');
+  });
+
   it('parses MM/DD/YYYY dates and real unit counts', () => {
     expect(res.parcels[0].last_sale_date).toBe('2018-05-12');
     expect(res.parcels[0].units).toBe(6);
