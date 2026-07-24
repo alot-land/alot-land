@@ -137,6 +137,28 @@ try {
   }
 }
 
+// Phase 2 bootstrap: while the parcels table is empty, each scan run tries
+// the county auto-import (this machine has open internet; the build sandbox
+// doesn't). Failures never affect the scan — it just retries tomorrow.
+// Disable with MFDA_PARCELS_AUTO=0.
+if (!dryRun && !blocked && process.env.MFDA_PARCELS_AUTO !== '0') {
+  try {
+    const { parcelCount } = await import('../lib/parcelimport.js');
+    if ((await parcelCount(db, orgId)) === 0) {
+      console.log('\n→ parcels table is empty — bootstrapping county assessor data …');
+      const { spawnSync } = await import('node:child_process');
+      const script = new URL('./parcels.mjs', import.meta.url).pathname;
+      const r = spawnSync(process.execPath, [script, '--source', 'all'], {
+        stdio: 'inherit',
+        timeout: 45 * 60_000,
+      });
+      if (r.status !== 0) console.warn('  parcels bootstrap incomplete — will retry on the next scan (details above).');
+    }
+  } catch (e) {
+    console.warn(`  parcels bootstrap skipped: ${e.message}`);
+  }
+}
+
 const secs = Math.round((Date.now() - started) / 1000);
 if (blocked) {
   console.error(`\n✗ Redfin returned a block/challenge. Stopped without retrying (${secs}s).`);

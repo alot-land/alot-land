@@ -36,7 +36,7 @@ export function parseDSV(text, delim) {
  * The `generic` set backstops both presets and any other county.
  */
 const GENERIC = {
-  apn: ['apn', 'parcel', 'parcel_number', 'parcelid', 'parcel_id', 'parid', 'assessor_parcel_number'],
+  apn: ['apn', 'parcel', 'parcel_number', 'parcelid', 'parcel_id', 'parid', 'parcel_no', 'parcelno', 'parcel_num', 'assessor_parcel_number'],
   owner_name: ['owner_name', 'owner', 'ownername', 'owner1', 'current_owner', 'taxpayer_name', 'taxpayer'],
   mailing_address: ['mailing_address', 'mail_address', 'mail_addr', 'owner_address', 'mailing_addr1', 'mail_line1', 'taxpayer_address'],
   mailing_city: ['mailing_city', 'mail_city', 'owner_city', 'taxpayer_city'],
@@ -45,9 +45,9 @@ const GENERIC = {
   situs_address: ['situs_address', 'situs_addr', 'situs', 'property_address', 'prop_address', 'site_address', 'location', 'property_location'],
   situs_city: ['situs_city', 'property_city', 'prop_city', 'site_city', 'city'],
   situs_zip: ['situs_zip', 'property_zip', 'prop_zip', 'site_zip', 'zip', 'zip_code'],
-  units: ['units', 'unit_count', 'number_of_units', 'num_units', 'living_units', 'dwelling_units', 'res_units'],
+  units: ['units', 'unit_count', 'number_of_units', 'num_units', 'no_of_units', 'total_units', 'numberofunits', 'living_units', 'number_of_living_units', 'dwelling_units', 'res_units'],
   year_built: ['year_built', 'yearbuilt', 'const_year', 'year_constructed', 'yr_built', 'eff_year_built'],
-  property_class: ['property_class', 'class', 'property_use', 'use_code', 'puc', 'land_use', 'property_type', 'classification', 'prop_class'],
+  property_class: ['property_class', 'class', 'property_use', 'use_code', 'puc', 'land_use', 'land_use_desc', 'land_use_description', 'use_description', 'property_use_description', 'property_type', 'classification', 'prop_class'],
   last_sale_date: ['last_sale_date', 'sale_date', 'deed_date', 'sale_dt', 'last_sold', 'transfer_date'],
   last_sale_price: ['last_sale_price', 'sale_price', 'sale_amount', 'consideration', 'last_sale_amount', 'price'],
   assessed_value: ['assessed_value', 'total_assessed', 'assessed_total', 'full_cash_value', 'fcv', 'total_value', 'appraised_value', 'total_appraisal'],
@@ -64,6 +64,14 @@ export const PRESETS = {
       /^03/.test(String(row.property_class || '')) ||
       Number(row.units) >= 2 ||
       /apart|multi|duplex|triplex|fourplex/i.test(String(row.property_class || '')),
+    columns: GENERIC,
+  },
+  // Maricopa's Apartment Master bulk file: every row is already multifamily
+  // (duplex → apartment), so the file itself is the filter.
+  maricopa_apartments: {
+    state: 'AZ',
+    county_fips: '04013',
+    isMultifamily: () => true,
     columns: GENERIC,
   },
   tn: {

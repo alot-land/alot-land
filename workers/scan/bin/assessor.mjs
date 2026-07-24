@@ -15,6 +15,7 @@
  */
 import { readFile } from 'node:fs/promises';
 import { assessorToParcels, resolveColumns, PRESETS, sniffDelimiter, parseDSV } from '../lib/assessor.js';
+import { importParcels } from '../lib/parcelimport.js';
 import { makeDb } from '../lib/db.js';
 
 function arg(name, dflt) {
@@ -77,29 +78,9 @@ if (!res.kept) {
 
 const db = makeDb();
 const orgId = await db.resolveOrgId();
-const rows = res.parcels.map((p) => ({
-  org_id: orgId,
-  dedupe_key: `apn:${p.county_fips || 'na'}:${p.apn}`.toLowerCase(),
-  ...p,
-}));
+const stats = await importParcels(db, orgId, res.parcels);
+await db.logCost(orgId, `assessor import ${source}: ${stats.imported} MF parcels`);
 
-const CHUNK = 500;
-for (let i = 0; i < rows.length; i += CHUNK) {
-  const { error } = await db.supabase
-    .from('parcels')
-    .upsert(rows.slice(i, i + CHUNK), { onConflict: 'org_id,dedupe_key' });
-  if (error) {
-    console.error('✗ upsert failed:', error.message);
-    process.exit(1);
-  }
-  process.stdout.write(`  upserted ${Math.min(i + CHUNK, rows.length)}/${rows.length}\r`);
-}
-console.log('');
-await db.logCost(orgId, `assessor import ${source}: ${rows.length} MF parcels`);
-
-const absentee = rows.filter((r) => r.absentee).length;
-const entity = rows.filter((r) => r.owner_is_entity).length;
-const withUnits = rows.filter((r) => r.units != null).length;
-console.log(`✓ Imported ${rows.length} multifamily parcels.`);
-console.log(`  absentee: ${absentee} · entity-owned: ${entity} · with real unit counts: ${withUnits}`);
+console.log(`✓ Imported ${stats.imported} multifamily parcels.`);
+console.log(`  absentee: ${stats.absentee} · entity-owned: ${stats.entity} · with real unit counts: ${stats.withUnits}`);
 console.log('  Open the app → Off-Market to build lists and export FreedomSoft CSVs.');

@@ -66,6 +66,38 @@ price, agent when captured, link into the app) + scan-health footer.
 County assessor files → the `parcels` table → the app's **Off-Market** page
 (filter → FreedomSoft CSV export). Run migration_006 in Supabase first.
 
+### Zero-operator path (default)
+
+`bin/parcels.mjs` discovers, downloads, and imports county data by itself:
+
+- **maricopa** — the Assessor's free bulk downloads (launched 2026-03):
+  scrapes the Data Downloads page for the *Apartment Master* file (duplex →
+  apartment, REAL unit counts), backfills owner mailing addresses from the
+  ownership bulk file when needed (APN join).
+- **nashville** — Davidson Co runs its own CAMA outside the state system;
+  its assessor data is on data.nashville.gov (Socrata). The catalog API
+  picks the best assessor dataset at runtime; CSV is paged down in 50k rows.
+
+```bash
+node bin/parcels.mjs                    # both lanes
+node bin/parcels.mjs --source maricopa
+node bin/parcels.mjs --discover-only    # print what it found; no writes
+```
+
+The daily scan (`bin/scan.mjs`) runs this automatically whenever the
+parcels table is empty, so a fresh install self-populates on the next
+morning cron — no operator action. Disable with `MFDA_PARCELS_AUTO=0`.
+Each lane writes a `scan_runs` row (`parcels-maricopa`, `parcels-nashville`)
+so the outcome shows in the app header and the morning digest.
+
+**Safety valve:** a lane that cannot confidently resolve APN + owner +
+mailing-address columns imports NOTHING — it prints a full parse report
+(headers, field mapping, samples). Paste that report into the build chat;
+the mapping gets extended and the next run imports. Same iterate loop as
+`--inspect` below. Requires `unzip` on the machine (droplets have it).
+
+### Manual path (any county, any file)
+
 Where the files come from (free public records, one-time manual download):
 
 - **Maricopa, AZ** — [Maricopa County Open Data](https://data-maricopa.opendata.arcgis.com/)
