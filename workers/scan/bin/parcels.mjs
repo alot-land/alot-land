@@ -34,6 +34,7 @@ import {
   NASHVILLE_CATALOG_URL,
   NASHVILLE_HUB_DATASETS,
   hubDownloadUrl,
+  extractLinks,
   extractFileUrls,
   pickMaricopaFiles,
   socrataPickDataset,
@@ -103,14 +104,18 @@ function isTlsChainError(e) {
   return false;
 }
 
-/** Fetch a Maricopa URL: normal path first, TLS-tolerant fallback second. */
+/** Fetch a Maricopa URL: normal path first, raw-HTTPS fallback second.
+ * Their hosts fail Node's fetch in more ways than one (incomplete TLS
+ * chain on www, opaque "fetch failed" on api/ftp — field-verified), so any
+ * fetch failure on *.maricopa.gov falls back. */
 async function maricopaFetch(url, asBuffer = false) {
   try {
     const res = await fetchOk(url);
     return asBuffer ? Buffer.from(await res.arrayBuffer()) : await res.text();
   } catch (e) {
-    if (!isTlsChainError(e) || !new URL(url).hostname.endsWith('maricopa.gov')) throw e;
-    console.warn(`  TLS chain incomplete on ${new URL(url).hostname} — using verification-off fallback`);
+    if (!new URL(url).hostname.endsWith('maricopa.gov')) throw e;
+    const why = isTlsChainError(e) ? 'TLS chain incomplete' : `fetch failed (${e.message})`;
+    console.warn(`  ${why} on ${new URL(url).hostname} — using raw-HTTPS fallback`);
     const buf = await insecureGet(url);
     return asBuffer ? buf : buf.toString('utf8');
   }
@@ -154,16 +159,49 @@ async function maricopaLane() {
     try {
       console.log(`  reading ${page}`);
       const html = await maricopaFetch(page);
-      const files = pickMaricopaFiles(extractFileUrls(html, page));
+      let urls = extractFileUrls(html, page);
+
+      // The landing page is a static index whose files sit one level deeper
+      // (field-verified: zero file links on data_sales itself). Crawl the
+      // data-ish subpages it links to.
+      if (!urls.length) {
+        const subpages = extractLinks(html, page)
+          .filter((u) => {
+            try {
+              const x = new URL(u);
+              return (
+                x.hostname.endsWith('maricopa.gov') &&
+                u !== page &&
+                /data|download|sales|apartment|master|bulk|gis|parcel|rental|owner/i.test(x.pathname) &&
+                !/\.(pdf|jpg|png|css|js)(\?|$)/i.test(x.pathname)
+              );
+            } catch {
+              return false;
+            }
+          })
+          .slice(0, 8);
+        console.log(`  no file links on the page itself — crawling ${subpages.length} subpage(s)`);
+        for (const sub of subpages) {
+          try {
+            const subHtml = await maricopaFetch(sub);
+            const found = extractFileUrls(subHtml, sub);
+            if (found.length) console.log(`    ${sub} → ${found.length} file link(s)`);
+            urls.push(...found);
+          } catch (e) {
+            console.warn(`    ${sub}: ${e.message}`);
+          }
+        }
+        if (!urls.length && subpages.length) {
+          console.log(`  page snippet: ${html.replace(/\s+/g, ' ').slice(0, 400)}`);
+          console.log(`  subpages tried: ${subpages.join(' | ')}`);
+        }
+      }
+
+      const files = pickMaricopaFiles(urls);
       console.log(`  found ${files.all.length} data links · apartment=${files.apartment || 'none'} · ownership=${files.ownership || 'none'}`);
       if (files.apartment) {
         picked = files;
         break;
-      }
-      if (!files.all.length) {
-        // The page fetched but exposed no file URLs — show what it actually
-        // is so the next report pinpoints where the links moved.
-        console.log(`  page snippet: ${html.replace(/\s+/g, ' ').slice(0, 400)}`);
       }
     } catch (e) {
       console.warn(`  ${page}: ${e.message}`);

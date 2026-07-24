@@ -5,6 +5,7 @@ import {
   resolveColumns,
   looksLikeEntity,
   isAbsentee,
+  unitsFromClass,
   assessorToParcels,
   PRESETS,
 } from '../lib/assessor.js';
@@ -210,6 +211,23 @@ describe('assessorToParcels — Nashville ArcGIS Hub export shape', () => {
   it('converts an Acres lot column to square feet', () => {
     expect(res.parcels[0].lot_sqft).toBe(Math.round(0.5 * 43560));
     expect(res.parcels[1].lot_sqft).toBe(Math.round(1.2 * 43560));
+  });
+
+  it('infers unit counts from the class text when no units column exists', () => {
+    expect(res.parcels[0].units).toBe(2); // DUPLEX
+    expect(res.parcels[1].units).toBeNull(); // APARTMENT: LOW RISE — count unknown
+  });
+});
+
+describe('unitsFromClass', () => {
+  it('reads plex sizes out of land-use descriptions', () => {
+    expect(unitsFromClass('DUPLEX')).toBe(2);
+    expect(unitsFromClass('Residential Triplex')).toBe(3);
+    expect(unitsFromClass('QUADPLEX')).toBe(4);
+    expect(unitsFromClass('FOURPLEX')).toBe(4);
+    expect(unitsFromClass('TWO FAMILY')).toBe(2);
+    expect(unitsFromClass('APARTMENT: HIGH RISE')).toBeNull();
+    expect(unitsFromClass('')).toBeNull();
   });
 });
 

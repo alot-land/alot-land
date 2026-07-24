@@ -109,6 +109,19 @@ export function resolveColumns(headers, columns = GENERIC) {
   return idx;
 }
 
+/**
+ * When a file has no units column, the land-use class often states the
+ * count outright (Nashville: "DUPLEX", "TRIPLEX"…). Deterministic text →
+ * number; apartments stay null (class doesn't say how many units).
+ */
+export function unitsFromClass(desc) {
+  const s = String(desc || '').toLowerCase();
+  if (/duplex|two[- ]?family|2[- ]?family/.test(s)) return 2;
+  if (/triplex|three[- ]?family|3[- ]?family/.test(s)) return 3;
+  if (/quadplex|fourplex|four[- ]?family|4[- ]?family|quadruplex/.test(s)) return 4;
+  return null;
+}
+
 const ENTITY_RE = /\b(llc|l\.l\.c|inc|corp|corporation|company|co\b|trust|tr\b|lp|llp|ltd|partners(hip)?|properties|investments|holdings|capital|ventures|estates|group)\b/i;
 export function looksLikeEntity(name) {
   return ENTITY_RE.test(String(name || ''));
@@ -182,7 +195,7 @@ export function assessorToParcels(text, preset, opts = {}) {
     }
     const logical = {
       property_class: get(r, 'property_class'),
-      units: num(get(r, 'units')),
+      units: num(get(r, 'units')) ?? unitsFromClass(get(r, 'property_class')),
     };
     if (!preset.isMultifamily(logical)) continue;
 
