@@ -80,6 +80,30 @@ export default function ListingsMap({ rows, onAnalyze }) {
     <div className="relative card overflow-hidden" style={{ height: '70vh' }}>
       <div ref={containerRef} className="absolute inset-0" />
 
+      {/* Legend — above Leaflet's panes (z ~1000) */}
+      <div
+        className="absolute right-3 top-3 bg-surface/95 border border-border rounded-lg px-3 py-2 text-xs shadow"
+        style={{ zIndex: 1100 }}
+      >
+        {[
+          ['#2E8C43', 'Active'],
+          ['#B8860B', 'Pending'],
+          ['#3E6DA3', 'Coming soon'],
+          ['#8A8272', 'Unknown'],
+        ].map(([c, label]) => (
+          <div key={label} className="flex items-center gap-2 py-0.5">
+            <span
+              style={{
+                width: 12, height: 12, background: c, display: 'inline-block',
+                borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)',
+                border: '1.5px solid #fff', boxShadow: '0 1px 2px rgba(0,0,0,.3)',
+              }}
+            />
+            <span className="text-ink-2">{label}</span>
+          </div>
+        ))}
+      </div>
+
       {selected && (
         // Leaflet's internal panes reach z-index ~1000 — the card must sit above.
         <div className="absolute left-3 bottom-3 w-72 card shadow-xl overflow-hidden" style={{ zIndex: 1100 }}>
