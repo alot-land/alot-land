@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getDeal, listScenarios, getListingContact } from '../lib/queries';
 import { Suspense, useState } from 'react';
 import { lazyReload } from '../lib/lazyReload';
+import HeartButton from '../components/HeartButton';
 import {
   SummaryVerdict, ValuationPanel, FinancingComparator, InverseSolvers,
   StressPanel, TaxPanel, PrescreenFlags, ScoreBreakdown, ProvenanceTable,
@@ -31,7 +32,10 @@ export default function DealResults() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link to="/deals" className="text-sm text-muted hover:underline">← Deals</Link>
-          <h1 className="font-display text-2xl font-semibold">{deal.data.address || 'Deal'}</h1>
+          <h1 className="font-display text-2xl font-semibold flex items-center gap-2">
+            {deal.data.address || 'Deal'}
+            <HeartButton deal={deal.data} size="text-2xl" />
+          </h1>
           <p className="text-muted text-sm">
             {[deal.data.city, deal.data.state, deal.data.zip].filter(Boolean).join(', ')} · {deal.data.units_count} units
           </p>

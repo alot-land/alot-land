@@ -4,6 +4,8 @@ import {
   pickMaricopaFiles,
   socrataPickDataset,
   socrataCsvUrl,
+  hubDownloadUrl,
+  NASHVILLE_HUB_DATASETS,
   mergeOwnership,
 } from '../lib/parcelsources.js';
 import { looksLikeEntity, isAbsentee } from '../lib/assessor.js';
@@ -73,6 +75,15 @@ describe('socrataPickDataset', () => {
     };
     expect(socrataPickDataset(catalog)).toBeNull();
     expect(socrataPickDataset({ results: [] })).toBeNull();
+  });
+});
+
+describe('hubDownloadUrl', () => {
+  it('builds the ArcGIS Hub CSV download URL for the known Nashville dataset', () => {
+    expect(NASHVILLE_HUB_DATASETS.length).toBeGreaterThan(0);
+    expect(hubDownloadUrl('abc123_0')).toBe(
+      'https://hub.arcgis.com/api/v3/datasets/abc123_0/downloads/data?format=csv&spatialRefId=4326',
+    );
   });
 });
 

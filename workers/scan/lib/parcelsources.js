@@ -21,6 +21,18 @@ export const MARICOPA_PAGES = [
   'https://ftp.mcassessor.maricopa.gov/data-sales/',
 ];
 
+// Nashville migrated its portal from Socrata to ArcGIS Hub (confirmed
+// 2026-07: the Socrata catalog 404s and datasets live on
+// datanashvillegov-nashville.hub.arcgis.com). The Hub CSV-download API is
+// the stable route; dataset ids drift rarely, so known ids first with the
+// legacy Socrata path kept as a last-ditch fallback.
+export const NASHVILLE_HUB_DATASETS = [
+  'fa26cd9326c446179be059e00449cb1f_0', // "Parcels" (assessor parcel table)
+];
+
+export const hubDownloadUrl = (id) =>
+  `https://hub.arcgis.com/api/v3/datasets/${id}/downloads/data?format=csv&spatialRefId=4326`;
+
 export const NASHVILLE_CATALOG_URL =
   'https://api.us.socrata.com/api/catalog/v1?domains=data.nashville.gov&limit=50&q=' +
   encodeURIComponent('property assessor parcel');

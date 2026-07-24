@@ -44,6 +44,11 @@ export async function setDealStatus(id, status) {
   if (error) throw error;
 }
 
+export async function setDealFavorite(id, favorite) {
+  const { error } = await supabase.from('deals').update({ favorite }).eq('id', id);
+  if (error) throw error;
+}
+
 // Sold comps for a state (bucket/radius filtering happens client-side via mf-calc).
 export async function listCompsForState(orgId, state) {
   const { data, error } = await supabase

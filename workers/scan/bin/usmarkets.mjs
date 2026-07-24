@@ -42,14 +42,38 @@ const acsUrl = (year, codes) =>
 const NRI_URLS = [
   'https://hazards.fema.gov/nri/Content/StaticDocuments/DataDownload/NRI_Table_Counties/NRI_Table_Counties.zip',
 ];
+// NB: capital "Gaz" in the filename — the lowercase variant 404s (verified
+// in the field 2026-07-24).
 const GAZ_URLS = [2025, 2024, 2023].map(
-  (y) => `https://www2.census.gov/geo/docs/maps-data/data/gazetteer/${y}_Gazetteer/${y}_gaz_counties_national.zip`,
+  (y) => `https://www2.census.gov/geo/docs/maps-data/data/gazetteer/${y}_Gazetteer/${y}_Gaz_counties_national.zip`,
 );
+// FEMA's WAF 403s bare fetches; a Referer + browser Accept gets the real file.
+const BROWSERISH = {
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  Referer: 'https://hazards.fema.gov/nri/data-resources',
+};
 
-async function fetchText(url) {
-  const res = await politeFetch(url);
+async function fetchText(url, headers) {
+  const res = await politeFetch(url, fetch, headers);
   if (!res.ok) throw new Error(`HTTP ${res.status} on ${url}`);
   return res.text();
+}
+
+/** ACS occasionally serves an HTML page instead of JSON — retry once. */
+async function fetchAcsJson(url) {
+  const key = process.env.CENSUS_API_KEY;
+  const full = key ? `${url}&key=${key}` : url;
+  for (let attempt = 1; ; attempt++) {
+    const text = await fetchText(full);
+    try {
+      if (text.trimStart().startsWith('<')) throw new Error('HTML response');
+      return JSON.parse(text);
+    } catch (e) {
+      if (attempt >= 2) throw new Error(`ACS non-JSON after retry (${e.message}): ${text.slice(0, 150)}`);
+      console.warn(`  ACS returned non-JSON (attempt ${attempt}) — retrying in 5s…`);
+      await new Promise((r) => setTimeout(r, 5000));
+    }
+  }
 }
 
 async function fetchFirst(urls, kind) {
@@ -69,7 +93,7 @@ async function fetchZipText(urls, kind, filePattern) {
   let lastErr = null;
   for (const u of urls) {
     try {
-      const res = await politeFetch(u);
+      const res = await politeFetch(u, fetch, kind === 'nri' ? BROWSERISH : undefined);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const buf = Buffer.from(await res.arrayBuffer());
       const dir = mkdtempSync(join(tmpdir(), `mfda-${kind}-`));
@@ -127,8 +151,8 @@ try {
   let acsOld = new Map();
   try {
     console.log('→ Census ACS (2023 + 2018 5-year)…');
-    acsNow = acsMap(JSON.parse(await fetchText(acsUrl(2023, Object.values(ACS_FIELDS)))), ACS_FIELDS);
-    acsOld = acsMap(JSON.parse(await fetchText(acsUrl(2018, ['B01003_001E']))), { population: 'B01003_001E' });
+    acsNow = acsMap(await fetchAcsJson(acsUrl(2023, Object.values(ACS_FIELDS))), ACS_FIELDS);
+    acsOld = acsMap(await fetchAcsJson(acsUrl(2018, ['B01003_001E'])), { population: 'B01003_001E' });
     console.log(`  ${acsNow.size} counties now · ${acsOld.size} 5y-ago`);
   } catch (e) {
     console.warn(`  ACS unavailable this cycle: ${e.message}`);

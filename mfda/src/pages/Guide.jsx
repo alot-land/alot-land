@@ -282,6 +282,10 @@ const MANUAL = [
         b: 'Settings → Invites (admins only): enter their email and role. They sign in with a magic link and land in your org, seeing the same deals. Members can underwrite; admins can also invite and manage markets.',
       },
       {
+        t: 'Hearting deals',
+        b: 'Click the ♡ on any deal row or on a deal\'s results page to heart it. Hearted deals float to the top of the Deals page, and the ♥ Hearted button filters to just them. Hearts are shared across your org — everyone sees the same shortlist.',
+      },
+      {
         t: 'My underwrite from last week shows fewer panels than today\'s',
         b: 'Old snapshots are frozen with the engine version that made them — features added later (like the proforma) don\'t retroactively appear. Hit Edit / re-run to produce a fresh version with everything current.',
       },

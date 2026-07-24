@@ -28,9 +28,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { politeFetch } from '../lib/redfin.js';
 import { assessorToParcels, looksLikeEntity, isAbsentee, PRESETS } from '../lib/assessor.js';
+import { request as httpsRequest } from 'node:https';
 import {
   MARICOPA_PAGES,
   NASHVILLE_CATALOG_URL,
+  NASHVILLE_HUB_DATASETS,
+  hubDownloadUrl,
   extractLinks,
   pickMaricopaFiles,
   socrataPickDataset,
@@ -56,6 +59,56 @@ async function fetchOk(url) {
   return res;
 }
 
+/**
+ * mcassessor.maricopa.gov serves an INCOMPLETE TLS chain (missing its
+ * Entrust intermediate — field-verified 2026-07-24), so Node's fetch
+ * rejects it. For *.maricopa.gov only, fall back to a raw HTTPS GET with
+ * verification off. Public bulk-download data; shape is validated after.
+ */
+function insecureGet(url, redirects = 0) {
+  return new Promise((resolve, reject) => {
+    if (redirects > 3) return reject(new Error('too many redirects'));
+    const req = httpsRequest(
+      url,
+      { rejectUnauthorized: false, headers: { 'User-Agent': UA_STRING } },
+      (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          res.resume();
+          return resolve(insecureGet(new URL(res.headers.location, url).href, redirects + 1));
+        }
+        if (res.statusCode !== 200) {
+          res.resume();
+          return reject(new Error(`HTTP ${res.statusCode} on ${url}`));
+        }
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () => resolve(Buffer.concat(chunks)));
+        res.on('error', reject);
+      },
+    );
+    req.on('error', reject);
+    req.end();
+  });
+}
+const UA_STRING =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+const isTlsChainError = (e) =>
+  /UNABLE_TO_VERIFY|unable to verify|certificate|CERT_/i.test(String(e?.cause?.code || e?.cause?.message || e?.message || ''));
+
+/** Fetch a Maricopa URL: normal path first, TLS-tolerant fallback second. */
+async function maricopaFetch(url, asBuffer = false) {
+  try {
+    const res = await fetchOk(url);
+    return asBuffer ? Buffer.from(await res.arrayBuffer()) : await res.text();
+  } catch (e) {
+    if (!isTlsChainError(e) || !new URL(url).hostname.endsWith('maricopa.gov')) throw e;
+    console.warn(`  TLS chain incomplete on ${new URL(url).hostname} — using verification-off fallback`);
+    const buf = await insecureGet(url);
+    return asBuffer ? buf : buf.toString('utf8');
+  }
+}
+
 function unzipToTmp(buf, label) {
   const dir = mkdtempSync(join(tmpdir(), `mfda-${label}-`));
   const zipPath = join(dir, 'dl.zip');
@@ -71,17 +124,18 @@ function unzipToTmp(buf, label) {
   return files[0];
 }
 
-async function downloadDataFile(url, label) {
+async function downloadDataFile(url, label, { viaMaricopa = false } = {}) {
   console.log(`  downloading ${url}`);
-  const res = await fetchOk(url);
+  const getBuf = async () =>
+    viaMaricopa ? maricopaFetch(url, true) : Buffer.from(await (await fetchOk(url)).arrayBuffer());
   if (/\.zip(\?|$)/i.test(url)) {
-    const buf = Buffer.from(await res.arrayBuffer());
+    const buf = await getBuf();
     console.log(`  ${(buf.length / 1e6).toFixed(1)}MB zip`);
     const file = unzipToTmp(buf, label);
     console.log(`  unzipped → ${file} (${(statSync(file).size / 1e6).toFixed(1)}MB)`);
     return readFileSync(file, 'utf8');
   }
-  const text = await res.text();
+  const text = viaMaricopa ? await maricopaFetch(url) : await (await fetchOk(url)).text();
   if (text.trimStart().startsWith('<')) throw new Error('got an HTML page where a data file was expected (challenge?)');
   return text;
 }
@@ -92,7 +146,7 @@ async function maricopaLane() {
   for (const page of MARICOPA_PAGES) {
     try {
       console.log(`  reading ${page}`);
-      const html = await (await fetchOk(page)).text();
+      const html = await maricopaFetch(page);
       const files = pickMaricopaFiles(extractLinks(html, page));
       console.log(`  found ${files.all.length} data links · apartment=${files.apartment || 'none'} · ownership=${files.ownership || 'none'}`);
       if (files.apartment) {
@@ -106,7 +160,7 @@ async function maricopaLane() {
   if (!picked) throw new Error('no Apartment Master link found on any Maricopa page');
   if (DISCOVER_ONLY) return { discovered: picked };
 
-  const text = await downloadDataFile(picked.apartment, 'maricopa-apt');
+  const text = await downloadDataFile(picked.apartment, 'maricopa-apt', { viaMaricopa: true });
   // The Apartment Master IS the multifamily filter — keep every parsed row.
   const res = assessorToParcels(text, PRESETS.maricopa_apartments);
   console.log(inspectReport(res, 'maricopa apartment master'));
@@ -118,7 +172,7 @@ async function maricopaLane() {
   // ownership bulk file, joined on APN.
   if ((res.unresolved.includes('owner_name') || res.unresolved.includes('mailing_address')) && picked.ownership) {
     console.log('  owner/mailing not in apartment file — pulling ownership file for backfill');
-    const otext = await downloadDataFile(picked.ownership, 'maricopa-own');
+    const otext = await downloadDataFile(picked.ownership, 'maricopa-own', { viaMaricopa: true });
     const ores = assessorToParcels(otext, { ...PRESETS.maricopa_apartments });
     console.log(inspectReport(ores, 'maricopa ownership'));
     const { merged } = mergeOwnership(res.parcels, ores.parcels, { looksLikeEntity, isAbsentee });
@@ -133,15 +187,32 @@ async function maricopaLane() {
 }
 
 // ---- Nashville lane -------------------------------------------------------
-async function nashvilleLane() {
-  console.log(`  querying Socrata catalog`);
+// Primary: ArcGIS Hub CSV download (Nashville left Socrata for Hub, 2026).
+// Fallback: the old Socrata route, in case the portal moves back or the Hub
+// dataset id changes before this code does.
+async function nashvilleViaHub() {
+  let lastErr = null;
+  for (const id of NASHVILLE_HUB_DATASETS) {
+    try {
+      const url = hubDownloadUrl(id);
+      if (DISCOVER_ONLY) return { discovered: { hubDataset: id, url } };
+      const text = await downloadDataFile(url, 'nashville-hub');
+      return { text, via: `hub:${id}` };
+    } catch (e) {
+      lastErr = e;
+      console.warn(`  hub dataset ${id}: ${e.message}`);
+    }
+  }
+  throw lastErr || new Error('no Hub datasets configured');
+}
+
+async function nashvilleViaSocrata() {
+  console.log('  falling back to legacy Socrata catalog');
   const cat = JSON.parse(await (await fetchOk(NASHVILLE_CATALOG_URL)).text());
   const ds = socrataPickDataset(cat);
-  if (!ds) throw new Error('no assessor-shaped dataset found in the data.nashville.gov catalog');
+  if (!ds) throw new Error('no assessor-shaped dataset found in the Socrata catalog');
   console.log(`  picked dataset ${ds.id} "${ds.name}" (score ${ds.score})`);
-  console.log(`  columns: ${(ds.columns || []).join(', ')}`);
   if (DISCOVER_ONLY) return { discovered: ds };
-
   const LIMIT = 50000;
   let text = '';
   for (let offset = 0; offset < 600000; offset += LIMIT) {
@@ -149,12 +220,23 @@ async function nashvilleLane() {
     const body = offset === 0 ? page : page.slice(page.indexOf('\n') + 1);
     text += body.endsWith('\n') ? body : body + '\n';
     const rows = page.split('\n').length - 1;
-    console.log(`  fetched ${offset + Math.max(rows - (offset === 0 ? 1 : 0), 0)} rows…`);
     if (rows < LIMIT) break;
   }
+  return { text, via: `socrata:${ds.id}` };
+}
 
-  const res = assessorToParcels(text, PRESETS.tn, { countyFips: '47037' });
-  console.log(inspectReport(res, 'nashville socrata'));
+async function nashvilleLane() {
+  let got;
+  try {
+    got = await nashvilleViaHub();
+  } catch (e) {
+    console.warn(`  ArcGIS Hub route failed: ${e.message}`);
+    got = await nashvilleViaSocrata();
+  }
+  if (got.discovered) return got;
+
+  const res = assessorToParcels(got.text, PRESETS.tn, { countyFips: '47037' });
+  console.log(inspectReport(res, `nashville ${got.via}`));
   if (!essentialsOk(res)) {
     throw new Error(`essential fields unresolved (${res.unresolved.join(', ')}) — imported nothing; paste the parse report into the build chat`);
   }

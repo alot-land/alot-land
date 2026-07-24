@@ -29,7 +29,7 @@ export const SOLD_DAYS = [7, 30, 90, 180, 365, 730, 1095, 1825];
 let lastRequestAt = 0;
 let queue = Promise.resolve();
 
-export function politeFetch(url, fetchImpl = fetch) {
+export function politeFetch(url, fetchImpl = fetch, extraHeaders = {}) {
   const run = async () => {
     const wait = lastRequestAt + MIN_GAP_MS - Date.now();
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
@@ -39,6 +39,7 @@ export function politeFetch(url, fetchImpl = fetch) {
         'User-Agent': UA,
         Accept: 'text/csv,*/*',
         'Accept-Language': 'en-US,en;q=0.9',
+        ...extraHeaders,
       },
       redirect: 'follow',
       cache: 'no-store',
