@@ -31,12 +31,13 @@ import { assessorToParcels, looksLikeEntity, isAbsentee, PRESETS } from '../lib/
 import { request as httpsRequest } from 'node:https';
 import {
   MARICOPA_PAGES,
-  MARICOPA_HUB_DATASETS,
+  MARICOPA_ARCGIS_QUERIES,
+  ARCGIS_SEARCH_URL,
+  pickMaricopaService,
+  layerFieldNames,
   NASHVILLE_CATALOG_URL,
   NASHVILLE_HUB_DATASETS,
   hubDownloadUrl,
-  hubDatasetMetaUrl,
-  arcgisLayerFromMeta,
   arcgisQueryUrl,
   pickClassField,
   featuresToRows,
@@ -165,22 +166,29 @@ async function downloadDataFile(url, label, { viaMaricopa = false } = {}) {
 // Fallback: scrape the assessor's data-sales pages for bulk files.
 async function maricopaViaArcgis() {
   let lastErr = null;
-  for (const id of MARICOPA_HUB_DATASETS) {
+  for (const q of MARICOPA_ARCGIS_QUERIES) {
     try {
-      console.log(`  dataset ${id}: fetching layer metadata`);
-      const meta = JSON.parse(await (await fetchOk(hubDatasetMetaUrl(id))).text());
-      const layer = arcgisLayerFromMeta(meta);
-      if (!layer?.url) throw new Error('no layer URL in Hub metadata');
-      const classField = pickClassField(layer.fields);
-      console.log(`  layer ${layer.url}`);
-      console.log(`  fields (${layer.fields.length}): ${layer.fields.join(', ')}`);
+      console.log(`  searching ArcGIS Online: ${q}`);
+      const search = JSON.parse(await (await fetchOk(ARCGIS_SEARCH_URL(q))).text());
+      const svc = pickMaricopaService(search);
+      if (!svc) {
+        const titles = (search?.results || []).map((r) => `"${r.title}" (${r.owner})`).slice(0, 10);
+        throw new Error(`no parcel service matched; top results: ${titles.join(' · ') || 'none'}`);
+      }
+      console.log(`  picked "${svc.title}" by ${svc.owner} (score ${svc.score})`);
+      const layerUrl = `${svc.url}/0`;
+      const layerJson = JSON.parse(await (await fetchOk(`${layerUrl}?f=json`)).text());
+      const fields = layerFieldNames(layerJson);
+      console.log(`  layer ${layerUrl}`);
+      console.log(`  fields (${fields.length}): ${fields.join(', ')}`);
+      const classField = pickClassField(fields);
       if (!classField) throw new Error('no PUC/land-use field — paste the field list above into the build chat');
 
       const where = `${classField} LIKE '03%'`;
       console.log(`  querying where ${where}`);
       const rows = [];
       for (let offset = 0; offset < 300000; offset += 2000) {
-        const j = JSON.parse(await (await fetchOk(arcgisQueryUrl(layer.url, { where, offset }))).text());
+        const j = JSON.parse(await (await fetchOk(arcgisQueryUrl(layerUrl, { where, offset }))).text());
         if (j.error) throw new Error(`arcgis error: ${JSON.stringify(j.error).slice(0, 200)}`);
         const page = featuresToRows(j);
         rows.push(...page);
@@ -188,15 +196,15 @@ async function maricopaViaArcgis() {
         if (page.length < 2000) break;
       }
       console.log('');
-      if (!rows.length) throw new Error(`0 rows for "${where}" — the class field may be numeric or coded differently`);
-      if (DISCOVER_ONLY) return { discovered: { dataset: id, layer: layer.url, classField, rows: rows.length } };
-      return { text: rowsToCsv(rows), via: `arcgis:${id}` };
+      if (!rows.length) throw new Error(`0 rows for "${where}" — the class field may be numeric or coded differently; fields listed above`);
+      if (DISCOVER_ONLY) return { discovered: { service: svc, layer: layerUrl, classField, rows: rows.length } };
+      return { text: rowsToCsv(rows), via: `arcgis:${svc.id}` };
     } catch (e) {
       lastErr = e;
-      console.warn(`  ${id}: ${e.message}`);
+      console.warn(`  search "${q}": ${e.message}`);
     }
   }
-  throw lastErr || new Error('no ArcGIS datasets configured');
+  throw lastErr || new Error('no ArcGIS search queries configured');
 }
 
 async function maricopaLane() {

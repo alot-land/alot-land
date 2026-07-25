@@ -13,6 +13,8 @@ import {
   arcgisLayerFromMeta,
   arcgisQueryUrl,
   pickClassField,
+  pickMaricopaService,
+  layerFieldNames,
   featuresToRows,
   rowsToCsv,
 } from '../lib/parcelsources.js';
@@ -117,6 +119,34 @@ describe('socrataCsvUrl', () => {
     expect(socrataCsvUrl('data.nashville.gov', 'bbbb-2222', { limit: 1000, offset: 2000 })).toBe(
       'https://data.nashville.gov/resource/bbbb-2222.csv?$limit=1000&$offset=2000&$order=:id',
     );
+  });
+});
+
+describe('pickMaricopaService (runtime ArcGIS search)', () => {
+  it('picks the county parcel service over unrelated or junk results', () => {
+    const search = {
+      results: [
+        { id: 'j1', title: 'Maricopa Trails', owner: 'MaricopaCountyParks', type: 'Feature Service', snippet: 'hiking', url: 'https://x/1' },
+        { id: 'p1', title: 'Parcels', owner: 'MaricopaCountyGIS', type: 'Feature Service', snippet: 'Assessor parcel boundaries with ownership', url: 'https://services.arcgis.com/M/arcgis/rest/services/Parcels/FeatureServer/' },
+        { id: 'c1', title: 'Parcels COPY test', owner: 'someuser', type: 'Feature Service', snippet: 'maricopa test copy', url: 'https://x/2' },
+        { id: 'm1', title: 'Parcel Map', owner: 'esri', type: 'Web Map', snippet: 'maricopa', url: 'https://x/3' },
+      ],
+    };
+    const svc = pickMaricopaService(search);
+    expect(svc.id).toBe('p1');
+    expect(svc.url).toBe('https://services.arcgis.com/M/arcgis/rest/services/Parcels/FeatureServer');
+  });
+
+  it('returns null when nothing is maricopa-parcel-shaped', () => {
+    expect(pickMaricopaService({ results: [{ id: 'x', title: 'Denver Zoning', owner: 'denver', type: 'Feature Service', url: 'https://x' }] })).toBeNull();
+    expect(pickMaricopaService({ results: [] })).toBeNull();
+  });
+});
+
+describe('layerFieldNames', () => {
+  it('extracts field names from a layer descriptor', () => {
+    expect(layerFieldNames({ fields: [{ name: 'APN' }, { name: 'PUC' }, {}] })).toEqual(['APN', 'PUC']);
+    expect(layerFieldNames({})).toEqual([]);
   });
 });
 

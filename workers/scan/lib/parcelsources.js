@@ -20,13 +20,43 @@
 // data-sales pages expose samples + layout docs, not full files.
 export const MARICOPA_PAGES = ['https://www.mcassessor.maricopa.gov/page/data_sales/'];
 
-// PRIMARY Maricopa route: the county's GIS parcels on ArcGIS (same Hub
-// infrastructure that serves the Nashville parcels). Queried server-side by
-// multifamily PUC so we never pull the county's 1.4M single-family rows.
-export const MARICOPA_HUB_DATASETS = [
-  'c937f17330f64e64abd41976fc8bb17f_0', // "Parcels" (GIS Open Data)
-  'e22983d41d91490d90965544b718a120_0', // "Residential Master"
+// PRIMARY Maricopa route: the county's GIS parcels on ArcGIS, found at
+// RUNTIME through the official ArcGIS Online search API (hardcoded dataset
+// ids went stale and 404'd — field-verified 2026-07-24). Queried
+// server-side by multifamily PUC so we never pull 1.4M single-family rows.
+export const ARCGIS_SEARCH_URL = (q, num = 20) =>
+  `https://www.arcgis.com/sharing/rest/search?f=json&num=${num}&q=${encodeURIComponent(q)}`;
+
+export const MARICOPA_ARCGIS_QUERIES = [
+  'maricopa parcels assessor type:"Feature Service"',
+  'maricopa county parcels type:"Feature Service"',
 ];
+
+/** Rank ArcGIS Online search results for the Maricopa parcel service. */
+export function pickMaricopaService(searchJson) {
+  const items = searchJson?.results || [];
+  let best = null;
+  for (const it of items) {
+    if (!it?.url || !/(feature|map)\s*service/i.test(it.type || '')) continue;
+    const hay = `${it.title || ''} ${it.owner || ''} ${it.snippet || ''}`.toLowerCase();
+    if (!hay.includes('maricopa')) continue;
+    let score = 0;
+    if (/parcel/i.test(it.title || '')) score += 4;
+    if (/assessor|ownership|owner/.test(hay)) score += 3;
+    if (/maricopa/.test(String(it.owner || '').toLowerCase())) score += 3;
+    if (/county|gis/.test(String(it.owner || '').toLowerCase())) score += 1;
+    if (/test|sample|copy|deprecat/.test(hay)) score -= 4;
+    if (!best || score > best.score) {
+      best = { id: it.id, title: it.title, owner: it.owner, url: String(it.url).replace(/\/+$/, ''), score };
+    }
+  }
+  return best && best.score >= 4 ? best : null;
+}
+
+/** ArcGIS layer descriptor JSON (…/FeatureServer/0?f=json) → field names. */
+export function layerFieldNames(layerJson) {
+  return (layerJson?.fields || []).map((f) => f?.name).filter(Boolean);
+}
 
 export const hubDatasetMetaUrl = (id) => `https://hub.arcgis.com/api/v3/datasets/${id}`;
 
