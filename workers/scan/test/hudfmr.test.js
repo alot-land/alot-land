@@ -7,7 +7,37 @@ import {
   parseFmrResponse,
   parseCounties,
   toRentBandRows,
+  normalizeZip,
+  isRealZip,
 } from '../lib/hudfmr.js';
+
+describe('normalizeZip', () => {
+  it('rejects HUD area-wide rows instead of truncating them into a ZIP', () => {
+    // The real bug: "MSA level" was sliced to "MSA l" and stored as a place.
+    expect(normalizeZip('MSA level')).toBeNull();
+    expect(normalizeZip('MSA')).toBeNull();
+    expect(normalizeZip('')).toBeNull();
+    expect(normalizeZip(null)).toBeNull();
+    expect(normalizeZip('8500A')).toBeNull();
+  });
+
+  it('keeps real ZIPs and restores lost leading zeros', () => {
+    expect(normalizeZip('85003')).toBe('85003');
+    expect(normalizeZip(' 37206 ')).toBe('37206');
+    expect(normalizeZip('85003-1234')).toBe('85003');
+    // JSON numbers drop leading zeros: 601 is Puerto Rico's 00601.
+    expect(normalizeZip(601)).toBe('00601');
+    expect(normalizeZip(2134)).toBe('02134');
+    // Too short to disambiguate — junk, not a ZIP.
+    expect(normalizeZip('60')).toBeNull();
+  });
+
+  it('isRealZip identifies stored rows worth keeping', () => {
+    expect(isRealZip('85003')).toBe(true);
+    expect(isRealZip('MSA l')).toBe(false);
+    expect(isRealZip(null)).toBe(false);
+  });
+});
 
 describe('HUD FMR urls and auth', () => {
   it('builds data and county urls', () => {
@@ -72,6 +102,26 @@ describe('parseFmrResponse', () => {
     // No zip of its own — the importer skips these rather than inventing one.
     expect(rows[0].zip).toBeNull();
     expect(rows[0].small_area).toBe(false);
+  });
+
+  it('drops area-wide summary rows mixed into basicdata', () => {
+    // HUD returns these alongside the real ZIP rows.
+    const rows = parseFmrResponse({
+      data: {
+        year: 2026,
+        smallarea_status: '1',
+        basicdata: [
+          { zip_code: 'MSA level', 'Two-Bedroom': 1839 },
+          { zip_code: '85003', 'Two-Bedroom': 1500 },
+        ],
+      },
+    });
+    expect(rows).toHaveLength(2);
+    // Parsed, but with no zip — toRentBandRows then refuses to store it.
+    expect(rows[0].zip).toBeNull();
+    expect(rows[1].zip).toBe('85003');
+    const stored = toRentBandRows(rows, { orgId: 'org1' });
+    expect(stored.every((r) => r.zip === '85003')).toBe(true);
   });
 
   it('drops rows with no usable figures, and copes with junk', () => {

@@ -48,6 +48,27 @@ const numOrNull = (v) => {
   return Number.isFinite(n) && n > 0 ? n : null;
 };
 
+/**
+ * HUD's zip field → a real 5-digit ZIP, or null.
+ *
+ * Not every row in `basicdata` is a ZIP row: HUD mixes in area-wide summaries
+ * whose zip_code reads "MSA level". Blind truncation turned that into the
+ * ZIP "MSA l", which was then stored and exported as though it were a place
+ * (field-verified 2026-07-25). Anything that is not digits is rejected.
+ *
+ * Leading zeros are restored: a JSON number 601 is Puerto Rico's 00601, not a
+ * malformed code, so 3-5 digits are padded rather than discarded. Fewer than
+ * three digits cannot be recovered unambiguously and is treated as junk.
+ */
+export function normalizeZip(v) {
+  if (v == null) return null;
+  const m = /^(\d{3,5})(?:-\d{4})?$/.exec(String(v).trim());
+  return m ? m[1].padStart(5, '0') : null;
+}
+
+/** True for a stored value that is a real ZIP — used to prune bad rows. */
+export const isRealZip = (v) => /^\d{5}$/.test(String(v ?? ''));
+
 /** One HUD row → the FmrByBedroom shape mf-calc's bedroomRatios expects. */
 export function fmrByBedroom(row) {
   const out = {};
@@ -79,7 +100,7 @@ export function parseFmrResponse(json) {
   const rows = Array.isArray(basic) ? basic : [basic];
   return rows
     .map((r) => ({
-      zip: r?.zip_code != null ? String(r.zip_code).slice(0, 5) : null,
+      zip: normalizeZip(r?.zip_code),
       fmr: fmrByBedroom(r),
       /** True when HUD itself publishes this at zip resolution. */
       small_area: Array.isArray(basic) || String(data?.smallarea_status ?? '') === '1',

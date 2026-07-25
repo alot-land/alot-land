@@ -26,6 +26,7 @@ import {
   hudAuthHeaders,
   parseFmrResponse,
   toRentBandRows,
+  isRealZip,
 } from '../lib/hudfmr.js';
 
 function arg(name, dflt) {
@@ -149,6 +150,42 @@ for (let i = 0; i < allRows.length; i += CHUNK) {
   process.stdout.write(`  upserted ${Math.min(i + CHUNK, allRows.length)}/${allRows.length}\r`);
 }
 console.log('');
+
+// Sweep out anything a previous run stored under a non-ZIP key. Earlier
+// versions truncated HUD's "MSA level" summary rows into the fake ZIP
+// "MSA l"; those rows will never be rewritten now that they are rejected at
+// parse time, so they have to be deleted or they linger forever.
+// Distinct keys are walked with a loose index scan (the 1000-row cap makes a
+// plain select unreliable), then deleted by exact value — never by pattern,
+// so a real ZIP cannot be caught by accident.
+const badZips = [];
+let zipCursor = null;
+for (let guard = 0; guard < 5000; guard++) {
+  let q = db.supabase
+    .from('rent_bands')
+    .select('zip')
+    .eq('org_id', orgId)
+    .eq('source', 'hud-safmr')
+    .order('zip', { ascending: true })
+    .limit(1);
+  if (zipCursor) q = q.gt('zip', zipCursor);
+  const { data, error } = await q;
+  if (error) throw error;
+  if (!data?.length) break;
+  zipCursor = data[0].zip;
+  if (!isRealZip(zipCursor)) badZips.push(zipCursor);
+}
+if (badZips.length) {
+  const { error } = await db.supabase
+    .from('rent_bands')
+    .delete()
+    .eq('org_id', orgId)
+    .eq('source', 'hud-safmr')
+    .in('zip', badZips);
+  if (error) console.warn(`  ⚠ could not remove non-ZIP rows: ${error.message}`);
+  else console.log(`  cleaned ${badZips.length} non-ZIP key(s) from earlier runs: ${badZips.join(', ')}`);
+}
+
 await db.logCost(orgId, `HUD SAFMR import: ${allRows.length} bedroom rows`);
 console.log(`✓ Imported ${allRows.length} SAFMR bedroom rows. e.g. ${sample}`);
 console.log('  The app now reshapes ZORI zip rents to each unit\'s bedroom count.');
