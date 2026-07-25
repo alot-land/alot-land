@@ -10,6 +10,29 @@
 import { annualDebtService } from './finance.js';
 import { emptyExpenses, type ExpenseInputs } from './types.js';
 
+export interface StrDefaultsSuggestion {
+  adr: number;
+  occupancy_rate: number;
+  estimated: true;
+}
+
+/**
+ * A STARTING ADR from the LTR rent we already have, so the STR panel can
+ * auto-populate. Heuristic: a short-term night typically grosses ~2.5× the
+ * long-term nightly equivalent (monthly rent ÷ 30), i.e. ADR ≈ rent ÷ 12,
+ * paired with a conservative 60% occupancy. It's a glance-level estimate,
+ * clearly flagged — real ADR comes from AirDNA/comps once a deal interests
+ * you. Returns null without a usable rent rather than inventing a number.
+ */
+export function suggestStrDefaults(monthlyRentPerUnit: number | null | undefined): StrDefaultsSuggestion | null {
+  if (monthlyRentPerUnit == null || !(monthlyRentPerUnit > 0)) return null;
+  return {
+    adr: Math.round(monthlyRentPerUnit / 12),
+    occupancy_rate: 0.6,
+    estimated: true,
+  };
+}
+
 export interface StrComparisonInputs {
   units: number;
   /** Average daily rate per unit. */

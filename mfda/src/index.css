@@ -81,7 +81,9 @@ body {
     @apply btn bg-ink text-bg hover:opacity-90;
   }
   .btn-gold {
-    @apply btn bg-gold text-ink hover:brightness-95;
+    /* Fixed dark ink — NOT text-ink, which inverts to near-white in dark
+       mode and leaves white text on a yellow button. */
+    @apply btn bg-gold text-[#1A1A1A] hover:brightness-95;
   }
   .btn-ghost {
     @apply btn border border-border text-ink-2 hover:bg-surface-2;

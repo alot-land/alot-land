@@ -4,12 +4,32 @@
  * implementation.
  */
 import { describe, it, expect } from 'vitest';
-import { CALC_VERSION, strComparison, annualDebtService } from '../src/index.js';
+import { CALC_VERSION, strComparison, suggestStrDefaults, annualDebtService } from '../src/index.js';
 
 describe('calc version', () => {
   it('is at least 1.9.0 (str module)', () => {
     const [maj, min] = CALC_VERSION.split('.').map(Number);
     expect(maj! > 1 || (maj === 1 && min! >= 9)).toBe(true);
+  });
+});
+
+describe('suggestStrDefaults', () => {
+  it('derives ADR from monthly rent (~2.5x the nightly LTR equivalent)', () => {
+    const s = suggestStrDefaults(2_000);
+    expect(s.adr).toBe(167); // round(2000 / 12)
+    expect(s.occupancy_rate).toBe(0.6);
+    expect(s.estimated).toBe(true);
+  });
+
+  it('scales with rent and rounds to whole dollars', () => {
+    expect(suggestStrDefaults(1_400).adr).toBe(117);
+    expect(suggestStrDefaults(3_600).adr).toBe(300);
+  });
+
+  it('returns null (not a fabricated number) without a usable rent', () => {
+    expect(suggestStrDefaults(0)).toBeNull();
+    expect(suggestStrDefaults(null)).toBeNull();
+    expect(suggestStrDefaults(undefined)).toBeNull();
   });
 });
 

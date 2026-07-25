@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../lib/auth';
 import { useOrg } from '../lib/org';
 import { underwrite } from '../lib/underwrite';
+import { suggestStrDefaults } from '@alot/mf-calc';
+import { usd } from '../lib/format';
 import {
   getDeal, getUnits, upsertDeal, replaceUnits, saveScenario, logCost, listMarkets, listScenarios,
   getListingContact,
@@ -95,6 +97,28 @@ export default function DealNew() {
 
   const set = (patch) => setF((p) => ({ ...p, ...patch }));
   const setNested = (key, patch) => setF((p) => ({ ...p, [key]: { ...p[key], ...patch } }));
+
+  // Blended market rent per unit across the mix — the STR ADR seed.
+  const avgMarketRent = useMemo(() => {
+    const units = f.units || [];
+    const count = units.reduce((a, u) => a + (Number(u.count) || 0), 0);
+    if (!count) return null;
+    const gross = units.reduce((a, u) => a + (Number(u.market_rent) || 0) * (Number(u.count) || 0), 0);
+    return gross > 0 ? gross / count : null;
+  }, [f.units]);
+  const strSuggestion = useMemo(() => suggestStrDefaults(avgMarketRent), [avgMarketRent]);
+
+  // Auto-seed the STR ADR + occupancy from the rent data so the LTR-vs-STR
+  // panel appears without hunting — glance-level estimate, editable, flagged.
+  useEffect(() => {
+    if (!hydrated || !strSuggestion) return;
+    setF((p) =>
+      p.str.adr != null && p.str.adr !== ''
+        ? p
+        : { ...p, str: { ...p.str, adr: strSuggestion.adr, occupancy_rate: p.str.occupancy_rate ?? strSuggestion.occupancy_rate } },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, strSuggestion]);
 
   // Apply market defaults when a market is picked.
   function applyMarket(marketId) {
@@ -266,8 +290,14 @@ export default function DealNew() {
 
       <Section title="STR comparison" subtitle="Optional — see this building's short-term-rental case beside the LTR numbers" tip="Enter an average nightly rate and occupancy and the results page adds a side-by-side LTR vs STR panel: same building, same loan, STR income and expense stack (turn cleaning, platform fees, 22%-grade management). Leave ADR blank to skip. Check the market's STR permit status in the prescreen below — a great ADR means nothing where permits are closed." defaultOpen={false}>
         <div className="grid sm:grid-cols-3 gap-4">
-          <Field label="ADR ($/night)" tip="Average daily rate per unit. Pull from AirDNA, or comp nearby Airbnb listings for the same bedroom count."><NumberInput value={f.str.adr} onChange={(v) => setNested('str', { adr: v })} suffix="$" /></Field>
-          <Field label="Occupancy" tip="Share of nights booked, yearly average. Phoenix metro typically 55–70%; seasonal markets swing hard."><PercentInput value={f.str.occupancy_rate} onChange={(v) => setNested('str', { occupancy_rate: v })} /></Field>
+          <Field
+            label="ADR ($/night)"
+            tip="Average daily rate per unit. Auto-seeded from this deal's market rent (roughly rent ÷ 12 — a short-term night grosses about 2.5× the long-term nightly equivalent). That's a glance-level estimate: once a deal interests you, refine it from AirDNA or nearby Airbnb comps for the same bedroom count."
+            hint={strSuggestion ? `≈ suggested from ${usd(Math.round(avgMarketRent))}/mo rent — refine with AirDNA` : undefined}
+          >
+            <NumberInput value={f.str.adr} onChange={(v) => setNested('str', { adr: v })} suffix="$" />
+          </Field>
+          <Field label="Occupancy" tip="Share of nights booked, yearly average. Seeded at a conservative 60%; Phoenix metro typically 55–70%, seasonal markets swing hard."><PercentInput value={f.str.occupancy_rate} onChange={(v) => setNested('str', { occupancy_rate: v })} /></Field>
           <Field label="Avg stay (nights)" tip="Typical booking length. 7 nights or less also opens the STR material-participation tax lane (see the tax panel)."><NumberInput value={f.str.avg_stay_days} onChange={(v) => setNested('str', { avg_stay_days: v })} /></Field>
           <Field label="Cost per turn" tip="Cleaning + restocking per checkout. Shorter stays = more turns = this matters a lot."><NumberInput value={f.str.cost_per_turn} onChange={(v) => setNested('str', { cost_per_turn: v })} suffix="$" /></Field>
           <Field label="STR management" tip="Full-service STR management runs 20–25% of revenue (vs 8–10% for LTR). Self-managing? Enter what your time is honestly worth."><PercentInput value={f.str.management_rate} onChange={(v) => setNested('str', { management_rate: v })} /></Field>

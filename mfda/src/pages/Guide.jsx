@@ -176,7 +176,7 @@ const MANUAL = [
     entries: [
       {
         t: 'Comparing long-term vs short-term returns',
-        b: 'On the deal form, open the "STR comparison" section and enter an average nightly rate (ADR) and occupancy — that\'s all it takes. The results page then shows an "LTR vs STR" panel: the same building on the same loan, gross income, expenses, NOI, cash flow, cash-on-cash, and DSCR side by side, with a pill declaring the winner in $/yr. Leave ADR blank and the panel doesn\'t appear.',
+        b: 'It\'s automatic: the ADR (average nightly rate) auto-seeds from the deal\'s market rent — roughly rent ÷ 12, since a short-term night grosses about 2.5× the long-term nightly equivalent — at a conservative 60% occupancy. So the "LTR vs STR" panel appears on the results page by default: the same building on the same loan, gross income, expenses, NOI, cash flow, cash-on-cash, and DSCR side by side, with a pill declaring the winner in $/yr. That\'s a glance-level estimate to tell you whether STR is worth a closer look; once a deal interests you, refine the ADR from AirDNA or nearby Airbnb comps and everything recomputes.',
       },
       {
         t: 'Why STR grosses more but keeps less',
