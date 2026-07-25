@@ -36,6 +36,17 @@ export function loadEnvFile(path) {
   return true;
 }
 
+// Load workers/scan/.env at IMPORT time, not inside makeDb().
+//
+// Every bin script imports this module, and several read their own
+// credentials at module top level — before makeDb() is ever called.
+// bin/hudfmr.mjs hit exactly that: it exited with "Set HUD_API_TOKEN" while
+// the token sat in .env, because the check ran nine lines above makeDb().
+// Loading on import removes the ordering hazard for every script at once,
+// including future ones. Existing variables are never overridden, so an
+// exported shell value or a cron environment still wins.
+loadEnvFile();
+
 export function makeDb(env = process.env) {
   if (env === process.env && !(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY)) loadEnvFile();
   const url = env.SUPABASE_URL;

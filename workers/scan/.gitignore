@@ -1,3 +1,9 @@
 node_modules/
-.env
 *.log
+
+# Credentials. The service-role key lives here and nowhere else — keep every
+# variant out, including the .env.bak.<timestamp> files an edit-in-place
+# leaves behind. Those are the same secret with a name git was not ignoring.
+.env
+.env.*
+!.env.example

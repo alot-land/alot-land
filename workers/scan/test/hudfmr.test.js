@@ -115,6 +115,17 @@ describe('toRentBandRows', () => {
     expect(row.confidence).toBe('low');
   });
 
+  it('never emits a null period', () => {
+    // period is part of the upsert conflict target, and NULL matches nothing —
+    // a null would duplicate the whole set on every re-run instead of updating.
+    const noYear = [{ zip: '85003', fmr: { two: 1500 }, year: null }];
+    const [row] = toRentBandRows(noYear, { orgId: 'org1', now: '2026-07-25T00:00:00Z' });
+    expect(row.period).toBe('2026');
+    // An explicit period still wins over both the response year and the clock.
+    const [pinned] = toRentBandRows(parsed, { orgId: 'org1', period: '2025' });
+    expect(pinned.period).toBe('2025');
+  });
+
   it('does not collide with the ZORI blended rows', () => {
     // ZORI writes bedrooms -1 with source 'zori'; SAFMR writes 0..4 with its
     // own source, so both live in rent_bands under the same unique index.

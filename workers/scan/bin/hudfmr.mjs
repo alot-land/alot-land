@@ -43,7 +43,7 @@ const countiesArg = arg('counties', null);
 const token = process.env.HUD_API_TOKEN;
 if (!token) {
   console.error(
-    'Set HUD_API_TOKEN. Free: sign in at https://www.huduser.gov/portal/dataset/fmr-api.html\n' +
+    'Set HUD_API_TOKEN in workers/scan/.env (loaded automatically). Free: sign in at https://www.huduser.gov/portal/dataset/fmr-api.html\n' +
       '→ Create New Token, then add HUD_API_TOKEN=... to workers/scan/.env',
   );
   process.exit(1);

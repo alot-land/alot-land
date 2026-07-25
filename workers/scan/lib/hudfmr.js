@@ -110,6 +110,11 @@ export function parseCounties(json) {
  */
 export function toRentBandRows(parsed, { orgId, state, period, now }) {
   const BED_INDEX = { efficiency: 0, one: 1, two: 2, three: 3, four: 4 };
+  // period is part of the upsert conflict target (org_id, source, zip,
+  // period, bedrooms), and NULL never matches a conflict target — a null
+  // period would silently INSERT a duplicate set on every re-run instead of
+  // updating. Always resolve to a non-null vintage.
+  const fallbackYear = String(new Date(now || Date.now()).getUTCFullYear());
   const out = [];
   for (const row of parsed) {
     if (!row.zip) continue; // area-wide rows carry no zip — not storable here
@@ -121,7 +126,7 @@ export function toRentBandRows(parsed, { orgId, state, period, now }) {
         source: 'hud_safmr',
         zip: row.zip,
         state: state || null,
-        period: period || (row.year ? String(row.year) : null),
+        period: period || (row.year ? String(row.year) : fallbackYear),
         bedrooms,
         rent,
         // A policy figure, not a market observation — the app must never
