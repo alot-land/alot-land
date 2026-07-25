@@ -169,7 +169,7 @@ function GoalTimelineStrip({ goal }) {
   }, [goal]);
   if (!scenarios.length) return null;
   const best = scenarios.reduce(
-    (a, s) => (s.result.months_to_goal != null && (a == null || s.result.months_to_goal < a.result.months_to_goal!) ? s : a),
+    (a, s) => (s.result.months_to_goal != null && (a == null || s.result.months_to_goal < a.result.months_to_goal) ? s : a),
     null,
   );
   return (
