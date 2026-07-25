@@ -49,7 +49,9 @@ export function normalize(payload) {
 }
 
 export default async function handler(request) {
-  const key = process.env.RENTCAST_API_KEY;
+  // Trim: a key pasted into a dashboard field very often carries a trailing
+  // newline or space, which the API rejects exactly like a wrong key.
+  const key = (process.env.RENTCAST_API_KEY || '').trim();
   if (!key) {
     return json(501, {
       error: 'not_configured',
@@ -78,8 +80,23 @@ export default async function handler(request) {
     return json(502, { error: 'upstream_unreachable', message: String(e.message || e) });
   }
 
+  // 401 and 403 mean different things and need different fixes, so don't
+  // collapse them. RentCast's own explanation is included verbatim — it is
+  // the only thing that distinguishes "wrong key" from "key fine, plan does
+  // not cover this endpoint". Never echo the key itself; its LENGTH is enough
+  // to spot a truncated or empty paste.
   if (res.status === 401 || res.status === 403) {
-    return json(502, { error: 'bad_key', message: 'RentCast rejected the API key.' });
+    const detail = await res.text().catch(() => '');
+    const upstream = detail.slice(0, 200).replace(/\s+/g, ' ').trim();
+    return json(502, {
+      error: 'bad_key',
+      message:
+        (res.status === 401
+          ? 'RentCast did not recognise the API key. Re-copy it from the RentCast dashboard and re-paste it into Netlify (no spaces or line breaks), then redeploy.'
+          : 'RentCast recognised the key but refused the request — usually no active plan on the account, or a plan that does not include the rent-estimate endpoint. Check that a plan (the free Developer tier counts) is selected in the RentCast dashboard.') +
+        (upstream ? ` RentCast said: “${upstream}”` : '') +
+        ` (key received by the server: ${key.length} characters)`,
+    });
   }
   if (res.status === 429) {
     // Say so plainly rather than degrading into a wrong-looking number.
