@@ -114,6 +114,17 @@ export async function latestScanRun(orgId) {
   return data;
 }
 
+export async function findDealByDedupeKey(orgId, key) {
+  const { data, error } = await supabase
+    .from('deals')
+    .select('id, status')
+    .eq('org_id', orgId)
+    .eq('dedupe_key', key)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export async function getDeal(id) {
   const { data, error } = await supabase.from('deals').select('*').eq('id', id).single();
   if (error) throw error;

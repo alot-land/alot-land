@@ -10,6 +10,8 @@ import {
   listMarkets,
   upsertDeal,
   replaceUnits,
+  findDealByDedupeKey,
+  dedupeKey,
 } from '../lib/queries';
 import { buildZipRents, presetForState, parcelDealInput, streetViewUrl } from '../lib/parcelscreen';
 import RatingControl from '../components/RatingControl';
@@ -37,6 +39,7 @@ export default function OffMarketDeal() {
   const nav = useNavigate();
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState(null);
 
   const parcel = useQuery({ queryKey: ['parcel', id], queryFn: () => getParcel(id) });
   const bands = useQuery({
@@ -95,7 +98,18 @@ export default function OffMarketDeal() {
   // Promote to a real deal (prefilled) for the full manual workflow + PDF.
   async function analyzeAsDeal() {
     setCreating(true);
+    setCreateError(null);
     try {
+      // Already promoted (or matches an existing scraped listing)? Go there —
+      // a second insert would violate the unique deal key and die silently.
+      const existing = await findDealByDedupeKey(
+        org.id,
+        dedupeKey({ apn: p.apn, county_fips: p.county_fips, address: p.situs_address, city: p.situs_city, state: p.state, zip: p.situs_zip }),
+      );
+      if (existing) {
+        nav(`/deals/${existing.id}/edit`);
+        return;
+      }
       const deal = await upsertDeal(org.id, user.id, {
         apn: p.apn,
         county_fips: p.county_fips,
@@ -117,6 +131,9 @@ export default function OffMarketDeal() {
       }
       qc.invalidateQueries({ queryKey: ['deals', org.id] });
       nav(`/deals/${deal.id}/edit`);
+    } catch (e) {
+      console.error('analyzeAsDeal', e);
+      setCreateError(e.message || 'Could not create the deal.');
     } finally {
       setCreating(false);
     }
@@ -159,6 +176,7 @@ export default function OffMarketDeal() {
           </button>
         </div>
       </div>
+      {createError && <div className="text-danger text-sm mt-2">Analyze as deal failed: {createError}</div>}
 
       {/* Owner card — this is who gets the mail/call */}
       <div className="card p-4 mt-4">
