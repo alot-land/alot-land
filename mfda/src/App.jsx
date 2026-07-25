@@ -10,6 +10,7 @@ import OnMarket from './pages/OnMarket';
 import OffMarket from './pages/OffMarket';
 import OffMarketDeal from './pages/OffMarketDeal';
 import Markets from './pages/Markets';
+import Goals from './pages/Goals';
 import DealNew from './pages/DealNew';
 import DealResults from './pages/DealResults';
 import Compare from './pages/Compare';
@@ -55,6 +56,7 @@ function TopBar() {
     ['/on-market', 'On-Market'],
     ['/off-market', 'Off-Market'],
     ['/deals', 'Deals'],
+    ['/goals', 'Goals'],
     ['/guide', 'Guide'],
     ['/settings', 'Settings'],
   ];
@@ -213,6 +215,16 @@ export default function App() {
           <Protected>
             <Shell>
               <DealNew />
+            </Shell>
+          </Protected>
+        }
+      />
+      <Route
+        path="/goals"
+        element={
+          <Protected>
+            <Shell>
+              <Goals />
             </Shell>
           </Protected>
         }

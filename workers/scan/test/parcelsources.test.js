@@ -10,6 +10,8 @@ import {
   mergeOwnership,
 } from '../lib/parcelsources.js';
 import {
+  restCatalogServices,
+  rankParcelServices,
   arcgisLayerFromMeta,
   arcgisQueryUrl,
   pickClassField,
@@ -119,6 +121,38 @@ describe('socrataCsvUrl', () => {
     expect(socrataCsvUrl('data.nashville.gov', 'bbbb-2222', { limit: 1000, offset: 2000 })).toBe(
       'https://data.nashville.gov/resource/bbbb-2222.csv?$limit=1000&$offset=2000&$order=:id',
     );
+  });
+});
+
+describe('county REST services directory (authoritative Maricopa route)', () => {
+  it('restCatalogServices lists services with resolvable URLs', () => {
+    const json = {
+      folders: ['Assessor', 'Elections'],
+      services: [
+        { name: 'Parcels', type: 'MapServer' },
+        { name: 'Assessor/TaxParcels', type: 'FeatureServer' },
+      ],
+    };
+    const cat = restCatalogServices(json, 'https://gis.test/arcgis/rest/services');
+    expect(cat.folders).toEqual(['Assessor', 'Elections']);
+    expect(cat.services[0].url).toBe('https://gis.test/arcgis/rest/services/Parcels/MapServer');
+    // folder-qualified names keep only the service segment against the base
+    expect(cat.services[1].url).toBe('https://gis.test/arcgis/rest/services/TaxParcels/FeatureServer');
+  });
+
+  it('rankParcelServices puts parcel/assessor services first, drops noise', () => {
+    const ranked = rankParcelServices([
+      { name: 'ZipCodeGrid', type: 'MapServer' },
+      { name: 'TaxParcels', type: 'FeatureServer' },
+      { name: 'AssessorParcels', type: 'MapServer' },
+      { name: 'ParcelLabels', type: 'MapServer' },
+      { name: 'Roads', type: 'MapServer' },
+    ]);
+    expect(ranked[0].name).toBe('AssessorParcels');
+    expect(ranked.map((s) => s.name)).not.toContain('Roads');
+    expect(ranked.map((s) => s.name)).not.toContain('ZipCodeGrid');
+    // "ParcelLabels" scores 4 - 3 = 1, still above zero but below the real ones
+    expect(ranked[ranked.length - 1].name).toBe('ParcelLabels');
   });
 });
 

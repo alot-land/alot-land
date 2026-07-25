@@ -19,3 +19,4 @@ export * from './comps.js';
 export * from './proforma.js';
 export * from './markets.js';
 export * from './offmarket.js';
+export * from './goals.js';

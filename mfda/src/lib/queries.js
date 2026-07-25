@@ -421,6 +421,35 @@ export async function listMarkets(orgId) {
   return data;
 }
 
+// ---- Goals ----------------------------------------------------------------
+export async function listGoals(orgId) {
+  const { data, error } = await supabase
+    .from('goals')
+    .select('*')
+    .eq('org_id', orgId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function createGoal(orgId, userId, { name, target_monthly, inputs }) {
+  const { data, error } = await supabase
+    .from('goals')
+    .insert({ org_id: orgId, name, target_monthly, inputs, created_by: userId })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function setGoalStatus(id, status) {
+  const { error } = await supabase
+    .from('goals')
+    .update({ status, achieved_at: status === 'achieved' ? new Date().toISOString() : null })
+    .eq('id', id);
+  if (error) throw error;
+}
+
 // ---- Cost ledger ----------------------------------------------------------
 export async function logCost(orgId, userId, { deal_id, kind, provider, description, amount_usd }) {
   const { error } = await supabase.from('cost_ledger').insert({

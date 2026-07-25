@@ -250,6 +250,27 @@ const MANUAL = [
     ],
   },
   {
+    section: 'Goals (the "why" behind the deals)',
+    entries: [
+      {
+        t: 'Setting a goal',
+        b: 'Goals → enter the monthly cash flow you want (say $10,000), your starting cash, and what you can add monthly. Three strategy paths compute instantly, each with a timeline, deal count, doors, and total capital required. Set the goal to lock it in; when you hit it, mark it achieved 🎉 and set the next one — achieved goals stay on the trophy list.',
+      },
+      {
+        t: 'How the timelines are computed',
+        b: 'A month-by-month simulation, not a guess: your war chest grows from savings plus the cash flow of every deal you\'ve already bought (the snowball effect), and a new deal is bought the month you can afford one. No appreciation or rent growth is counted — real results should beat the projection.',
+      },
+      {
+        t: 'The three paths',
+        b: 'Conventional: bank loans, 25% down — most cash per deal, simplest. Seller finance: ~10% down with the owner carrying — exactly what your long-hold absentee off-market list makes possible, and why the timeline is usually shortest. Value-add + refi recycle: buy under-rented, improve, refinance your cash back out, repeat (BRRRR) — fast but the most work per building.',
+      },
+      {
+        t: 'Make the assumptions yours',
+        b: 'The defaults ($150k/unit, 8% cash-on-cash, 12% under seller terms) are editable under "Edit deal assumptions." Best practice: underwrite a few real deals first, then plug YOUR achieved cash-on-cash into the planner — the timeline becomes a plan instead of a hope.',
+      },
+    ],
+  },
+  {
     section: 'Behind the scenes (automation)',
     entries: [
       {

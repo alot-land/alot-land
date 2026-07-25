@@ -24,6 +24,41 @@ export const MARICOPA_PAGES = ['https://www.mcassessor.maricopa.gov/page/data_sa
 // RUNTIME through the official ArcGIS Online search API (hardcoded dataset
 // ids went stale and 404'd — field-verified 2026-07-24). Queried
 // server-side by multifamily PUC so we never pull 1.4M single-family rows.
+// The county's OWN ArcGIS server — authoritative, unlike ArcGIS Online
+// search which surfaces community copies (a 2021 geometry-only layer,
+// field-verified 2026-07-25). The REST services directory is a stable,
+// documented API: root?f=json lists folders + services.
+export const MARICOPA_REST_ROOTS = [
+  'https://gis.maricopa.gov/arcgis/rest/services',
+  'https://services.maricopa.gov/arcgis/rest/services',
+];
+
+/** Services-directory JSON → { services: [{name,type,url}], folders: [] }. */
+export function restCatalogServices(json, baseUrl) {
+  const services = (json?.services || []).map((s) => ({
+    name: s.name,
+    type: s.type,
+    url: `${baseUrl}/${String(s.name).split('/').pop()}/${s.type}`,
+  }));
+  return { services, folders: json?.folders || [] };
+}
+
+/** Rank a service list for "the assessor parcel layer lives here". */
+export function rankParcelServices(services) {
+  return services
+    .filter((s) => /(Map|Feature)Server/i.test(s.type || ''))
+    .map((s) => {
+      let score = 0;
+      if (/parcel/i.test(s.name)) score += 4;
+      if (/assessor|assessment|cadastr/i.test(s.name)) score += 3;
+      if (/tax/i.test(s.name)) score += 1;
+      if (/label|anno|boundar|zip|grid/i.test(s.name)) score -= 3;
+      return { ...s, score };
+    })
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score);
+}
+
 export const ARCGIS_SEARCH_URL = (q, num = 20) =>
   `https://www.arcgis.com/sharing/rest/search?f=json&num=${num}&q=${encodeURIComponent(q)}`;
 

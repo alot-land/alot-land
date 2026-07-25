@@ -32,6 +32,9 @@ import { request as httpsRequest } from 'node:https';
 import {
   MARICOPA_PAGES,
   MARICOPA_ARCGIS_QUERIES,
+  MARICOPA_REST_ROOTS,
+  restCatalogServices,
+  rankParcelServices,
   ARCGIS_SEARCH_URL,
   pickMaricopaService,
   layerFieldNames,
@@ -164,6 +167,85 @@ async function downloadDataFile(url, label, { viaMaricopa = false } = {}) {
 // Primary: county GIS parcels via ArcGIS, filtered server-side to
 // multifamily PUC (03xx) so only ~tens of thousands of rows transfer.
 // Fallback: scrape the assessor's data-sales pages for bulk files.
+/** Page a layer's rows for a WHERE clause (shared by both ArcGIS routes). */
+async function queryArcgisLayer(layerUrl, where) {
+  const rows = [];
+  for (let offset = 0; offset < 300000; offset += 2000) {
+    const j = JSON.parse(await (await fetchOk(arcgisQueryUrl(layerUrl, { where, offset }))).text());
+    if (j.error) throw new Error(`arcgis error: ${JSON.stringify(j.error).slice(0, 200)}`);
+    const page = featuresToRows(j);
+    rows.push(...page);
+    process.stdout.write(`  ${rows.length} multifamily features…\r`);
+    if (page.length < 2000) break;
+  }
+  console.log('');
+  return rows;
+}
+
+/** Try a candidate parcel layer: read fields, find the class field, query MF. */
+async function tryParcelLayer(layerUrl) {
+  const layerJson = JSON.parse(await (await fetchOk(`${layerUrl}?f=json`)).text());
+  const fields = layerFieldNames(layerJson);
+  if (!fields.length) throw new Error('no fields');
+  console.log(`  fields (${fields.length}): ${fields.join(', ')}`);
+  const classField = pickClassField(fields);
+  if (!classField) throw new Error('no PUC/land-use field');
+  const where = `${classField} LIKE '03%'`;
+  console.log(`  querying where ${where}`);
+  const rows = await queryArcgisLayer(layerUrl, where);
+  if (!rows.length) throw new Error(`0 rows for "${where}"`);
+  return rows;
+}
+
+/** Authoritative route: enumerate the county's own GIS services directory. */
+async function maricopaViaCountyRest() {
+  let lastErr = null;
+  for (const root of MARICOPA_REST_ROOTS) {
+    try {
+      console.log(`  county GIS directory: ${root}`);
+      const rootJson = JSON.parse(await (await fetchOk(`${root}?f=json`)).text());
+      const cat = restCatalogServices(rootJson, root);
+      let services = [...cat.services];
+      for (const folder of cat.folders.slice(0, 12)) {
+        try {
+          const fj = JSON.parse(await (await fetchOk(`${root}/${folder}?f=json`)).text());
+          services.push(...restCatalogServices(fj, `${root}/${folder}`).services);
+        } catch (e) {
+          console.warn(`    folder ${folder}: ${e.message}`);
+        }
+      }
+      const ranked = rankParcelServices(services);
+      console.log(`  ${services.length} services · parcel candidates: ${ranked.map((s) => s.name).join(' · ') || 'none'}`);
+      if (!ranked.length) throw new Error(`no parcel-named services; all: ${services.map((s) => s.name).slice(0, 40).join(', ')}`);
+
+      for (const svc of ranked.slice(0, 4)) {
+        try {
+          console.log(`  service ${svc.url}`);
+          const svcJson = JSON.parse(await (await fetchOk(`${svc.url}?f=json`)).text());
+          const layers = (svcJson?.layers || [{ id: 0, name: 'layer 0' }]).slice(0, 5);
+          for (const layer of layers) {
+            try {
+              console.log(`  layer ${layer.id}: ${layer.name}`);
+              const rows = await tryParcelLayer(`${svc.url}/${layer.id}`);
+              if (DISCOVER_ONLY) return { discovered: { service: svc.url, layer: layer.id, rows: rows.length } };
+              return { text: rowsToCsv(rows), via: `county-rest:${svc.name}/${layer.id}` };
+            } catch (e) {
+              console.warn(`    layer ${layer.id}: ${e.message}`);
+            }
+          }
+        } catch (e) {
+          console.warn(`    ${svc.name}: ${e.message}`);
+        }
+      }
+      throw new Error('no candidate layer had a usable class field — layer field lists above');
+    } catch (e) {
+      lastErr = e;
+      console.warn(`  ${root}: ${e.message}`);
+    }
+  }
+  throw lastErr || new Error('no county REST roots configured');
+}
+
 async function maricopaViaArcgis() {
   let lastErr = null;
   for (const q of MARICOPA_ARCGIS_QUERIES) {
@@ -176,28 +258,9 @@ async function maricopaViaArcgis() {
         throw new Error(`no parcel service matched; top results: ${titles.join(' · ') || 'none'}`);
       }
       console.log(`  picked "${svc.title}" by ${svc.owner} (score ${svc.score})`);
-      const layerUrl = `${svc.url}/0`;
-      const layerJson = JSON.parse(await (await fetchOk(`${layerUrl}?f=json`)).text());
-      const fields = layerFieldNames(layerJson);
-      console.log(`  layer ${layerUrl}`);
-      console.log(`  fields (${fields.length}): ${fields.join(', ')}`);
-      const classField = pickClassField(fields);
-      if (!classField) throw new Error('no PUC/land-use field — paste the field list above into the build chat');
-
-      const where = `${classField} LIKE '03%'`;
-      console.log(`  querying where ${where}`);
-      const rows = [];
-      for (let offset = 0; offset < 300000; offset += 2000) {
-        const j = JSON.parse(await (await fetchOk(arcgisQueryUrl(layerUrl, { where, offset }))).text());
-        if (j.error) throw new Error(`arcgis error: ${JSON.stringify(j.error).slice(0, 200)}`);
-        const page = featuresToRows(j);
-        rows.push(...page);
-        process.stdout.write(`  ${rows.length} multifamily features…\r`);
-        if (page.length < 2000) break;
-      }
-      console.log('');
-      if (!rows.length) throw new Error(`0 rows for "${where}" — the class field may be numeric or coded differently; fields listed above`);
-      if (DISCOVER_ONLY) return { discovered: { service: svc, layer: layerUrl, classField, rows: rows.length } };
+      console.log(`  layer ${svc.url}/0`);
+      const rows = await tryParcelLayer(`${svc.url}/0`);
+      if (DISCOVER_ONLY) return { discovered: { service: svc, rows: rows.length } };
       return { text: rowsToCsv(rows), via: `arcgis:${svc.id}` };
     } catch (e) {
       lastErr = e;
@@ -209,7 +272,13 @@ async function maricopaViaArcgis() {
 
 async function maricopaLane() {
   try {
-    const got = await maricopaViaArcgis();
+    let got;
+    try {
+      got = await maricopaViaCountyRest();
+    } catch (e) {
+      console.warn(`  county REST route failed: ${e.message}`);
+      got = await maricopaViaArcgis();
+    }
     if (got.discovered) return got;
     const res = assessorToParcels(got.text, PRESETS.maricopa);
     console.log(inspectReport(res, `maricopa ${got.via}`));
