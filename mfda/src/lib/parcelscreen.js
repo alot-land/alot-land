@@ -15,6 +15,9 @@ export function buildZipRents(bands) {
   const byZip = new Map();
   for (const b of bands || []) {
     if (!b.zip || !(Number(b.rent) > 0)) continue;
+    // HUD SAFMR rows are a bedroom SHAPE, not market rent — they must never
+    // set the level. buildZipBedroomRatios consumes them instead.
+    if (b.source === 'hud_safmr') continue;
     const arr = byZip.get(b.zip) || [];
     arr.push(b);
     byZip.set(b.zip, arr);
@@ -30,6 +33,66 @@ export function buildZipRents(bands) {
     out.set(zip, rents[Math.floor(rents.length / 2)]);
   }
   return out;
+}
+
+/**
+ * rent_bands rows → Map zip → bedroom ratios (from HUD SAFMR).
+ *
+ * The ratios reshape the blended ZORI level to a bedroom count; the SAFMR
+ * levels themselves are policy figures and are never shown as rent.
+ */
+export function buildZipBedroomRatios(bands) {
+  const byZip = new Map();
+  for (const b of bands || []) {
+    if (b.source !== 'hud_safmr' || !b.zip || !(Number(b.rent) > 0)) continue;
+    const cur = byZip.get(b.zip) || {};
+    // Newest vintage wins when several years are stored.
+    const prev = cur[`__period_${b.bedrooms}`];
+    if (prev != null && String(b.period || '') < String(prev)) continue;
+    cur[`__period_${b.bedrooms}`] = b.period || '';
+    cur[Number(b.bedrooms)] = Number(b.rent);
+    byZip.set(b.zip, cur);
+  }
+  const out = new Map();
+  for (const [zip, byBed] of byZip) {
+    const ratios = mf.bedroomRatios({
+      efficiency: byBed[0] ?? null,
+      one: byBed[1] ?? null,
+      two: byBed[2] ?? null,
+      three: byBed[3] ?? null,
+      four: byBed[4] ?? null,
+    });
+    if (Object.keys(ratios).length) out.set(zip, ratios);
+  }
+  return out;
+}
+
+/**
+ * Market rent for one unit: the blended ZIP level, reshaped to a bedroom
+ * count when SAFMR ratios cover that ZIP. Falls back to the blend itself —
+ * never to nothing — and reports which happened for the provenance line.
+ */
+export function zipRentForUnit(zip, { zipRents, bedroomRatios, bedrooms }) {
+  const z = zip ? String(zip).slice(0, 5) : null;
+  const blended = z ? zipRents?.get(z) ?? null : null;
+  if (blended == null) return { rent: null, basis: 'none' };
+  const ratios = z ? bedroomRatios?.get(z) : null;
+  if (ratios && bedrooms != null) {
+    const adj = mf.adjustRentForBedrooms({ blended_rent: blended, bedrooms, ratios });
+    if (adj != null) return { rent: adj, basis: 'safmr_adjusted', bedrooms };
+  }
+  return { rent: blended, basis: 'zori_blended' };
+}
+
+/**
+ * Maricopa (and others) publish unit counts as RANGES — "APARTMENTS 25 - 99
+ * UNITS" parses to 25, deliberately the low end. That makes the stored count
+ * a FLOOR, not a fact, and per-unit math on it understates the property. The
+ * UI marks these with ≥ rather than presenting 25 as if it were counted.
+ */
+export function unitsAreFloor(propertyClass) {
+  const s = String(propertyClass || '');
+  return /\d\s*(?:-|–|to)\s*\d+\s*units?\b/i.test(s) || /\d\s*\+\s*units?\b/i.test(s);
 }
 
 // Address join key: lowercase alphanumeric with street-suffix words dropped,

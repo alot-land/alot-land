@@ -13,15 +13,16 @@ math — the *only* place arithmetic is allowed to live in the product.
 
 ## Status
 
-- **CALC_VERSION `1.12.0`** (see `src/types.ts` — always the source of truth)
-- **217 tests** across 15 suites, including **two fully hand-verified
+- **CALC_VERSION `1.13.0`** (see `src/types.ts` — always the source of truth)
+- **233 tests** across 16 suites, including **two fully hand-verified
   reference deals** (`test/referenceDeals.test.ts`).
 - Version history: 1.1 comps/$-per-bed · 1.2 proforma · 1.3 US market scoring ·
   1.4 off-market parcel screening · 1.5–1.8 goal planner (snowball sim, goal
   progress, equity capture, discounted-entry cash flows) · 1.9–1.11 LTR-vs-STR
   (ADR suggestion, cleaning pass-through) · 1.12 audit round: §1245 vs §1250
   recapture split at exit, refi-month clamp in the goal sim, $700/unit
-  insurance default, 1.2 screen DSCR aligned with the solver.
+  insurance default, 1.2 screen DSCR aligned with the solver · 1.13 rent
+  estimation (HUD SAFMR bedroom ratios, rent-source precedence).
 
 ```bash
 cd packages/mf-calc
@@ -49,6 +50,7 @@ npm run typecheck
 | Off-market | standard-rate expense estimate, fast parcel screen (pursue/consider/pass/insufficient) | `offmarket.ts` |
 | Goals | month-by-month snowball simulation, four strategy scenarios (incl. equity capture w/ refi cash-back + honest debt-service delta), goal progress from assigned deals, equity spread/capture | `goals.ts` |
 | STR | LTR-vs-STR comparison (ADR × occupancy revenue, guest-paid cleaning pass-through, STR-grade management), rent-derived ADR suggestion | `str.ts` |
+| Rents | HUD SAFMR bedroom ratios, blended-ZIP rent reshaped to a bedroom count, bedroom parsing from unit labels, rent-source precedence (actual → API → SAFMR-adjusted → blended) | `rents.ts` |
 
 ## Conventions baked in
 

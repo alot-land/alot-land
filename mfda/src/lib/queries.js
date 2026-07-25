@@ -412,6 +412,54 @@ export async function listParcelValueIndex(orgId) {
   return rows;
 }
 
+// ---- Address-level rent estimates (RentCast, cached) ----------------------
+// The cache is the point: RentCast's free tier is 50 requests/month, so a
+// property already fetched must never be fetched again by accident.
+export async function getRentEstimate(orgId, addrKey, bedrooms = null) {
+  let q = supabase
+    .from('rent_estimates')
+    .select('*')
+    .eq('org_id', orgId)
+    .eq('addr_key', addrKey);
+  q = bedrooms == null ? q.is('bedrooms', null) : q.eq('bedrooms', bedrooms);
+  const { data, error } = await q.order('fetched_at', { ascending: false }).limit(1);
+  if (error) throw error;
+  return data?.[0] || null;
+}
+
+export async function saveRentEstimate(orgId, userId, row) {
+  const { data, error } = await supabase
+    .from('rent_estimates')
+    .upsert(
+      { org_id: orgId, created_by: userId, ...row },
+      { onConflict: 'org_id,addr_key,source,bedrooms' },
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Ask the serverless proxy for an address-level rent estimate. The API key
+ * lives in Netlify's environment, never in this bundle. A 501 means no key is
+ * configured, which is a normal state — the caller falls back to ZIP bands.
+ */
+export async function fetchRentEstimate({ address, bedrooms, bathrooms, squareFootage }) {
+  const p = new URLSearchParams({ address });
+  if (bedrooms != null) p.set('bedrooms', String(bedrooms));
+  if (bathrooms != null) p.set('bathrooms', String(bathrooms));
+  if (squareFootage) p.set('squareFootage', String(squareFootage));
+  const res = await fetch(`/.netlify/functions/rent-estimate?${p.toString()}`);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(body.message || `rent estimate failed (${res.status})`);
+    err.code = body.error || String(res.status);
+    throw err;
+  }
+  return body;
+}
+
 // Every rent band for the org (zip → est. market rent), for parcel screening.
 export async function listAllRentBands(orgId) {
   const { rows } = await fetchPaged(

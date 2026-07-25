@@ -34,13 +34,30 @@ only. If it ever leaks, rotate it in the same dashboard page.
 
 ## Run
 
+The bin scripts load `.env` themselves now, so sourcing it is optional.
+
 ```bash
-set -a; source .env; set +a           # load env into the shell
+set -a; source .env; set +a           # optional — scripts read .env directly
 npm run scan -- --market phoenix   --status both      # active + sold(1yr)
 npm run scan -- --market nashville --status both
 npm run scan -- --market phoenix --status sold --days 730
 npm run scan -- --market phoenix --status active --dry-run   # no DB writes
 ```
+
+### Rent data
+
+```bash
+node bin/rents.mjs                      # Zillow ZORI zip bands — monthly, free
+node bin/hudfmr.mjs --dry-run           # HUD SAFMR bedroom shape — annual, free
+node bin/hudfmr.mjs                     # …then import it
+```
+
+ZORI gives an accurate rent **level** per ZIP but blends all bedroom counts
+together. HUD SAFMR gives an accurate bedroom **shape** but at policy levels,
+not market. Storing both lets the app reshape the ZORI level to a unit's
+bedroom count — neither source is used for the job it is bad at. `hudfmr`
+needs a free `HUD_API_TOKEN` (see `.env.example`) and only needs re-running
+when HUD publishes a new vintage (October 1).
 
 Then refresh the app → **On-Market** shows the lead queue; each **Analyze**
 click moves a lead into underwriting. Sold rows land in `comps`. Every run

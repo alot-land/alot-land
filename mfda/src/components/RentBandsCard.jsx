@@ -5,6 +5,8 @@ import { usd } from '../lib/format';
 const SOURCE_LABELS = {
   zori: 'Zillow ZORI (blended, all sizes)',
   'hud-safmr': 'HUD Small Area FMR',
+  // Bedroom SHAPE only — the app never uses these as a rent level.
+  hud_safmr: 'HUD Small Area FMR (bedroom shape)',
   acs: 'Census ACS',
 };
 const CONF = { high: 'bg-green/15 text-green-deep', med: 'bg-gold/20 text-warn', low: 'bg-surface-2 text-muted' };

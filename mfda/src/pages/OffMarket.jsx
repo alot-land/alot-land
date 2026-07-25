@@ -16,7 +16,7 @@ import {
   listMarkets,
   setParcelRating,
 } from '../lib/queries';
-import { buildZipRents, presetForState, screenRow, streetViewUrl, ownerEquity } from '../lib/parcelscreen';
+import { buildZipRents, presetForState, screenRow, streetViewUrl, ownerEquity, unitsAreFloor } from '../lib/parcelscreen';
 import RatingControl from '../components/RatingControl';
 
 const OffMarketMap = lazyReload(() => import('../components/OffMarketMap'));
@@ -485,7 +485,20 @@ export default function OffMarket() {
                   </td>
                   <td className="td text-right tabular-nums">{p.screen.noi != null ? usd(p.screen.noi) : '—'}</td>
                   <td className="td text-right tabular-nums">{p.screen.cap_rate != null ? pct(p.screen.cap_rate, 1) : '—'}</td>
-                  <td className="td text-right">{p.units ?? '—'}</td>
+                  <td className="td text-right">
+                    {p.units == null ? (
+                      '—'
+                    ) : unitsAreFloor(p.property_class) ? (
+                      <span
+                        className="text-warn"
+                        title={`County publishes this as a RANGE ("${p.property_class}") — ${p.units} is the low end, not a count. Every per-unit figure on this row is a floor. Verify before underwriting.`}
+                      >
+                        ≥{p.units}
+                      </span>
+                    ) : (
+                      p.units
+                    )}
+                  </td>
                   <td className="td text-right">
                     {p.last_sale_date ? (
                       <>

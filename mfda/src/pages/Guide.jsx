@@ -96,6 +96,10 @@ const MANUAL = [
         b: 'Inside Valuation comps: sold multifamily comps from the scanned store — filtered by radius when the deal has coordinates (scraped listings do), falling back to STATEWIDE comps when it doesn\'t (off-market promotions and hand-entered deals), honestly labeled as the rougher guide. Median price, $/bed, and $/sqft show with sample sizes (n=); values with 3+ comps AUTO-FILL the empty valuation inputs on load and stay fully editable. Expand "Show nearest/recent" for the individual comps with Redfin links.',
       },
       {
+        t: 'Market rent estimates — free path and paid path',
+        b: 'Above the unit mix is a rent estimator with two ladders. FREE: the blended Zillow ZORI rent for the ZIP, reshaped to each unit type\'s bedroom count using HUD Small Area FMR ratios — SAFMR levels are policy figures (roughly a 40th percentile), so only the RATIOS between bedroom counts are used, never the level itself. That turns one blended number into a real 1BR/2BR/3BR spread for $0. PAID: an address-level RentCast estimate with a comp-backed range, fetched only when you click "Address-level" and cached forever afterwards, because the free tier is 50 requests a month. Neither writes into your unit mix until you press Apply. Rent is the single largest source of error in every downstream figure — NOI, cap rate, DSCR, verdict, max offer — so this is the input most worth improving.',
+      },
+      {
         t: 'Operating expenses fill themselves — in dollars',
         b: 'Insurance, management, utilities, repairs, and capex reserve pre-fill with ANNUAL DOLLAR estimates computed from your unit count and rents (~$700/unit insurance, ~10% of income management, ~$300/unit utilities and reserves, ~8% of rent repairs). Replace any with real quotes — auto-fill never overwrites something you\'ve entered or saved. Only two fields on the whole form take percentages: property tax rate and vacancy. Everything else is dollars.',
       },
@@ -258,6 +262,10 @@ const MANUAL = [
         b: 'Nothing to do for the built-in lanes: the droplet auto-discovers, downloads, and imports county data (Nashville/Davidson live; Maricopa in progress) whenever the parcels table is empty or more than ~30 days old — no files to handle. For ANY other county, download its assessor file and run the manual importer with --inspect first (it writes nothing, just shows how the columns mapped), then without it to import; ask in the build chat to promote a county you use often into an automatic lane.',
       },
       {
+        t: 'Unit counts marked ≥ are a floor, not a count',
+        b: 'Counties often publish unit counts as RANGES rather than numbers — Maricopa\'s classes read "APARTMENTS 25 - 99 UNITS". The importer takes the LOW end deliberately (underwriting on units a building may not have is the expensive direction to be wrong), which makes the stored figure a floor. Anywhere that happens the parcel list shows ≥25 in amber instead of 25, and hovering explains it: a parcel showing ≥25 could genuinely be 99 units, so every per-unit figure on that row — NOI, cap rate, the screen verdict — is a floor too. Get a real count before underwriting one. Parcels whose class carries no number at all (Maricopa\'s "100+ UNITS", about 1,500 of them) stay blank and screen as "needs data", which is the honest answer. For a 2-20 unit buy box none of this bites: those bands are outside it anyway.',
+      },
+      {
         t: 'Which states appear in the Off-Market filter',
         b: 'The state and county dropdowns are built from the parcels you actually have — nothing is hardcoded. TN appears because Davidson County imported cleanly (8,842 multifamily parcels). AZ appears the moment a Maricopa import lands, and every off-market feature (screening, equity flags, ratings, mail lists, FreedomSoft export) works on it immediately with no further setup. Maricopa is the stubborn one: the assessor firewalls its bulk-file hosts from datacenters, so the importer now tries four routes in order — the county GIS REST directory, the county\'s own ArcGIS Online portals, the public ArcGIS search, then the assessor page scrape — and prints exactly why each failed, so one droplet run diagnoses the whole chain.',
       },
@@ -361,7 +369,7 @@ const MANUAL = [
     entries: [
       {
         t: 'The droplet does the work',
-        b: 'A small always-on server runs the schedule: early-morning code update, 5:15/5:45am scans (Phoenix, Nashville), photos + agent capture every 2 hours from 6am–10pm, the 7am email digest, and a monthly rent refresh. The morning scan also chains the Phase 2/3 jobs automatically: county parcel import when the table is empty or >30 days old, national market stats when >90 days old, and scans of any counties you added from the Markets page. Logs live at /var/log/mfda-scan.log, mfda-photos.log, mfda-digest.log, and mfda-rents.log on the droplet.',
+        b: 'A small always-on server runs the schedule: early-morning code update, 5:15/5:45am scans (Phoenix, Nashville), photos + agent capture every 2 hours from 6am–10pm, the 7am email digest, and a monthly rent refresh. The morning scan also chains the Phase 2/3 jobs automatically: county parcel import when the table is empty or >30 days old, national market stats when >90 days old, and scans of any counties you added from the Markets page. One job is manual because it only changes once a year: node bin/hudfmr.mjs pulls HUD Small Area FMRs (bedroom rent shape) each October. Logs live at /var/log/mfda-scan.log, mfda-photos.log, mfda-digest.log, and mfda-rents.log on the droplet.',
       },
       {
         t: 'The morning digest',
@@ -377,7 +385,7 @@ const MANUAL = [
       },
       {
         t: 'Costs',
-        b: 'Every external call is logged to a cost ledger. The current stack is $0/month: Redfin and Zillow data are free, Supabase and Netlify are on free tiers, and the droplet was already paid for. Paid upgrades (RentCast property data, HelloData rent comps) are built but switched off until needed.',
+        b: 'Every external call is logged to a cost ledger. The current stack is $0/month: Redfin, Zillow ZORI and HUD FMR data are free, Supabase and Netlify are on free tiers, and the droplet was already paid for. The one paid upgrade that is wired is RentCast address-level rents — it stays dark until a RENTCAST_API_KEY is set in Netlify, and even then it is only called when you click "Address-level" on a deal, with every answer cached so a repeat click spends nothing. RentCast\'s own free tier is 50 requests a month, which is ample for per-deal use; it would evaporate instantly on a 12,000-parcel sweep, which is exactly why the parcel list never calls it.',
       },
     ],
   },

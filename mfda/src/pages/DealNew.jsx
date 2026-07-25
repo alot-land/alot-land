@@ -14,6 +14,7 @@ import { Field, TextInput, NumberInput, PercentInput, Section, Grid, Tip } from 
 import UnitMixEditor from '../components/UnitMixEditor';
 import CompsAssist from '../components/CompsAssist';
 import RentBandsCard from '../components/RentBandsCard';
+import RentEstimator from '../components/RentEstimator';
 
 function blankForm() {
   return {
@@ -247,7 +248,17 @@ export default function DealNew() {
       </Section>
 
       <Section title="Unit mix & rents" subtitle="Rents are per-unit — model the mix" tip="The income engine. List each unit TYPE (2BR/1BA etc.), how many, and both rents: actual (what the seller collects) and market (what they should fetch). Use the rent-reference card as your anchor. Total income = units × per-unit rent — never one blended number.">
-        <div className="mb-4">
+        <div className="mb-4 space-y-3">
+          <RentEstimator
+            orgId={org?.id}
+            userId={user?.id}
+            zip={f.zip}
+            address={f.address}
+            city={f.city}
+            state={f.state}
+            units={f.units}
+            onApply={(u) => set({ units: u })}
+          />
           <RentBandsCard orgId={org?.id} zip={f.zip} />
         </div>
         <UnitMixEditor units={f.units} onChange={(u) => set({ units: u })} />

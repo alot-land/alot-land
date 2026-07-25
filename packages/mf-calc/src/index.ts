@@ -21,3 +21,4 @@ export * from './markets.js';
 export * from './offmarket.js';
 export * from './goals.js';
 export * from './str.js';
+export * from './rents.js';

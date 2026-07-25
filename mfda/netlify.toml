@@ -2,6 +2,14 @@
   base = "mfda/"
   command = "npm install && npm run build"
   publish = "dist"
+  functions = "netlify/functions"
+
+# Functions must resolve before the SPA catch-all, or /.netlify/* would be
+# rewritten to index.html.
+[[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
 
 [[redirects]]
   from = "/*"
