@@ -125,8 +125,10 @@ export default function OffMarketDeal() {
         notes: `Off-market parcel APN ${p.apn}. Owner: ${p.owner_name || 'unknown'}${p.absentee ? ' (absentee)' : ''}. Mailing: ${[p.mailing_address, p.mailing_city, p.mailing_state, p.mailing_zip].filter(Boolean).join(', ')}`,
       });
       if (Number(units) > 0 && Number(rent) > 0) {
+        // units.sqft is NOT NULL — use the building average when known, else 0.
+        const sqft = p.building_sqft ? Math.round(Number(p.building_sqft) / Number(units)) : 0;
         await replaceUnits(org.id, deal.id, [
-          { type: 'avg unit', count: Number(units), sqft: null, actual_rent: null, market_rent: Number(rent) },
+          { type: 'avg unit', count: Number(units), sqft, actual_rent: 0, market_rent: Number(rent) },
         ]);
       }
       qc.invalidateQueries({ queryKey: ['deals', org.id] });
