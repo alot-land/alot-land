@@ -4,23 +4,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        // On-brand (Alot Of Land). MFDA is a light, professional analyst tool —
-        // dense financial tables + print-to-PDF read better on a warm neutral
-        // ground than the dark in-house tools.
-        bg: '#F9F6F0',
-        surface: '#FFFFFF',
-        'surface-2': '#F4EFE6',
-        border: '#E4DDD0',
-        'border-hi': '#D6CCB8',
-        ink: '#1A1A1A',
-        'ink-2': '#4A4A4A',
-        muted: '#8A8272',
-        gold: '#F5B800',
-        green: '#3CB054',
-        'green-deep': '#2E8C43',
-        blue: '#3E6DA3',
-        danger: '#C0392B',
-        warn: '#B8860B',
+        // On-brand (Alot Of Land), themeable: every token resolves through a
+        // CSS variable (RGB triplet) so the .dark root class swaps the whole
+        // palette. <alpha-value> keeps /20-style opacity modifiers working.
+        bg: 'rgb(var(--c-bg) / <alpha-value>)',
+        surface: 'rgb(var(--c-surface) / <alpha-value>)',
+        'surface-2': 'rgb(var(--c-surface-2) / <alpha-value>)',
+        border: 'rgb(var(--c-border) / <alpha-value>)',
+        'border-hi': 'rgb(var(--c-border-hi) / <alpha-value>)',
+        ink: 'rgb(var(--c-ink) / <alpha-value>)',
+        'ink-2': 'rgb(var(--c-ink-2) / <alpha-value>)',
+        muted: 'rgb(var(--c-muted) / <alpha-value>)',
+        gold: 'rgb(var(--c-gold) / <alpha-value>)',
+        green: 'rgb(var(--c-green) / <alpha-value>)',
+        'green-deep': 'rgb(var(--c-green-deep) / <alpha-value>)',
+        blue: 'rgb(var(--c-blue) / <alpha-value>)',
+        danger: 'rgb(var(--c-danger) / <alpha-value>)',
+        warn: 'rgb(var(--c-warn) / <alpha-value>)',
       },
       fontFamily: {
         display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],

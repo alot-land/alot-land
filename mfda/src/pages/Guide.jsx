@@ -282,6 +282,10 @@ const MANUAL = [
         b: 'Settings → Invites (admins only): enter their email and role. They sign in with a magic link and land in your org, seeing the same deals. Members can underwrite; admins can also invite and manage markets.',
       },
       {
+        t: 'Dark mode',
+        b: 'The moon/sun button in the top bar switches between light and dark themes. Your choice is remembered on this browser; first visit follows your device\'s setting. Printed PDF reports always stay light — they\'re built for paper.',
+      },
+      {
         t: 'Hearting deals',
         b: 'Click the ♡ on any deal row or on a deal\'s results page to heart it. Hearted deals float to the top of the Deals page, and the ♥ Hearted button filters to just them. Hearts are shared across your org — everyone sees the same shortlist.',
       },

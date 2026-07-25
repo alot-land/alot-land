@@ -113,7 +113,7 @@ export default function Compare() {
               onClick={() => toggle(s.id)}
               className={`px-3 py-1.5 rounded-lg text-sm border ${
                 selectedIds.includes(s.id)
-                  ? 'bg-ink text-white border-ink'
+                  ? 'bg-ink text-bg border-ink'
                   : 'bg-surface text-ink-2 border-border hover:bg-surface-2'
               }`}
             >

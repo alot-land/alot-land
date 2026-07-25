@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth, signOut } from './lib/auth';
+import { getTheme, setTheme } from './lib/theme';
 import { useOrg } from './lib/org';
 import { supabaseConfigured } from './lib/supabase';
 import SignIn from './pages/SignIn';
@@ -20,6 +22,26 @@ function ConfigBanner() {
       Supabase is not configured. Copy <code>.env.local.example</code> → <code>.env.local</code> and set
       <code> VITE_SUPABASE_URL</code> / <code>VITE_SUPABASE_ANON_KEY</code>.
     </div>
+  );
+}
+
+function ThemeToggle() {
+  const [theme, setThemeState] = useState(getTheme());
+  function toggle() {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    setThemeState(next);
+  }
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label="Toggle dark mode"
+      className="text-lg leading-none text-ink-2 hover:text-ink"
+    >
+      {theme === 'dark' ? '☀️' : '🌙'}
+    </button>
   );
 }
 
@@ -71,6 +93,7 @@ function TopBar() {
             <span className="text-muted">{org?.name}</span>
           )}
           {role === 'admin' && <span className="pill bg-gold/20 text-warn">admin</span>}
+          <ThemeToggle />
           <span className="text-muted hidden sm:inline">{user?.email}</span>
           <button onClick={signOut} className="text-ink-2 hover:text-ink underline">
             Sign out

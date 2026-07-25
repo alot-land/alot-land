@@ -5,7 +5,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './lib/auth';
 import { OrgProvider } from './lib/org';
 import App from './App';
+import { initTheme } from './lib/theme';
 import './index.css';
+
+initTheme();
 
 const qc = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: false } } });
 

@@ -12,7 +12,7 @@ export function Tip({ text }) {
       >
         i
       </span>
-      <span className="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-opacity absolute z-30 left-0 bottom-full mb-1.5 w-64 bg-ink text-white text-xs font-normal normal-case tracking-normal rounded-lg px-3 py-2 shadow-xl pointer-events-none">
+      <span className="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-opacity absolute z-30 left-0 bottom-full mb-1.5 w-64 bg-ink text-bg text-xs font-normal normal-case tracking-normal rounded-lg px-3 py-2 shadow-xl pointer-events-none">
         {text}
       </span>
     </span>

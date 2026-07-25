@@ -4,6 +4,40 @@
 
 :root {
   color-scheme: light;
+  /* Light (default) — warm analyst-paper palette. RGB triplets for Tailwind. */
+  --c-bg: 249 246 240;
+  --c-surface: 255 255 255;
+  --c-surface-2: 244 239 230;
+  --c-border: 228 221 208;
+  --c-border-hi: 214 204 184;
+  --c-ink: 26 26 26;
+  --c-ink-2: 74 74 74;
+  --c-muted: 138 130 114;
+  --c-gold: 245 184 0;
+  --c-green: 60 176 84;
+  --c-green-deep: 46 140 67;
+  --c-blue: 62 109 163;
+  --c-danger: 192 57 43;
+  --c-warn: 184 134 11;
+}
+
+:root.dark {
+  color-scheme: dark;
+  /* Dark — same warmth, inverted ground; accents brightened for contrast. */
+  --c-bg: 23 21 18;
+  --c-surface: 32 29 25;
+  --c-surface-2: 43 38 32;
+  --c-border: 59 52 39;
+  --c-border-hi: 78 69 54;
+  --c-ink: 242 237 227;
+  --c-ink-2: 200 193 177;
+  --c-muted: 148 139 120;
+  --c-gold: 245 184 0;
+  --c-green: 86 199 110;
+  --c-green-deep: 118 208 138;
+  --c-blue: 130 168 212;
+  --c-danger: 229 110 98;
+  --c-warn: 226 178 80;
 }
 
 html,
@@ -14,11 +48,16 @@ body,
 
 body {
   margin: 0;
-  background: theme('colors.bg');
-  color: theme('colors.ink');
+  @apply bg-bg text-ink;
   font-family: theme('fontFamily.body');
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Leaflet ships light OSM tiles; dim them slightly under the dark theme so
+   the map doesn't glow against the dark chrome. Pins/cards are unaffected. */
+:root.dark .leaflet-tile {
+  filter: brightness(0.8) contrast(1.05) saturate(0.9);
 }
 
 @layer components {
@@ -37,7 +76,9 @@ body {
       font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-primary {
-    @apply btn bg-ink text-white hover:bg-black;
+    /* text-bg (not white): ink and bg swap together, so this stays readable
+       in both themes. */
+    @apply btn bg-ink text-bg hover:opacity-90;
   }
   .btn-gold {
     @apply btn bg-gold text-ink hover:brightness-95;

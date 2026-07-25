@@ -13,6 +13,15 @@
       rel="stylesheet"
     />
     <title>MFDA · Multifamily Deal Analyzer</title>
+    <script>
+      // Apply the saved/OS theme before first paint (mirrors src/lib/theme.js).
+      try {
+        var t = localStorage.getItem('mfda-theme');
+        if (t !== 'light' && t !== 'dark')
+          t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        if (t === 'dark') document.documentElement.classList.add('dark');
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

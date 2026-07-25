@@ -119,7 +119,7 @@ export default function OnMarket() {
               key={v}
               type="button"
               onClick={() => setView(v)}
-              className={`px-3 py-2 text-sm capitalize ${view === v ? 'bg-ink text-white' : 'bg-surface text-ink-2 hover:bg-surface-2'}`}
+              className={`px-3 py-2 text-sm capitalize ${view === v ? 'bg-ink text-bg' : 'bg-surface text-ink-2 hover:bg-surface-2'}`}
             >
               {v}
             </button>
