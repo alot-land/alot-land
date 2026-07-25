@@ -39,23 +39,26 @@ const GENERIC = {
   apn: ['apn', 'parcel', 'parcel_number', 'parcelid', 'parcel_id', 'parid', 'parcel_no', 'parcelno', 'parcel_num', 'assessor_parcel_number'],
   owner_name: ['owner_name', 'owner', 'ownership', 'ownername', 'owner1', 'current_owner', 'taxpayer_name', 'taxpayer'],
   // 'ownaddr1'/'propaddr' style: Nashville ArcGIS Hub parcel export (2026-07)
-  mailing_address: ['mailing_address', 'mail_address', 'mail_addr', 'owner_address', 'mailing_addr1', 'mail_line1', 'taxpayer_address', 'ownaddr1', 'own_addr1'],
+  // '*_line1' / '*_zip_code': Maricopa ArcGIS parcel layer (2026-07-25).
+  mailing_address: ['mailing_address', 'mail_address', 'mail_addr', 'owner_address', 'owner_address_line1', 'mailing_address_line1', 'mail_address_line1', 'mailing_addr1', 'mail_line1', 'taxpayer_address', 'ownaddr1', 'own_addr1'],
   mailing_city: ['mailing_city', 'mail_city', 'owner_city', 'taxpayer_city', 'owncity'],
   mailing_state: ['mailing_state', 'mail_state', 'owner_state', 'taxpayer_state', 'ownstate'],
-  mailing_zip: ['mailing_zip', 'mail_zip', 'owner_zip', 'mail_zipcode', 'taxpayer_zip', 'ownzip'],
-  situs_address: ['situs_address', 'situs_addr', 'situs', 'property_address', 'prop_address', 'site_address', 'location', 'property_location', 'propaddr', 'physical_address', 'physical_street_address'],
+  mailing_zip: ['mailing_zip', 'mail_zip', 'owner_zip', 'owner_zip_code', 'mail_zip_code', 'mail_zipcode', 'taxpayer_zip', 'ownzip'],
+  situs_address: ['situs_address', 'situs_addr', 'situs', 'property_address', 'property_full_street_address', 'property_street_address', 'prop_address', 'site_address', 'location', 'property_location', 'propaddr', 'physical_address', 'physical_street_address'],
   situs_city: ['situs_city', 'property_city', 'prop_city', 'site_city', 'propcity', 'physical_city', 'city'],
-  situs_zip: ['situs_zip', 'property_zip', 'prop_zip', 'site_zip', 'propzip', 'physical_zip', 'physical_zipcode', 'zip', 'zip_code'],
+  situs_zip: ['situs_zip', 'property_zip', 'property_zip_code', 'prop_zip', 'site_zip', 'propzip', 'physical_zip', 'physical_zipcode', 'zip', 'zip_code'],
   units: ['units', 'unit_count', 'number_of_units', 'num_units', 'no_of_units', 'total_units', 'numberofunits', 'living_units', 'number_of_living_units', 'dwelling_units', 'res_units'],
-  year_built: ['year_built', 'yearbuilt', 'const_year', 'year_constructed', 'yr_built', 'eff_year_built'],
-  property_class: ['property_class', 'class', 'property_use', 'use_code', 'puc', 'land_use', 'land_use_desc', 'land_use_description', 'use_description', 'property_use_description', 'ludesc', 'lucode', 'property_type', 'classification', 'prop_class'],
+  year_built: ['year_built', 'yearbuilt', 'const_year', 'construction_year', 'year_constructed', 'yr_built', 'eff_year_built'],
+  // Descriptions sort ahead of bare codes: the text carries the unit count
+  // ("DUPLEX") that unitsFromClass reads, a code carries none.
+  property_class: ['property_class', 'class', 'property_use', 'use_code', 'puc', 'land_use', 'land_use_desc', 'land_use_description', 'use_description', 'property_use_description', 'property_use_code', 'ludesc', 'lucode', 'property_type', 'classification', 'prop_class'],
   last_sale_date: ['last_sale_date', 'sale_date', 'deed_date', 'sale_dt', 'last_sold', 'transfer_date', 'owndate'],
   last_sale_price: ['last_sale_price', 'sale_price', 'saleprice', 'sale_amount', 'consideration', 'last_sale_amount', 'price'],
   assessed_value: ['assessed_value', 'total_assessed', 'assessed_total', 'full_cash_value', 'fcv', 'total_value', 'appraised_value', 'total_appraisal', 'totlappr', 'totlassd'],
-  building_sqft: ['building_sqft', 'improvement_sqft', 'living_area', 'bldg_sqft', 'sqft', 'finished_area', 'total_living_area'],
-  lot_sqft: ['lot_sqft', 'land_sqft', 'lot_size', 'land_area', 'lot_area', 'acreage', 'acres'],
-  lat: ['lat', 'latitude', 'intptlat', 'point_y', 'centroid_lat'],
-  lng: ['lon', 'lng', 'longitude', 'intptlon', 'intptlong', 'point_x', 'centroid_lon'],
+  building_sqft: ['building_sqft', 'improvement_sqft', 'living_area', 'livable_area_sqft', 'livable_area', 'bldg_sqft', 'sqft', 'finished_area', 'total_living_area'],
+  lot_sqft: ['lot_sqft', 'land_sqft', 'lot_size_sqft', 'lot_size', 'land_area', 'lot_area', 'acreage', 'acres'],
+  lat: ['lat', 'latitude', 'latitude_dd', 'intptlat', 'point_y', 'centroid_lat'],
+  lng: ['lon', 'lng', 'longitude', 'longitude_dd', 'intptlon', 'intptlong', 'point_x', 'centroid_lon'],
 };
 
 export const PRESETS = {
@@ -131,8 +134,17 @@ export function unitsFromClass(desc) {
   if (/duplex|two[- ]?family|2[- ]?family/.test(s)) return 2;
   if (/triplex|three[- ]?family|3[- ]?family/.test(s)) return 3;
   if (/quadplex|fourplex|four[- ]?family|4[- ]?family|quadruplex/.test(s)) return 4;
+  // Explicit counts in apartment descriptions ("APARTMENTS 5-9 UNITS",
+  // "APARTMENT 24 UNITS"). Ranges take the LOW end — underwriting on a count
+  // the property might not have is the expensive direction to be wrong in.
+  const range = /(\d{1,4})\s*(?:-|–|to)\s*(\d{1,4})\s*units?\b/.exec(s);
+  if (range) return plausibleUnits(Number(range[1]));
+  const exact = /(\d{1,4})\s*units?\b/.exec(s);
+  if (exact) return plausibleUnits(Number(exact[1]));
   return null;
 }
+
+const plausibleUnits = (n) => (Number.isFinite(n) && n >= 1 && n <= 2000 ? n : null);
 
 const ENTITY_RE = /\b(llc|l\.l\.c|inc|corp|corporation|company|co\b|trust|tr\b|lp|llp|ltd|partners(hip)?|properties|investments|holdings|capital|ventures|estates|group)\b/i;
 export function looksLikeEntity(name) {

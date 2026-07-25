@@ -97,6 +97,40 @@ describe('resolveColumns', () => {
     expect(idx.assessed_value).toBe(5);
   });
 
+  it('maps the real Maricopa ArcGIS header set', () => {
+    // Field-verified against the county REST layer, 2026-07-25. The four
+    // address/zip fields must all resolve together: `absentee` compares
+    // situs to mailing, so a partial mapping yields a uniformly false flag
+    // rather than a missing one — silently wrong is worse than empty.
+    const idx = resolveColumns([
+      'APN', 'Ownership', 'OwnerAddressLine1', 'OwnerCity', 'OwnerState', 'OwnerZipCode',
+      'PropertyFullStreetAddress', 'PropertyCity', 'PropertyZipCode',
+      'PropertyUseDescription', 'ConstructionYear', 'LivableArea_SqFt', 'LotSize_SqFt',
+      'Latitude_DD', 'Longitude_DD', 'FullCashValue', 'SaleDate', 'SalePrice',
+    ]);
+    for (const [field, header] of [
+      ['apn', 'APN'], ['owner_name', 'Ownership'],
+      ['mailing_address', 'OwnerAddressLine1'], ['mailing_city', 'OwnerCity'],
+      ['mailing_state', 'OwnerState'], ['mailing_zip', 'OwnerZipCode'],
+      ['situs_address', 'PropertyFullStreetAddress'], ['situs_city', 'PropertyCity'],
+      ['situs_zip', 'PropertyZipCode'], ['property_class', 'PropertyUseDescription'],
+      ['year_built', 'ConstructionYear'], ['building_sqft', 'LivableArea_SqFt'],
+      ['lot_sqft', 'LotSize_SqFt'], ['lat', 'Latitude_DD'], ['lng', 'Longitude_DD'],
+      ['assessed_value', 'FullCashValue'], ['last_sale_date', 'SaleDate'],
+      ['last_sale_price', 'SalePrice'],
+    ]) {
+      expect(idx[field], `${field} → ${header}`).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('prefers the use DESCRIPTION over the use CODE when both exist', () => {
+    // The description is what unitsFromClass reads a unit count out of.
+    const idx = resolveColumns(['APN', 'PropertyUseCode', 'PropertyUseDescription']);
+    expect(idx.property_class).toBe(2);
+    // Code-only counties still map rather than resolving to nothing.
+    expect(resolveColumns(['APN', 'PropertyUseCode']).property_class).toBe(1);
+  });
+
   it('prefers an exact header match over a separator-insensitive one', () => {
     // 'Units' is exact for the first candidate; 'DwellingUnits' only squashes.
     const idx = resolveColumns(['DwellingUnits', 'Units']);
@@ -253,6 +287,17 @@ describe('unitsFromClass', () => {
     expect(unitsFromClass('TWO FAMILY')).toBe(2);
     expect(unitsFromClass('APARTMENT: HIGH RISE')).toBeNull();
     expect(unitsFromClass('')).toBeNull();
+  });
+
+  it('reads explicit unit counts, taking the low end of a range', () => {
+    expect(unitsFromClass('APARTMENT 24 UNITS')).toBe(24);
+    expect(unitsFromClass('Apartments 5-9 units')).toBe(5);
+    expect(unitsFromClass('APARTMENTS 10 TO 19 UNITS')).toBe(10);
+    // A plex word still wins — it is the more specific signal.
+    expect(unitsFromClass('DUPLEX - 1 DUPLEX BUILDING')).toBe(2);
+    // Counts that aren't unit counts stay null rather than guessing.
+    expect(unitsFromClass('APARTMENT 3 STORY')).toBeNull();
+    expect(unitsFromClass('COMMERCIAL 0 UNITS')).toBeNull();
   });
 });
 

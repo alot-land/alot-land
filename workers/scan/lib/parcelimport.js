@@ -16,7 +16,29 @@ export function inspectReport(res, label = '') {
   lines.push(`=== parse report ${label} ===`);
   lines.push(`delimiter=${JSON.stringify(res.delimiter)} rows=${res.total} kept=${res.kept} dropped=${res.dropped}`);
   lines.push(`headers: ${(res.headers || []).join(' | ')}`);
-  if (res.unresolved?.length) lines.push(`UNRESOLVED fields: ${res.unresolved.join(', ')}`);
+  if (res.unresolved?.length) {
+    const blocking = res.unresolved.filter((f) => ESSENTIAL_FIELDS.includes(f));
+    lines.push(`UNRESOLVED fields: ${res.unresolved.join(', ')}`);
+    lines.push(
+      blocking.length
+        ? `  BLOCKING (import aborts): ${blocking.join(', ')} — the rest are quality gaps`
+        : '  none of these are essential — import proceeds',
+    );
+  }
+  // Counties with no unit column derive units from the class description.
+  // Whatever it can't read is the gap between "imported" and "screenable",
+  // so name the descriptions rather than making it another round-trip.
+  const noUnits = (res.parcels || []).filter((p) => p.units == null);
+  if (noUnits.length) {
+    const counts = new Map();
+    for (const p of noUnits) {
+      const k = p.property_class || '(blank)';
+      counts.set(k, (counts.get(k) || 0) + 1);
+    }
+    const top = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 12);
+    lines.push(`no unit count on ${noUnits.length} of ${res.parcels.length} — these screen as "needs data":`);
+    for (const [k, n] of top) lines.push(`  ${n}× ${k}`);
+  }
   if (res.parcels?.[0]) lines.push(`first parcel: ${JSON.stringify(res.parcels[0])}`);
   return lines.join('\n');
 }
