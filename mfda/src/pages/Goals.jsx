@@ -142,6 +142,51 @@ function ScenarioGrid({ target, inputs }) {
   );
 }
 
+const SHORT_LABELS = {
+  conventional: 'Bank',
+  seller_finance: 'Seller',
+  value_add_recycle: 'BRRRR',
+  equity_capture: 'Equity',
+};
+const shortMonths = (m) => {
+  if (m == null) return '50yr+';
+  if (m === 0) return 'now';
+  return m < 12 ? `${m}mo` : `${(m / 12).toFixed(m % 12 === 0 ? 0 : 1)}yr`;
+};
+
+/** Collapsed-card strip: how long each strategy takes for this goal. */
+function GoalTimelineStrip({ goal }) {
+  const scenarios = useMemo(() => {
+    try {
+      return goalScenarios({
+        target_monthly_cashflow: Number(goal.target_monthly),
+        ...DEFAULT_INPUTS,
+        ...(goal.inputs || {}),
+      });
+    } catch {
+      return [];
+    }
+  }, [goal]);
+  if (!scenarios.length) return null;
+  const best = scenarios.reduce(
+    (a, s) => (s.result.months_to_goal != null && (a == null || s.result.months_to_goal < a.result.months_to_goal!) ? s : a),
+    null,
+  );
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+      {scenarios.map((s) => (
+        <span
+          key={s.key}
+          className={`pill ${best?.key === s.key ? 'bg-green/15 text-green-deep' : 'bg-surface-2 text-ink-2'}`}
+          title={`${s.label}: ${s.result.months_to_goal != null ? `${s.result.months_to_goal} months` : 'not reachable within 50 years'} · ${s.result.deals_needed || '—'} deals`}
+        >
+          {SHORT_LABELS[s.key]} {shortMonths(s.result.months_to_goal)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function GoalForm({ initial, submitLabel, onSave, onCancel, saving }) {
   const [name, setName] = useState(initial?.name || '');
   const [target, setTarget] = useState(initial?.target ?? 10_000);
@@ -333,6 +378,7 @@ export default function Goals() {
                     {progress.met && ' · 🎉 covered'}
                   </div>
                 </div>
+                <GoalTimelineStrip goal={g} />
               </button>
 
               {open && (
