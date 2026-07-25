@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useCallback, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrg } from '../lib/org';
 import { listMarketStats, listTargetGeoIds, addMarketTarget } from '../lib/queries';
@@ -66,6 +66,10 @@ export default function Markets() {
   const states = useMemo(() => [...new Set(scored.map((m) => m.state))].sort(), [scored]);
   const selected = rows.find((m) => m.geo_id === selectedId) || null;
   const retrievedAt = stats.data?.[0]?.retrieved_at;
+
+  // Stable handler so the map's marker effect doesn't redraw ~3,000 circles
+  // on every unrelated parent render.
+  const mapSelect = useCallback((m) => setSelectedId(m.geo_id), []);
 
   async function addTarget(m) {
     // NB: land area lives on the RAW stats row, not the scored metrics —
@@ -167,7 +171,7 @@ export default function Markets() {
       {rows.length > 0 && (
         <>
           <Suspense fallback={<div className="card p-10 text-center text-muted">Loading map…</div>}>
-            <MarketsMap markets={rows} selectedId={selectedId} onSelect={(m) => setSelectedId(m.geo_id)} />
+            <MarketsMap markets={rows} selectedId={selectedId} onSelect={mapSelect} />
           </Suspense>
 
           {selected && (

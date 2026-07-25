@@ -15,7 +15,8 @@ const DEFAULT_INPUTS = {
   avg_units_per_deal: 4,
   cash_on_cash: 0.08,
   down_payment_rate: 0.25,
-  closing_cost_rate: 0.03,
+  closing_cost_rate: 0.02, // matches the underwriting default
+
   seller_down_rate: 0.1,
   seller_cash_on_cash: 0.12,
   refi_cash_back_fraction: 0.6,
@@ -62,14 +63,15 @@ const FIELD_DEFS = [
 ];
 
 function ScenarioGrid({ target, inputs }) {
+  const merged = useMemo(() => ({ ...DEFAULT_INPUTS, ...inputs }), [inputs]);
   const scenarios = useMemo(() => {
     if (!(target > 0)) return [];
     try {
-      return goalScenarios({ target_monthly_cashflow: target, ...DEFAULT_INPUTS, ...inputs });
+      return goalScenarios({ target_monthly_cashflow: target, ...merged });
     } catch {
       return [];
     }
-  }, [target, inputs]);
+  }, [target, merged]);
   if (!scenarios.length) return null;
 
   return (
@@ -131,8 +133,8 @@ function ScenarioGrid({ target, inputs }) {
           )}
           {!s.result.reached && (
             <div className="mt-3 text-xs text-warn">
-              {s.result.deals_needed === 0 && (inputs.capital_available ?? 0) < s.per_deal_cash
-                ? `Never gets off the ground: ${usd(inputs.capital_available ?? 0)} to start doesn't cover the ${usd(s.per_deal_cash)} this strategy needs per deal${!((inputs.monthly_savings ?? 0) > 0) ? ', and at $0/month added nothing grows' : ''}. Lower the cash per deal or add monthly savings.`
+              {s.result.deals_needed === 0 && (merged.capital_available ?? 0) < s.per_deal_cash
+                ? `Never gets off the ground: ${usd(merged.capital_available ?? 0)} to start doesn't cover the ${usd(s.per_deal_cash)} this strategy needs per deal${!((merged.monthly_savings ?? 0) > 0) ? ', and at $0/month added nothing grows' : ''}. Lower the cash per deal or add monthly savings.`
                 : "Converges too slowly (50+ years): cash flow alone can't accumulate the next down payment fast enough. Add savings, lower-down financing, or refi recycling."}
             </div>
           )}
@@ -268,6 +270,7 @@ export default function Goals() {
 
   const [showNew, setShowNew] = useState(false);
   const [newInitial, setNewInitial] = useState(null); // set by "Duplicate"
+  const [newFormSeq, setNewFormSeq] = useState(0); // bumps so the form remounts with fresh values
   const [expanded, setExpanded] = useState({});
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -332,6 +335,7 @@ export default function Goals() {
           type="button"
           onClick={() => {
             setNewInitial(null);
+            setNewFormSeq((n) => n + 1);
             setShowNew((v) => !v);
           }}
           className="btn-gold text-sm"
@@ -344,6 +348,7 @@ export default function Goals() {
         <div className="card p-4 mb-6">
           <div className="text-sm font-medium mb-3">{newInitial ? `New goal (duplicated from “${newInitial.name}”)` : 'New goal'}</div>
           <GoalForm
+            key={newFormSeq}
             initial={newInitial}
             submitLabel="Set goal"
             onSave={saveNew}
@@ -391,6 +396,7 @@ export default function Goals() {
                       type="button"
                       onClick={() => {
                         setNewInitial({ name: g.name, target: Number(g.target_monthly), inputs: g.inputs || {} });
+                        setNewFormSeq((n) => n + 1);
                         setShowNew(true);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
@@ -406,6 +412,7 @@ export default function Goals() {
 
                   {editingId === g.id ? (
                     <GoalForm
+                      key={g.id}
                       initial={{ name: g.name, target: Number(g.target_monthly), inputs: g.inputs || {} }}
                       submitLabel="Save changes"
                       onSave={(v) => saveEdit(g, v)}

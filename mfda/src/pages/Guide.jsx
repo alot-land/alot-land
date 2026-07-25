@@ -11,11 +11,11 @@ const MANUAL = [
     entries: [
       {
         t: 'What MFDA does',
-        b: 'MFDA finds 2–20 unit multifamily properties (Phoenix and Nashville today), gathers their photos and listing agents automatically, and lets you underwrite any of them in minutes: what the building is worth, how it performs under four financing structures, what it does to your taxes, and the most you can pay while still hitting your return targets. Every analysis is saved forever and can be printed as a branded PDF report.',
+        b: 'MFDA is the whole acquisition loop for 2–20 unit multifamily: rank every US county to pick markets (Markets), scan listings daily with photos and agents captured automatically (On-Market), surface owners before they list with real county data (Off-Market), underwrite any property in minutes — worth, four financing structures, taxes, max allowable offer — and tie every deal to a cash-flow goal with a computed timeline (Goals). Every analysis is saved forever and prints as a branded PDF report. The stack costs $0/month.',
       },
       {
-        t: 'The three tabs',
-        b: 'ON-MARKET is the incoming queue — properties the overnight scan found, browsable as a list or a map. DEALS is your working pipeline — anything you clicked Analyze on. SETTINGS holds your organization, teammate invites, and market presets.',
+        t: 'The tabs, left to right',
+        b: 'MARKETS ranks ~3,000 US counties and adds pockets you like to the scan targets. ON-MARKET is the incoming listing queue (list or map). OFF-MARKET is county assessor parcels — owners, mailing addresses, equity — for direct outreach. DEALS is your working pipeline (plus "+ New deal" to enter any property by hand). GOALS holds your cash-flow targets and strategy timelines. GUIDE is this manual. SETTINGS has your organization, teammate invites, and market presets — the top bar also shows your org (with a switcher if you belong to several), your admin badge, and the dark/light toggle.',
       },
       {
         t: 'The daily rhythm',
@@ -23,7 +23,7 @@ const MANUAL = [
       },
       {
         t: 'Where the data comes from',
-        b: 'Listings and sold comps come from Redfin (scanned daily). Market rents come from Zillow ZORI research data (refreshed monthly, per ZIP). Photos and listing agents come from each listing\'s page. Everything else — rents per unit, expenses — you enter, guided by the reference cards. All of it costs $0/month.',
+        b: 'Listings and sold comps: Redfin, scanned daily. Market rents: Zillow ZORI per ZIP, refreshed monthly. Photos and listing agents: each listing\'s page. Off-market parcels: county assessor records (owner names, mailing addresses, REAL unit counts, appraised values, sale history), auto-imported and refreshed ~monthly. National market rankings: Zillow ZHVI/ZORI + Census ACS + FEMA risk + Census Gazetteer, refreshed ~quarterly. Operating expenses pre-fill with dollar estimates from the unit mix; rents you confirm per unit, guided by the reference cards. All of it costs $0/month.',
       },
     ],
   },
@@ -31,16 +31,16 @@ const MANUAL = [
     section: 'On-Market queue',
     entries: [
       {
-        t: 'Searching and filtering',
-        b: 'Type in the search box to filter by address, city, ZIP, or MLS number — the list narrows as you type. The dropdowns filter by state, unit bucket (2–4 or 5+), and max price. Sort by newest, price, days on market, or year built.',
+        t: 'Searching, filtering, sorting',
+        b: 'Search filters by address, city, ZIP, or MLS number as you type. Dropdowns filter by state, unit bucket (2–4 or 5+), rating (♥/👍/👎/unrated), and screen verdict (Pursue/Consider/Pass/needs data); a number box caps max price. Sorts: newest scan, best screen first, most equity first, price up/down, days on market, year built. The queue loads the newest 500 leads.',
       },
       {
         t: 'List vs Map',
-        b: 'The List/Map toggle shows the same filtered properties either way. On the map, pin colors mean: green = active, gold = pending, blue = coming soon. Click a pin for a card with the photo, price, and an Analyze button.',
+        b: 'The List/Map toggle shows the same filtered properties either way. Map pins: green = active, gold = pending, blue = coming soon, grey = unknown — a legend sits on the map itself. Click a pin for a card with the photo, price, unit bucket, year built, total beds, a Redfin link, and an Analyze button.',
       },
       {
         t: 'What "2–4" and "5+" mean (and why not exact unit counts)',
-        b: 'Redfin only publishes two multifamily size buckets — it never says exactly how many units. A "5+" building could be 5 units or 50. Check the listing (Redfin link on each row) or county records before underwriting; you\'ll enter the real unit mix yourself on the Analyze form. Exact unit counts arrive with county assessor data in Phase 2.',
+        b: 'Redfin only publishes two multifamily size buckets — it never says exactly how many units. A "5+" building could be 5 units or 50. For real unit counts, check the Off-Market page (county assessor data carries them) or the listing itself via the Redfin link; you\'ll enter the real unit mix on the Analyze form.',
       },
       {
         t: '"Beds" is the building total',
@@ -88,8 +88,12 @@ const MANUAL = [
         b: 'MFDA re-computes property tax at YOUR purchase price using the county\'s rate and assessment ratio. The seller\'s current tax bill reflects their old assessed value — buying triggers reassessment, and copying the seller\'s number understates your biggest expense.',
       },
       {
-        t: 'Auto-comps ("Sold comps near this property")',
-        b: 'Inside Valuation comps: picks sold multifamily comps within your chosen radius from the scanned comps store, shows the median price, $/bed, and $/sqft with sample sizes (n=), and one-click fills the valuation inputs. Auto-fill only offers itself with 3+ comps in the sample. Everything it fills stays editable.',
+        t: 'Auto-comps ("Sold comps")',
+        b: 'Inside Valuation comps: sold multifamily comps from the scanned store — filtered by radius when the deal has coordinates (scraped listings do), falling back to STATEWIDE comps when it doesn\'t (off-market promotions and hand-entered deals), honestly labeled as the rougher guide. Median price, $/bed, and $/sqft show with sample sizes (n=); values with 3+ comps AUTO-FILL the empty valuation inputs on load and stay fully editable. Expand "Show nearest/recent" for the individual comps with Redfin links.',
+      },
+      {
+        t: 'Operating expenses fill themselves — in dollars',
+        b: 'Insurance, management, utilities, repairs, and capex reserve pre-fill with ANNUAL DOLLAR estimates computed from your unit count and rents (~$700/unit insurance, ~10% of income management, ~$300/unit utilities and reserves, ~8% of rent repairs). Replace any with real quotes — auto-fill never overwrites something you\'ve entered or saved. Only two fields on the whole form take percentages: property tax rate and vacancy. Everything else is dollars.',
       },
       {
         t: 'Every field has a tooltip',
@@ -155,7 +159,7 @@ const MANUAL = [
     entries: [
       {
         t: 'Deal stages',
-        b: 'Every deal\'s results page has a stage bar: analyzing → pursue → under contract → closed (or passed). The Deals page shows the stage on every row, so the pipeline reads at a glance.',
+        b: 'Every deal\'s results page has a stage bar — analyzing · pursue · under contract · passed · closed — and any stage is one click away. The Deals page shows the stage on every row, so the pipeline reads at a glance.',
       },
       {
         t: 'Under contract',
@@ -163,7 +167,7 @@ const MANUAL = [
       },
       {
         t: 'Committing a deal to a goal',
-        b: 'On any deal\'s results page, "Part of goal" assigns it to one of your active goals, and "Want from this deal / mo" sets your personal target for it — the page instantly tells you whether the underwrite makes that number or falls short, and by how much.',
+        b: 'The tracking card always shows the deal\'s underwritten monthly cash flow first (≈ $X/mo) — no typing needed. "Part of goal" assigns the deal to one of your active goals; enter "Want from this deal / mo" and the line switches to ✓ Makes it / ✗ Falls short with the exact gap.',
       },
       {
         t: 'Goal progress from real deals',
@@ -180,7 +184,7 @@ const MANUAL = [
       },
       {
         t: 'Why STR grosses more but keeps less',
-        b: 'STR revenue = occupied nights × ADR, usually well above rent — but the expense stack bites: turn cleaning (every checkout), platform fees (~3%), and management at 20–25% of revenue vs 8–10% for LTR. The panel builds all of that honestly, and shows nights and turns per year so you can feel the operational load.',
+        b: 'STR revenue = occupied nights × ADR, usually well above rent — but management runs 20–25% of revenue vs 8–10% for LTR, plus platform fees (~3%). Turn cleaning is modeled as a GUEST PASS-THROUGH by default: the cleaning fee you charge per stay offsets what the cleaner charges you, netting to $0 owner expense — lower the fee below your cost on the deal form only if you deliberately absorb part of it. The panel shows nights and turns per year so you can feel the operational load either way.',
       },
       {
         t: 'Permits and the STR tax lane',
@@ -213,6 +217,10 @@ const MANUAL = [
         b: 'Every US county (~3,000) ranked for multifamily investing from free national data: Zillow home values and rents, Census population/taxes/vacancy, and FEMA natural-hazard risk. Pick a lens — Cash flow, Balanced, or Appreciation — and the ranking reorders instantly under the same data.',
       },
       {
+        t: 'Reading the map and county card',
+        b: 'Every county is a circle: color = score under the selected lens (red→gold→green, legend on the map), size = population. Click a circle or a table row for the county card: score, eight metrics (yield, 5-yr appreciation, rent growth, population growth, tax rate, rental vacancy, renter share, FEMA hazard risk), a "thin data" pill when under 85% of metrics are present, and the Add-to-targets button. Filter with the search box, state dropdown, and the min-population box (defaults to 25,000 — tiny counties make noisy statistics; lower it to explore rural markets).',
+      },
+      {
         t: 'How the score works',
         b: 'Each metric becomes a national percentile (direction-aware: high yield helps, high taxes hurt), then the profile\'s weights blend them 0–100. All arithmetic runs in the tested calc engine — the same frozen-math discipline as underwriting. A county missing some data is scored on what it has and flagged "thin data" rather than silently punished.',
       },
@@ -242,8 +250,8 @@ const MANUAL = [
         b: 'County assessor records for multifamily parcels — every duplex-to-apartment building the county knows about, with the owner\'s real name and mailing address. Unlike Redfin data, these have REAL unit counts. Filter down to a target list and export it for a direct-mail campaign.',
       },
       {
-        t: 'Getting parcels in (the import)',
-        b: 'Download the county\'s parcel file (free public records), then run the assessor importer from the repo: node bin/assessor.mjs --source maricopa --file parcels.csv --inspect. Inspect mode writes nothing — it shows how the file\'s columns mapped so you can verify before importing. Drop --inspect to import for real. Tennessee files are per-county, so add --county-fips.',
+        t: 'Getting parcels in — it\'s automatic',
+        b: 'Nothing to do for the built-in lanes: the droplet auto-discovers, downloads, and imports county data (Nashville/Davidson live; Maricopa in progress) whenever the parcels table is empty or more than ~30 days old — no files to handle. For ANY other county, download its assessor file and run the manual importer with --inspect first (it writes nothing, just shows how the columns mapped), then without it to import; ask in the build chat to promote a county you use often into an automatic lane.',
       },
       {
         t: 'Absentee',
@@ -251,7 +259,15 @@ const MANUAL = [
       },
       {
         t: 'Entity-owned',
-        b: 'The owner name looks like an LLC, corporation, or trust. These are investors — the mail copy should talk numbers, not memories. Principal names behind LLCs can be resolved through Secretary of State records (coming next in Phase 2).',
+        b: 'The owner name looks like an LLC, corporation, or trust. These are investors — the mail copy should talk numbers, not memories. Looking up the people behind an LLC via Secretary of State records is on the roadmap (not built yet); until then, the mailing address is the reliable channel.',
+      },
+      {
+        t: 'Filtering the parcel list',
+        b: 'Search matches owner, address, city, or APN as you type — results update live, no search button. Dropdowns: state, county, rating, screen verdict. Number boxes: min/max units and held ≥ years. Checkboxes: Absentee, Entity-owned, 💰 High equity. Sorts: best screen first, most units first, highest value first. One trap worth knowing: "Min units" silently drops apartment parcels whose county file doesn\'t state a unit count — the zero-results card reminds you.',
+      },
+      {
+        t: 'The table shows 200; Export ships everything',
+        b: 'The on-screen table renders the first 200 rows for speed, but Export FreedomSoft CSV and Save-as-mail-list always include ALL filtered matches (the button shows the true count). Above 10,000 matches the server caps out and the page says so — tighten filters for full coverage.',
       },
       {
         t: 'Held ≥ years',
@@ -271,11 +287,11 @@ const MANUAL = [
       },
       {
         t: 'Notes with timestamps',
-        b: 'Every off-market lead and every analyzed deal has a Notes section — each note saves with a timestamp and who wrote it, visible to your whole org. Call outcomes, drive-by impressions, seller conversations. Notes survive data refreshes. Cmd/Ctrl+Enter saves quickly.',
+        b: 'Every off-market lead and every analyzed deal has a Notes section — each note saves with a timestamp and who wrote it, visible to your whole org, deletable with the ✕. Call outcomes, drive-by impressions, seller conversations. Notes survive data refreshes. Cmd/Ctrl+Enter saves quickly.',
       },
       {
         t: 'Street View and the off-market map',
-        b: 'Every lead links to Google Street View (exact position once coordinates arrive with a data refresh; address search until then). The List/Map toggle shows all filtered leads as pins colored by screen verdict — click an address in the list to jump to it on the map, click any pin for the summary card and its report.',
+        b: 'Every lead links to Google Street View (exact position from county coordinates; address search as fallback). The List/Map toggle shows all filtered leads as pins colored by screen verdict — green pursue, gold consider, grey pass, blue needs-data (legend on the map), with ♥-rated parcels drawn bigger. Click an address in the list to jump to it on the map; click any pin for a summary card with Open report and Street View buttons. If pins are missing, the map says coordinates arrive with the next county refresh.',
       },
       {
         t: 'How fresh is the parcel data?',
@@ -287,7 +303,7 @@ const MANUAL = [
       },
       {
         t: 'Saved mail lists',
-        b: 'Save as mail list freezes the current filter results under a name. Re-exporting a saved list always gives the same parcels, even after fresh county imports — so a campaign\'s audience stays auditable. Every export is logged.',
+        b: 'Save as mail list freezes the current filter results under a name. The lists live in a collapsible card at the top of the Off-Market page — expand it for each list\'s parcel count, date, its own Export CSV, and Delete. Re-exporting a saved list always gives the same parcels, even after fresh county imports, so a campaign\'s audience stays auditable; every export is logged, and deleting a list keeps its export history.',
       },
       {
         t: 'Calling hours are enforced by design',
@@ -300,7 +316,7 @@ const MANUAL = [
     entries: [
       {
         t: 'Setting goals (as many as you want)',
-        b: 'Goals → "+ New goal": enter the monthly cash flow you want (say $10,000), your starting cash, and optional monthly savings — the four strategy paths compute live right in the form before you even save. You can run MULTIPLE goals at once, each with its own assumptions and its own committed deals. Goals collapse to a one-line summary with a progress bar; click to expand the full detail. Mark one achieved 🎉 and it moves to the trophy list.',
+        b: 'Goals → "+ New goal": enter the monthly cash flow you want (say $10,000), your starting cash, and optional monthly savings — the four strategy paths compute live right in the form before you even save. You can run MULTIPLE goals at once, each with its own assumptions and committed deals. Collapsed goal cards show the progress bar PLUS four timeline chips — Bank / Seller / BRRRR / Equity with time-to-goal, fastest in green, hover for exact months and deal counts — so you compare goals at a glance without expanding. Mark one achieved 🎉 and it moves to the trophy list.',
       },
       {
         t: 'Editing and duplicating goals',
@@ -324,7 +340,7 @@ const MANUAL = [
       },
       {
         t: 'Finding equity-capture candidates (the 💰 pills)',
-        b: 'On-Market: listings that match a county parcel show a 💰 "under value" pill when asking price sits below the county appraisal — sort by "Most equity first." Off-Market: owners whose county value dwarfs what they paid show a 💰 equity pill — they can sell you a discount or carry financing and still win. Both are appraisal-based signals: verify with comps before counting the equity as real.',
+        b: 'On-Market: listings that match a county parcel show a 💰 "under value" pill when asking sits at least 8% below the county appraisal — sort by "Most equity first." Off-Market: the list pill appears at 50%+ owner equity (county value vs what they paid) and the 💰 High equity checkbox filters to exactly those; the parcel report shows the equity figure whenever it\'s positive. Two honest caveats: the off-market signal needs a recorded sale price (owners with none — often the longest holds with the MOST equity — won\'t show a pill; use Held ≥ years for those), and all of it is appraisal-based — verify with comps before counting the equity as real.',
       },
       {
         t: 'Make the assumptions yours',
@@ -337,7 +353,7 @@ const MANUAL = [
     entries: [
       {
         t: 'The droplet does the work',
-        b: 'A small always-on server runs the schedule: 4:45am code update, 5:15/5:45am scans (Phoenix, Nashville), photos + agent capture every 2 hours from 6am–10pm, the 7am email digest, and a monthly rent refresh. Logs live in /var/log/mfda/ on the droplet.',
+        b: 'A small always-on server runs the schedule: early-morning code update, 5:15/5:45am scans (Phoenix, Nashville), photos + agent capture every 2 hours from 6am–10pm, the 7am email digest, and a monthly rent refresh. The morning scan also chains the Phase 2/3 jobs automatically: county parcel import when the table is empty or >30 days old, national market stats when >90 days old, and scans of any counties you added from the Markets page. Logs live at /var/log/mfda-scan.log, mfda-photos.log, mfda-digest.log, and mfda-rents.log on the droplet.',
       },
       {
         t: 'The morning digest',

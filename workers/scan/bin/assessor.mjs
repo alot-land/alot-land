@@ -28,8 +28,19 @@ function arg(name, dflt) {
 const source = String(arg('source', ''));
 const file = arg('file', null);
 const INSPECT = Boolean(arg('inspect', false));
-const state = arg('state', null);
-const countyFips = arg('county-fips', null);
+// Value flags must be real strings — a bare `--state` (no value) returns
+// boolean true from arg() and would corrupt parcels.state / dedupe keys.
+const str = (v) => (typeof v === 'string' ? v : null);
+const state = str(arg('state', null));
+const countyFips = str(arg('county-fips', null));
+if (state && !/^[A-Za-z]{2}$/.test(state)) {
+  console.error(`--state must be a 2-letter code (got "${state}")`);
+  process.exit(1);
+}
+if (countyFips && !/^\d{5}$/.test(countyFips)) {
+  console.error(`--county-fips must be a 5-digit FIPS code (got "${countyFips}")`);
+  process.exit(1);
+}
 
 const preset = PRESETS[source];
 if (!preset || !file) {
@@ -38,6 +49,12 @@ if (!preset || !file) {
 }
 if (source === 'tn' && !countyFips && !INSPECT) {
   console.error('TN files are per-county — pass --county-fips (e.g. Davidson=47037, Perry=47135).');
+  process.exit(1);
+}
+if (source === 'custom' && !state && !INSPECT) {
+  // parcels.state is NOT NULL — a custom import without --state would fail
+  // the whole upsert chunk with a raw 23502.
+  console.error('--source custom requires --state XX (2-letter state code).');
   process.exit(1);
 }
 

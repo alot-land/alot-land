@@ -46,7 +46,9 @@ export interface SimulateGoalResult {
 export function simulateGoal(inp: SimulateGoalInputs): SimulateGoalResult {
   const maxMonths = inp.max_months ?? 600;
   const refiFrac = inp.refi_cash_back_fraction ?? 0;
-  const refiMonths = inp.refi_months ?? 0;
+  // Clamp to ≥1: a same-month refi would be scheduled for a month already
+  // processed and silently dropped (v1.12.0 fix) — and a refi takes time.
+  const refiMonths = Math.max(1, inp.refi_months ?? 1);
 
   const refiDelta = inp.refi_monthly_cashflow_delta ?? 0;
   let capital = inp.capital_available;

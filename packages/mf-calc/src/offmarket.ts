@@ -26,7 +26,9 @@ export interface ExpenseEstimateRates {
 }
 
 export const DEFAULT_EXPENSE_RATES: ExpenseEstimateRates = {
-  insurance_per_unit: 500,
+  // $700/unit/yr: post-2023-25 insurance repricing reality (national MF
+  // averages ~$600-900+; v1.12.0 — the earlier $500 flattered screening NOI).
+  insurance_per_unit: 700,
   repairs_rate: 0.08,
   management_rate: 0.08,
   utilities_per_unit: 300,
@@ -128,7 +130,9 @@ export function screenParcel(inp: ScreenParcelInputs): ScreenParcelResult {
   const ltv = inp.ltv ?? 0.75;
   const rate = inp.annual_rate ?? 0.075;
   const amort = inp.amort_years ?? 30;
-  const minDscr = inp.min_dscr ?? 1.25;
+  // 1.2 matches the underwriting solvers' floor (v1.12.0 — screening at 1.25
+  // was stricter than the tool it feeds, filtering borderline deals early).
+  const minDscr = inp.min_dscr ?? 1.2;
   const targetCap = inp.target_cap ?? 0.07;
 
   const gpr = units * rent * 12;

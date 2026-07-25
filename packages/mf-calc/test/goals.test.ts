@@ -79,6 +79,24 @@ describe('simulateGoal', () => {
     expect(refi.months_to_goal).toBeLessThan(noRefi.months_to_goal);
   });
 
+  it('same-month refi is clamped to month 1, never silently dropped (v1.12.0)', () => {
+    // Bug: refi_months 0 scheduled the cash-back for a month already
+    // processed and dropped it entirely.
+    const r = simulateGoal({
+      target_monthly_cashflow: 3_000,
+      capital_available: 100_000,
+      monthly_savings: 0,
+      per_deal_cash: 100_000,
+      per_deal_monthly_cashflow: 1_000,
+      refi_cash_back_fraction: 1.0,
+      refi_months: 0,
+    });
+    expect(r.refi_cash_returned).toBeGreaterThan(0);
+    // Full cash-back one month later → buy every month: deals at m0, m1, m2.
+    expect(r.months_to_goal).toBe(2);
+    expect(r.deals_needed).toBe(3);
+  });
+
   it('reports not-reached instead of looping forever on impossible goals', () => {
     const r = simulateGoal({
       target_monthly_cashflow: 50_000,

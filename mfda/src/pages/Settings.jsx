@@ -119,7 +119,7 @@ export default function Settings() {
               <tr key={m.id}>
                 <td className="td">{m.name}</td>
                 <td className="td">{m.str_permit_status}</td>
-                <td className="td">{(m.property_tax_rate * 100).toFixed(2)}%</td>
+                <td className="td">{m.property_tax_rate != null ? `${(m.property_tax_rate * 100).toFixed(2)}%` : '—'}</td>
                 <td className="td">{(m.appreciation_rate * 100).toFixed(1)}%</td>
               </tr>
             ))}

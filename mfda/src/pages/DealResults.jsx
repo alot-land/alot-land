@@ -111,12 +111,17 @@ export default function DealResults() {
           <StrPanel out={out} inputs={scen.inputs} />
           <TaxPanel out={out} />
           <ProvenanceTable inputs={scen.inputs} />
-          <NotesCard entityType="deal" entityId={id} />
-          <p className="text-xs text-muted pb-8">
-            Estimates only — not an offer. Verify tax positions with a CPA and legal/title matters with an attorney.
-            Computed by mf-calc v{out.calc_version}. Scenario snapshot is immutable.
-          </p>
         </>
+      )}
+
+      {/* Notes live on the deal, not the scenario — always reachable. */}
+      <NotesCard entityType="deal" entityId={id} />
+
+      {out && (
+        <p className="text-xs text-muted pb-8">
+          Estimates only — not an offer. Verify tax positions with a CPA and legal/title matters with an attorney.
+          Computed by mf-calc v{out.calc_version}. Scenario snapshot is immutable.
+        </p>
       )}
     </div>
   );

@@ -3,7 +3,7 @@
  * 👎 something's off. Clicking the active icon clears it. Org-shared.
  */
 const OPTIONS = [
-  ['heart', '♥', 'text-[#C0392B]', 'Strong — contact first'],
+  ['heart', '♥', 'text-danger', 'Strong — contact first'],
   ['up', '👍', 'text-green-deep', 'Has potential'],
   ['down', '👎', 'text-muted', "Don't like it"],
 ];

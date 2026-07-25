@@ -269,6 +269,10 @@ export function underwrite(dealInput) {
     selling_costs: dscrLoan.exit_value * d.selling_cost_rate,
     purchase_price: d.price,
     accumulated_depreciation: accumDep,
+    // Cost-seg bonus depreciation is §1245 personal property — recaptured at
+    // ordinary rates, not the 25% §1250 cap (calc v1.12.0).
+    section1245_depreciation: dep.first_year_bonus,
+    ordinary_rate: d.tax.marginal_rate,
     recapture_rate: d.tax.recapture_rate,
     ltcg_rate: d.tax.ltcg_rate,
   });

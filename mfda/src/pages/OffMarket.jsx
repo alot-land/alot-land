@@ -1,7 +1,7 @@
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { lazyReload } from '../lib/lazyReload';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useOrg } from '../lib/org';
 import { useAuth } from '../lib/auth';
 import {
@@ -81,7 +81,9 @@ export default function OffMarket() {
     queryKey: ['parcels', org?.id, filters],
     queryFn: () => listParcels(org.id, filters),
     enabled: !!org,
-    keepPreviousData: true,
+    // v5 API: keeps the previous page rendered while a filter change refetches
+    // (the v4 `keepPreviousData: true` option is silently ignored in v5).
+    placeholderData: keepPreviousData,
   });
   const counties = useQuery({
     queryKey: ['parcel-counties', org?.id],
@@ -130,6 +132,15 @@ export default function OffMarket() {
     return [...scored].sort(by[sort] || by.screen);
   }, [parcels.data, zipRents, markets.data, sort, verdictFilter, highEquity]);
   const total = parcels.data?.count ?? 0;
+  const anyFilterActive =
+    Boolean(search.trim()) || state !== 'all' || county !== 'all' || absentee || entity ||
+    Boolean(minUnits) || Boolean(maxUnits) || Boolean(heldYears) || highEquity ||
+    ratingFilter !== 'all' || verdictFilter !== 'all';
+
+  // Stable handlers so the map's marker effect doesn't rebuild (and reset
+  // pan/zoom) on every unrelated parent render.
+  const mapSelect = useCallback((p) => setMapSelectedId(p?.id ?? null), []);
+  const mapOpen = useCallback((p) => nav(`/off-market/${p.id}`), [nav]);
 
   async function rate(p, rating) {
     qc.setQueryData(['parcels', org.id, filters], (old) =>
@@ -221,7 +232,9 @@ export default function OffMarket() {
           >
             <span className="text-muted">{listsOpen ? '▾' : '▸'}</span>
             Saved mail lists ({lists.data.length})
-            <Tip text="Frozen snapshots of parcels at save time — re-exporting a saved list gives the same rows even after new imports. Exports are logged for campaign history." />
+            <span onClick={(e) => e.stopPropagation()}>
+              <Tip text="Frozen snapshots of parcels at save time — re-exporting a saved list gives the same rows even after new imports. Exports are logged for campaign history." />
+            </span>
           </button>
           {listsOpen && (
             <table className="w-full text-sm border-t border-border">
@@ -356,25 +369,27 @@ export default function OffMarket() {
       {parcels.isLoading && <div className="text-muted">Loading…</div>}
       {parcels.error && <div className="text-danger text-sm">{String(parcels.error.message)}</div>}
 
-      {parcels.data && total === 0 && (search || state !== 'all' || absentee || entity || minUnits || maxUnits || heldYears) && (
-        <div className="card p-8 text-center">
-          <p className="font-medium">0 parcels match these filters</p>
+      {/* Empty states gate on the RENDERED rows (which include the
+          client-side verdict/equity filters), never the raw server count. */}
+      {parcels.data && rows.length === 0 && !anyFilterActive && total === 0 && (
+        <div className="card p-10 text-center">
+          <p className="font-medium">No parcels imported yet</p>
           <p className="text-muted text-sm mt-2 max-w-lg mx-auto">
-            Loosen one filter at a time to see which is excluding everything. Two common causes:
-            “Min units” drops apartment parcels whose county file doesn’t state a unit count, and
-            “Held ≥ years” drops parcels whose file lacks a sale date.
+            The droplet imports county data automatically with the next morning scan. To load now,
+            run <code className="text-xs">node bin/parcels.mjs</code> from{' '}
+            <code className="text-xs">workers/scan</code> on a machine with the scanner env.
           </p>
         </div>
       )}
 
-      {parcels.data && total === 0 && !search && state === 'all' && !absentee && !entity && !minUnits && (
-        <div className="card p-10 text-center">
-          <p className="font-medium">No parcels imported yet</p>
+      {parcels.data && rows.length === 0 && (anyFilterActive || total > 0) && (
+        <div className="card p-8 text-center">
+          <p className="font-medium">0 parcels match these filters</p>
           <p className="text-muted text-sm mt-2 max-w-lg mx-auto">
-            Download a county assessor file, then from the repo run{' '}
-            <code className="text-xs">cd workers/scan && node bin/assessor.mjs --source maricopa --file parcels.csv --inspect</code>{' '}
-            to check the column mapping, and re-run without <code className="text-xs">--inspect</code> to import.
-            See <code className="text-xs">workers/scan/README.md</code> § Off-market imports.
+            Loosen one filter at a time to see which is excluding everything. Common causes:
+            “Min units” drops apartment parcels whose county file doesn’t state a unit count,
+            “Held ≥ years” drops parcels without a recorded sale date, and “💰 High equity” needs a
+            recorded sale price.
           </p>
         </div>
       )}
@@ -384,8 +399,8 @@ export default function OffMarket() {
           <OffMarketMap
             rows={rows}
             selected={rows.find((p) => p.id === mapSelectedId) || null}
-            onSelect={(p) => setMapSelectedId(p?.id ?? null)}
-            onOpen={(p) => nav(`/off-market/${p.id}`)}
+            onSelect={mapSelect}
+            onOpen={mapOpen}
           />
         </Suspense>
       )}

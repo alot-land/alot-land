@@ -13,13 +13,15 @@ math — the *only* place arithmetic is allowed to live in the product.
 
 ## Status
 
-- **CALC_VERSION `1.11.0`** (see `src/types.ts` — always the source of truth)
-- **212 tests** across 15 suites, including **two fully hand-verified
+- **CALC_VERSION `1.12.0`** (see `src/types.ts` — always the source of truth)
+- **217 tests** across 15 suites, including **two fully hand-verified
   reference deals** (`test/referenceDeals.test.ts`).
 - Version history: 1.1 comps/$-per-bed · 1.2 proforma · 1.3 US market scoring ·
   1.4 off-market parcel screening · 1.5–1.8 goal planner (snowball sim, goal
   progress, equity capture, discounted-entry cash flows) · 1.9–1.11 LTR-vs-STR
-  (ADR suggestion, cleaning pass-through).
+  (ADR suggestion, cleaning pass-through) · 1.12 audit round: §1245 vs §1250
+  recapture split at exit, refi-month clamp in the goal sim, $700/unit
+  insurance default, 1.2 screen DSCR aligned with the solver.
 
 ```bash
 cd packages/mf-calc

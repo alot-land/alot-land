@@ -67,17 +67,17 @@ describe('screenParcel', () => {
 
   it('computes GPR, NOI, and cap rate on the anchor exactly', () => {
     expect(strong.gpr).toBeCloseTo(67_200, 6);
-    // EGI 63,840 − (est opex 14,883.2 + tax 400,000×1% = 4,000) = 44,956.8
-    expect(strong.opex).toBeCloseTo(18_883.2, 4);
-    expect(strong.noi).toBeCloseTo(44_956.8, 4);
-    expect(strong.cap_rate).toBeCloseTo(44_956.8 / 400_000, 8);
+    // EGI 63,840 − (est opex 15,683.2 [$700/unit insurance] + tax 400,000×1% = 4,000) = 44,156.8
+    expect(strong.opex).toBeCloseTo(19_683.2, 4);
+    expect(strong.noi).toBeCloseTo(44_156.8, 4);
+    expect(strong.cap_rate).toBeCloseTo(44_156.8 / 400_000, 8);
   });
 
   it('computes DSCR against the default 75% LTV loan', () => {
     const debt = annualDebtService(300_000, 0.075, 30);
     expect(strong.annual_debt_service).toBeCloseTo(debt, 6);
-    expect(strong.dscr).toBeCloseTo(44_956.8 / debt, 6);
-    expect(strong.cash_flow).toBeCloseTo(44_956.8 - debt, 4);
+    expect(strong.dscr).toBeCloseTo(44_156.8 / debt, 6);
+    expect(strong.cash_flow).toBeCloseTo(44_156.8 - debt, 4);
   });
 
   it('strong economics → pursue', () => {
@@ -93,10 +93,11 @@ describe('screenParcel', () => {
   });
 
   it('borderline economics → consider', () => {
-    // Find a price where dscr is between 90% and 100% of the 1.25 bar.
+    // Find a price where dscr is between 90% and 100% of the 1.2 bar
+    // (the bar matches the underwriting solvers' floor as of v1.12.0).
     const mid = screenParcel({ units: 4, market_rent_monthly: 1_400, price_anchor: 572_000 });
-    expect(mid.dscr).toBeGreaterThan(1.25 * 0.9);
-    expect(mid.dscr).toBeLessThan(1.25);
+    expect(mid.dscr).toBeGreaterThan(1.2 * 0.9);
+    expect(mid.dscr).toBeLessThan(1.2);
     expect(mid.verdict).toBe('consider');
   });
 

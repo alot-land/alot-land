@@ -31,7 +31,7 @@ const VERDICT_STYLES = {
 };
 const VERDICT_RANK = { pursue: 0, consider: 1, pass: 2, insufficient: 3 };
 
-// maplibre is heavy — load it only when the map view is opened.
+// Leaflet map is only needed when the map view is opened — keep it lazy.
 const ListingsMap = lazyReload(() => import('../components/ListingsMap'));
 
 const LSTATUS = {
@@ -101,7 +101,7 @@ export default function OnMarket() {
     }
     if (state !== 'all') r = r.filter((d) => d.state === state);
     if (bucket !== 'all') r = r.filter((d) => d.unit_bucket === bucket);
-    if (maxPrice) r = r.filter((d) => Number(d.price) <= Number(maxPrice));
+    if (maxPrice) r = r.filter((d) => d.price != null && Number(d.price) <= Number(maxPrice));
     const by = {
       newest: (a, b) => new Date(b.scanned_at || 0) - new Date(a.scanned_at || 0),
       screen: (a, b) =>
@@ -313,7 +313,7 @@ export default function OnMarket() {
                   <td className="td">
                     <span className="pill bg-surface-2 text-ink-2">{d.unit_bucket} units</span>
                   </td>
-                  <td className="td text-right font-medium">{usd(Number(d.price))}</td>
+                  <td className="td text-right font-medium">{d.price != null ? usd(Number(d.price)) : '—'}</td>
                   <td className="td text-right">{d.beds_total ?? '—'}</td>
                   <td className="td text-right">{d.year_built ?? '—'}</td>
                   <td className="td text-right">{d.days_on_market ?? '—'}</td>

@@ -101,7 +101,7 @@ export default function Deals() {
                   </td>
                   <td className="td text-ink-2">{[d.city, d.state].filter(Boolean).join(', ') || '—'}</td>
                   <td className="td text-right">{d.units_count ?? '—'}</td>
-                  <td className="td text-right">{usd(Number(d.price))}</td>
+                  <td className="td text-right">{d.price != null ? usd(Number(d.price)) : '—'}</td>
                   <td className="td">
                     <span className={`pill ${STATUS_STYLES[d.status] || 'bg-surface-2'}`}>{d.status}</span>
                   </td>

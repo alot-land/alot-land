@@ -1,4 +1,64 @@
 import { describe, it, expect } from 'vitest';
+import { exitTax as exitTaxSplit } from '../src/index.js';
+
+describe('exitTax §1245/§1250 split (v1.12.0)', () => {
+  // $1M buy, $200k land, 30% cost-seg 100%-bonused → $240k §1245.
+  // Hold accumulates another $110k straight-line §1250. Sell high enough
+  // that the full depreciation recaptures.
+  const r = exitTaxSplit({
+    sale_price: 1_400_000,
+    selling_costs: 0,
+    purchase_price: 1_000_000,
+    accumulated_depreciation: 350_000,
+    section1245_depreciation: 240_000,
+    ordinary_rate: 0.37,
+    recapture_rate: 0.25,
+    ltcg_rate: 0.2,
+  });
+
+  it('taxes the cost-seg slice at ordinary rates and straight-line at 25%', () => {
+    expect(r.recapture_portion).toBe(350_000);
+    expect(r.recapture_1245_portion).toBe(240_000);
+    expect(r.recapture_1250_portion).toBe(110_000);
+    expect(r.recapture_tax).toBeCloseTo(240_000 * 0.37 + 110_000 * 0.25, 6); // 116,300
+  });
+
+  it('capital gain on the appreciation above original basis at LTCG', () => {
+    // gain 750k − recapture 350k = 400k appreciation
+    expect(r.capital_gain_portion).toBe(400_000);
+    expect(r.capital_gains_tax).toBeCloseTo(80_000, 6);
+    expect(r.total_exit_tax).toBeCloseTo(196_300, 6);
+  });
+
+  it('without a §1245 amount the legacy 25%-only behavior is unchanged', () => {
+    const legacy = exitTaxSplit({
+      sale_price: 1_400_000,
+      selling_costs: 0,
+      purchase_price: 1_000_000,
+      accumulated_depreciation: 350_000,
+      recapture_rate: 0.25,
+      ltcg_rate: 0.2,
+    });
+    expect(legacy.recapture_tax).toBeCloseTo(350_000 * 0.25, 6);
+    expect(legacy.recapture_1245_portion).toBe(0);
+  });
+
+  it('modest sale: full recapture still splits, small appreciation remains', () => {
+    const thin = exitTaxSplit({
+      sale_price: 1_050_000,
+      selling_costs: 0,
+      purchase_price: 1_000_000,
+      accumulated_depreciation: 350_000,
+      section1245_depreciation: 240_000,
+      ordinary_rate: 0.37,
+    });
+    // gain = 1.05M − 650k basis = 400k → recapture 350k (240k @37% + 110k @25%),
+    // appreciation 50k at LTCG.
+    expect(thin.recapture_1245_portion).toBe(240_000);
+    expect(thin.recapture_1250_portion).toBe(110_000);
+    expect(thin.capital_gain_portion).toBe(50_000);
+  });
+});
 import {
   depreciation,
   taxYear,

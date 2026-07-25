@@ -87,7 +87,10 @@ export function streetViewUrl(p) {
 
 /** Market preset (markets table row) for a parcel's state, if any. */
 export function presetForState(markets, state) {
-  return (markets || []).find((m) => m.state === state) || null;
+  const rows = (markets || []).filter((m) => m.state === state);
+  // Prefer hand-seeded presets (real tax rates / assessment ratios) over rows
+  // auto-created by the market finder, which carry engine defaults.
+  return rows.find((m) => m.source !== 'finder') || rows[0] || null;
 }
 
 /** Fast screen for list rows. Pure mf-calc; ~µs per parcel. */

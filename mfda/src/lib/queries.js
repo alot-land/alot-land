@@ -193,20 +193,40 @@ export async function upsertDeal(orgId, userId, deal) {
     notes: deal.notes || null,
   };
   if (deal.id) {
-    // On edit, an unspecified source means "keep what's there" (protects the
-    // redfin provenance on scraped deals).
+    // On edit, unspecified source/notes mean "keep what's there" (protects
+    // redfin provenance and the off-market owner details written into notes —
+    // the form doesn't carry notes, so writing null would erase them).
     if (deal.source === undefined) delete row.source;
+    if (deal.notes === undefined) delete row.notes;
     const { data, error } = await supabase.from('deals').update(row).eq('id', deal.id).select().single();
-    if (error) throw error;
+    if (error) throw friendlyDedupeError(error);
     return data;
+  }
+  // Deals are unique per property (org_id + dedupe_key). A manual entry can
+  // collide with an existing scraped lead — surface that clearly instead of
+  // a raw Postgres 23505.
+  const existing = await findDealByDedupeKey(orgId, row.dedupe_key);
+  if (existing) {
+    const e = new Error(
+      'A deal for this property already exists in your pipeline (same address/APN) — open it from the Deals or On-Market page instead of creating a duplicate.',
+    );
+    e.existingDealId = existing.id;
+    throw e;
   }
   const { data, error } = await supabase
     .from('deals')
     .insert({ ...row, created_by: userId })
     .select()
     .single();
-  if (error) throw error;
+  if (error) throw friendlyDedupeError(error);
   return data;
+}
+
+function friendlyDedupeError(error) {
+  if (error?.code === '23505') {
+    return new Error('Another deal already uses this address/APN — each property can have only one deal.');
+  }
+  return error;
 }
 
 // ---- Units ----------------------------------------------------------------

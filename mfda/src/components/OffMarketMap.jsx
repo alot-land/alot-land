@@ -47,6 +47,8 @@ export default function OffMarketMap({ rows, selected, onSelect, onOpen }) {
     };
   }, []);
 
+  const fitSigRef = useRef(null);
+  const lastSelectedRef = useRef(null);
   useEffect(() => {
     const map = mapRef.current;
     const layer = layerRef.current;
@@ -63,15 +65,21 @@ export default function OffMarketMap({ rows, selected, onSelect, onOpen }) {
         .on('click', () => onSelect(p))
         .addTo(layer);
     }
-    if (selected && selected.lat != null) {
+    // Only re-center when something meaningful changed — never reset the
+    // user's pan/zoom because a parent re-rendered.
+    const sig = pts.map((p) => p.id).join(',');
+    const selChanged = (selected?.id ?? null) !== lastSelectedRef.current;
+    lastSelectedRef.current = selected?.id ?? null;
+    if (selected && selected.lat != null && selChanged) {
       map.setView([selected.lat, selected.lng], Math.max(map.getZoom(), 15), { animate: false });
-    } else {
+    } else if (!selected && sig !== fitSigRef.current) {
       map.fitBounds(L.latLngBounds(pts.map((p) => [p.lat, p.lng])), {
         padding: [50, 50],
         maxZoom: 14,
         animate: false,
       });
     }
+    fitSigRef.current = sig;
   }, [rows, selected, onSelect]);
 
   const noCoords = rows.length > 0 && rows.every((p) => p.lat == null || p.lng == null);

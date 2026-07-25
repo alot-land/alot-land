@@ -138,7 +138,14 @@ export interface ExitTaxInput {
   purchase_price: number;
   /** Total depreciation taken over the hold. */
   accumulated_depreciation: number;
-  /** Unrecaptured §1250 rate (depreciation recapture). Default 0.25. */
+  /** Portion of accumulated depreciation that is §1245 personal property
+   * (the cost-seg reclass, typically 100%-bonused). Recaptured at ORDINARY
+   * rates, not the 25% §1250 cap — v1.12.0; earlier versions understated
+   * exit tax on cost-seg deals by taxing everything at 25%. Default 0. */
+  section1245_depreciation?: number;
+  /** Ordinary income rate applied to §1245 recapture. Default 0.37. */
+  ordinary_rate?: number;
+  /** Unrecaptured §1250 rate (straight-line real property). Default 0.25. */
   recapture_rate?: number;
   /** Long-term capital gains rate on appreciation. Default 0.20. */
   ltcg_rate?: number;
@@ -148,6 +155,10 @@ export interface ExitTaxResult {
   adjusted_basis: number;
   total_gain: number;
   recapture_portion: number;
+  /** §1245 slice of the recapture, taxed at ordinary rates. */
+  recapture_1245_portion: number;
+  /** §1250 slice of the recapture, taxed at the 25% cap. */
+  recapture_1250_portion: number;
   capital_gain_portion: number;
   recapture_tax: number;
   capital_gains_tax: number;
@@ -156,19 +167,27 @@ export interface ExitTaxResult {
 
 export function exitTax(inp: ExitTaxInput): ExitTaxResult {
   const recRate = inp.recapture_rate ?? 0.25;
+  const ordRate = inp.ordinary_rate ?? 0.37;
   const ltcgRate = inp.ltcg_rate ?? 0.2;
+  const s1245 = Math.min(inp.section1245_depreciation ?? 0, inp.accumulated_depreciation);
   const netProceeds = inp.sale_price - inp.selling_costs;
   const adjustedBasis = inp.purchase_price - inp.accumulated_depreciation;
   const totalGain = Math.max(0, netProceeds - adjustedBasis);
   // Recapture applies to the portion of gain up to accumulated depreciation.
+  // §1245 (cost-seg personal property) recaptures first, at ordinary rates;
+  // the remaining straight-line §1250 slice at the 25% cap.
   const recapturePortion = Math.min(totalGain, inp.accumulated_depreciation);
+  const rec1245 = Math.min(recapturePortion, s1245);
+  const rec1250 = recapturePortion - rec1245;
   const capitalGainPortion = totalGain - recapturePortion;
-  const recaptureTax = recapturePortion * recRate;
+  const recaptureTax = rec1245 * ordRate + rec1250 * recRate;
   const capitalGainsTax = capitalGainPortion * ltcgRate;
   return {
     adjusted_basis: adjustedBasis,
     total_gain: totalGain,
     recapture_portion: recapturePortion,
+    recapture_1245_portion: rec1245,
+    recapture_1250_portion: rec1250,
     capital_gain_portion: capitalGainPortion,
     recapture_tax: recaptureTax,
     capital_gains_tax: capitalGainsTax,

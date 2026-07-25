@@ -29,7 +29,7 @@ export default function HeartButton({ deal, className = '', size = 'text-lg' }) 
       aria-label={deal.favorite ? 'Remove heart' : 'Heart this deal'}
       title={deal.favorite ? 'Remove heart' : 'Heart this deal'}
       className={`${size} leading-none transition-transform hover:scale-110 ${
-        deal.favorite ? 'text-[#C0392B]' : 'text-muted hover:text-[#C0392B]'
+        deal.favorite ? 'text-danger' : 'text-muted hover:text-danger'
       } ${className}`}
     >
       {deal.favorite ? '♥' : '♡'}
