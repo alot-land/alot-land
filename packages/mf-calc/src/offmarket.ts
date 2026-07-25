@@ -11,6 +11,7 @@
 import { annualDebtService, noi as noiOf, effectiveGrossIncome, capRate, dscr as dscrOf } from './finance.js';
 import { reassessedPropertyTax } from './property.js';
 import { emptyExpenses, totalOperatingExpenses, type ExpenseInputs } from './types.js';
+import { checkPlausibility, type PlausibilityFlag } from './plausibility.js';
 
 export interface ExpenseEstimateRates {
   /** $/unit/yr hazard insurance allowance. */
@@ -77,9 +78,11 @@ export interface ScreenParcelInputs {
   min_dscr?: number;
   target_cap?: number;
   expense_rates?: Partial<ExpenseEstimateRates>;
+  /** Override the absurd-input bounds (see plausibility.ts). */
+  plausibility?: Partial<import('./plausibility.js').PlausibilityThresholds>;
 }
 
-export type ScreenVerdict = 'pursue' | 'consider' | 'pass' | 'insufficient';
+export type ScreenVerdict = 'pursue' | 'consider' | 'pass' | 'insufficient' | 'implausible';
 
 export interface ScreenParcelResult {
   ok: boolean;
@@ -94,9 +97,12 @@ export interface ScreenParcelResult {
   dscr: number | null;
   cash_flow: number | null;
   verdict: ScreenVerdict;
+  /** False when the inputs cannot describe a real building — see flags. */
+  plausible: boolean;
+  flags: PlausibilityFlag[];
 }
 
-const EMPTY: Omit<ScreenParcelResult, 'ok' | 'missing' | 'verdict'> = {
+const EMPTY: Omit<ScreenParcelResult, 'ok' | 'missing' | 'verdict' | 'plausible' | 'flags'> = {
   gpr: null,
   egi: null,
   expenses: emptyExpenses(),
@@ -119,7 +125,8 @@ export function screenParcel(inp: ScreenParcelInputs): ScreenParcelResult {
   if (!(inp.units != null && inp.units > 0)) missing.push('units');
   if (!(inp.market_rent_monthly != null && inp.market_rent_monthly > 0)) missing.push('market_rent_monthly');
   if (!(inp.price_anchor != null && inp.price_anchor > 0)) missing.push('price_anchor');
-  if (missing.length) return { ...EMPTY, ok: false, missing, verdict: 'insufficient' };
+  // Missing beats absurd: an absent input is a data gap, not a false claim.
+  if (missing.length) return { ...EMPTY, ok: false, missing, verdict: 'insufficient', plausible: true, flags: [] };
 
   const units = inp.units as number;
   const rent = inp.market_rent_monthly as number;
@@ -162,6 +169,19 @@ export function screenParcel(inp: ScreenParcelInputs): ScreenParcelResult {
   if (dscrValue >= minDscr && cap >= targetCap) verdict = 'pursue';
   else if (dscrValue >= minDscr * 0.9 && cap >= targetCap * 0.85) verdict = 'consider';
 
+  // A verdict on inputs that cannot describe a real building is worse than no
+  // verdict — it is a recommendation. Withhold it and say why instead. The
+  // arithmetic below is still returned so the operator can see WHAT looks
+  // wrong rather than being told only that something is.
+  const plaus = checkPlausibility({
+    units,
+    price: anchor,
+    rent_per_unit: rent,
+    cap_rate: cap,
+    thresholds: inp.plausibility,
+  });
+  if (!plaus.ok) verdict = 'implausible';
+
   return {
     ok: true,
     missing: [],
@@ -175,5 +195,7 @@ export function screenParcel(inp: ScreenParcelInputs): ScreenParcelResult {
     dscr: dscrValue,
     cash_flow: cashFlow,
     verdict,
+    plausible: plaus.ok,
+    flags: plaus.flags,
   };
 }

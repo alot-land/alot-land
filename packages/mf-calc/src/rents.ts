@@ -158,7 +158,9 @@ export function pickRent(candidates: RentCandidate[]): PickedRent | null {
     return i < 0 ? RENT_SOURCE_ORDER.length : i;
   };
   const sorted = [...usable].sort((a, b) => rank(a) - rank(b));
-  const [best, ...rest] = sorted;
+  const best = sorted[0];
+  if (!best) return null; // unreachable — `usable` is non-empty — but typed honestly
+  const rest = sorted.slice(1);
   return {
     rent: Number(best.rent),
     source: best.source,

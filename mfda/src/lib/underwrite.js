@@ -377,5 +377,15 @@ export function underwrite(dealInput) {
     score,
     primary_value: primaryValue,
     value_spread: valueSpread,
+    // Do the inputs describe a real building at all? Scoring answers "is this
+    // a good deal", which is a meaningless question when the price is a
+    // land-only assessment or the unit count is a county range read as its low
+    // end. The results page suppresses the verdict when this fails.
+    plausibility: mf.checkPlausibility({
+      units: unitsTotal,
+      price: d.price,
+      rent_per_unit: unitsTotal > 0 ? gprMarket / unitsTotal / 12 : null,
+      cap_rate: capOnPrice,
+    }),
   };
 }

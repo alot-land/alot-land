@@ -1,6 +1,6 @@
 {
   "name": "@alot/mf-calc",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "description": "MFDA multifamily underwriting calc engine. Pure TypeScript financial math — frozen once green. LLMs never do arithmetic; this module is the only place financial calculations live.",
   "type": "module",
   "main": "./src/index.ts",

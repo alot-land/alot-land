@@ -28,8 +28,11 @@ const VERDICT_STYLES = {
   pursue: 'bg-green/15 text-green-deep',
   consider: 'bg-gold/20 text-warn',
   pass: 'bg-surface-2 text-muted',
+  // Not a grade — a refusal to grade. Amber so it reads as "look at this".
+  implausible: 'bg-gold/20 text-warn',
 };
-const VERDICT_RANK = { pursue: 0, consider: 1, pass: 2, insufficient: 3 };
+// Implausible sorts beside 'needs data': both mean the row cannot be judged.
+const VERDICT_RANK = { pursue: 0, consider: 1, pass: 2, implausible: 3, insufficient: 4 };
 
 // Friendly names for the counties we actually target; anything else shows FIPS.
 const COUNTY_NAMES = {
@@ -337,6 +340,7 @@ export default function OffMarket() {
           <option value="consider">Consider only</option>
           <option value="pass">Pass only</option>
           <option value="insufficient">Needs data</option>
+          <option value="implausible">Check inputs</option>
         </select>
         <div className="ml-auto flex rounded-lg border border-border overflow-hidden">
           {['list', 'map'].map((v) => (
@@ -478,6 +482,13 @@ export default function OffMarket() {
                     {p.screen.verdict === 'insufficient' ? (
                       <span className="pill bg-surface-2 text-muted" title={`missing: ${p.screen.missing.join(', ')}`}>
                         needs data
+                      </span>
+                    ) : p.screen.verdict === 'implausible' ? (
+                      <span
+                        className={`pill ${VERDICT_STYLES.implausible}`}
+                        title={p.screen.flags.map((f) => f.message).join('\n\n')}
+                      >
+                        check inputs
                       </span>
                     ) : (
                       <span className={`pill ${VERDICT_STYLES[p.screen.verdict]} capitalize`}>{p.screen.verdict}</span>

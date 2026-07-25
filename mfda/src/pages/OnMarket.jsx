@@ -29,8 +29,11 @@ const VERDICT_STYLES = {
   pursue: 'bg-green/15 text-green-deep',
   consider: 'bg-gold/20 text-warn',
   pass: 'bg-surface-2 text-muted',
+  // Not a grade — a refusal to grade. Amber so it reads as "look at this".
+  implausible: 'bg-gold/20 text-warn',
 };
-const VERDICT_RANK = { pursue: 0, consider: 1, pass: 2, insufficient: 3 };
+// Implausible sorts beside 'needs data': both mean the row cannot be judged.
+const VERDICT_RANK = { pursue: 0, consider: 1, pass: 2, implausible: 3, insufficient: 4 };
 
 // Leaflet map is only needed when the map view is opened — keep it lazy.
 const ListingsMap = lazyReload(() => import('../components/ListingsMap'));
@@ -207,6 +210,7 @@ export default function OnMarket() {
           <option value="consider">Consider only</option>
           <option value="pass">Pass only</option>
           <option value="insufficient">Needs data</option>
+          <option value="implausible">Check inputs</option>
         </select>
         <select className="input w-auto" value={sort} onChange={(e) => setSort(e.target.value)}>
           <option value="newest">Newest scan</option>
@@ -309,6 +313,13 @@ export default function OnMarket() {
                     {d.screen.verdict === 'insufficient' ? (
                       <span className="pill bg-surface-2 text-muted" title={`missing: ${d.screen.missing.join(', ')}`}>
                         needs data
+                      </span>
+                    ) : d.screen.verdict === 'implausible' ? (
+                      <span
+                        className={`pill ${VERDICT_STYLES.implausible}`}
+                        title={d.screen.flags.map((f) => f.message).join('\n\n')}
+                      >
+                        check inputs
                       </span>
                     ) : (
                       <span

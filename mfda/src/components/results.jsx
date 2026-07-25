@@ -13,18 +13,41 @@ const METHOD_LABELS = {
 
 export function SummaryVerdict({ out, price }) {
   const s = out.score;
-  const pursue = s.pursue;
+  // A verdict computed from inputs that cannot describe a real building is a
+  // recommendation, not a calculation — withhold it and say what looks wrong.
+  // (Scenarios saved before v1.14.0 have no plausibility block; treat those as
+  // unchecked rather than implausible.)
+  const implausible = out.plausibility && out.plausibility.ok === false;
+  const pursue = s.pursue && !implausible;
   return (
-    <div className={`card p-6 ${pursue ? 'ring-1 ring-green/40' : ''}`}>
+    <div className={`card p-6 ${implausible ? 'ring-1 ring-warn/50' : pursue ? 'ring-1 ring-green/40' : ''}`}>
+      {implausible && (
+        <div className="mb-4 rounded-lg border border-warn/40 bg-gold/10 p-3">
+          <div className="font-medium text-warn">Inputs don’t describe a real building — verdict withheld</div>
+          <ul className="mt-1 space-y-1 text-sm text-ink-2 list-disc list-inside">
+            {out.plausibility.flags.map((f) => (
+              <li key={f.code}>{f.message}</li>
+            ))}
+          </ul>
+          <div className="text-xs text-muted mt-2">
+            The figures below are still the honest arithmetic on what was entered — they show you WHAT is
+            wrong. Fix the unit count or the price and re-run.
+          </div>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-6">
         <div>
-          <div className="label">Verdict<Tip text="One-glance answer: the composite score vs your buy-box, plus the headline numbers. PURSUE means it cleared your threshold — worth real diligence and a call to the agent. Max offer (green) is the highest price that still hits your targets." /></div>
+          <div className="label">Verdict<Tip text="One-glance answer: the composite score vs your buy-box, plus the headline numbers. PURSUE means it cleared your threshold — worth real diligence and a call to the agent. Max offer (green) is the highest price that still hits your targets. If the inputs can't describe a real building — a land-only price anchor, or a unit count that is really a county range — the verdict is withheld entirely rather than scored." /></div>
           <div className="flex items-center gap-2">
-            <span className={`pill ${pursue ? 'bg-green/15 text-green-deep' : 'bg-surface-2 text-muted'}`}>
-              {pursue ? 'PURSUE' : 'below threshold'}
+            <span className={`pill ${implausible ? 'bg-gold/20 text-warn' : pursue ? 'bg-green/15 text-green-deep' : 'bg-surface-2 text-muted'}`}>
+              {implausible ? 'CHECK INPUTS' : pursue ? 'PURSUE' : 'below threshold'}
             </span>
-            <span className="stat">{Math.round(s.score)}</span>
-            <span className="text-muted text-sm">/ 100</span>
+            {!implausible && (
+              <>
+                <span className="stat">{Math.round(s.score)}</span>
+                <span className="text-muted text-sm">/ 100</span>
+              </>
+            )}
           </div>
         </div>
         <Divider />
