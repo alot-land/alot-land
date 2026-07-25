@@ -61,12 +61,32 @@ async function targetCounties() {
     ? String(statesArg).split(',').map((s) => s.trim().toUpperCase())
     : null;
 
+  // Walk the DISTINCT county codes with a loose index scan: ask for the
+  // smallest fips greater than the last one seen, one row at a time. Costs
+  // one request per county.
+  //
+  // The obvious version — select every parcel and dedupe in memory — is
+  // broken however large the .limit() looks: PostgREST caps a request at 1000
+  // rows, so with 12,278 Maricopa parcels ahead of 8,842 Davidson ones it
+  // returned nothing but Maricopa and Nashville was silently never attempted.
   const seen = new Map();
-  let q = db.supabase.from('parcels').select('county_fips, state').eq('org_id', orgId).not('county_fips', 'is', null);
-  if (wanted) q = q.in('state', wanted);
-  const { data, error } = await q.limit(20000);
-  if (error) throw error;
-  for (const r of data) if (r.county_fips && !seen.has(r.county_fips)) seen.set(r.county_fips, r.state);
+  let cursor = null;
+  for (let guard = 0; guard < 500; guard++) {
+    let q = db.supabase
+      .from('parcels')
+      .select('county_fips, state')
+      .eq('org_id', orgId)
+      .not('county_fips', 'is', null)
+      .order('county_fips', { ascending: true })
+      .limit(1);
+    if (wanted) q = q.in('state', wanted);
+    if (cursor) q = q.gt('county_fips', cursor);
+    const { data, error } = await q;
+    if (error) throw error;
+    if (!data?.length) break;
+    seen.set(data[0].county_fips, data[0].state);
+    cursor = data[0].county_fips;
+  }
   return [...seen].map(([fips, state]) => ({ fips, state }));
 }
 
