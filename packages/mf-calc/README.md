@@ -13,9 +13,13 @@ math — the *only* place arithmetic is allowed to live in the product.
 
 ## Status
 
-- **CALC_VERSION `1.0.0`**
-- **115 assertions** across 9 suites (target was 30+), including **two fully
-  hand-verified reference deals** (`test/referenceDeals.test.ts`).
+- **CALC_VERSION `1.11.0`** (see `src/types.ts` — always the source of truth)
+- **212 tests** across 15 suites, including **two fully hand-verified
+  reference deals** (`test/referenceDeals.test.ts`).
+- Version history: 1.1 comps/$-per-bed · 1.2 proforma · 1.3 US market scoring ·
+  1.4 off-market parcel screening · 1.5–1.8 goal planner (snowball sim, goal
+  progress, equity capture, discounted-entry cash flows) · 1.9–1.11 LTR-vs-STR
+  (ADR suggestion, cleaning pass-through).
 
 ```bash
 cd packages/mf-calc
@@ -37,6 +41,12 @@ npm run typecheck
 | Stress | rents −10%, vacancy +5pp, rate +150bps, insurance +30%, combined worst case | `stress.ts` |
 | Prescreen | zoning, metering, septic/well, roof/HVAC age, rent-control, pre-1978 lead, pre-1980 asbestos, STR permit status | `prescreen.ts` |
 | Scoring | composite 0–100 vs a configurable buy-box (cash flow / appreciation / cost-seg / bottom line) → `pursue` flag | `scoring.ts` |
+| Comps | haversine radius filter, $/bed + $/sqft medians with sample sizes | `comps.ts` |
+| Proforma | year-by-year investor proforma reconciling exactly with `forward()` | `proforma.ts` |
+| US markets | county metrics (yield, CAGRs, tax, risk), percentile scoring under weight profiles, scan-polygon bbox | `markets.ts` |
+| Off-market | standard-rate expense estimate, fast parcel screen (pursue/consider/pass/insufficient) | `offmarket.ts` |
+| Goals | month-by-month snowball simulation, four strategy scenarios (incl. equity capture w/ refi cash-back + honest debt-service delta), goal progress from assigned deals, equity spread/capture | `goals.ts` |
+| STR | LTR-vs-STR comparison (ADR × occupancy revenue, guest-paid cleaning pass-through, STR-grade management), rent-derived ADR suggestion | `str.ts` |
 
 ## Conventions baked in
 

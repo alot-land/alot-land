@@ -28,7 +28,9 @@ const METRICS = [
   ['Min down (solver)', (o) => o.solvers?.min_down?.down_fraction, (v) => pct(v, 1)],
   ['Primary valuation', (o) => o.primary_value, usd],
   ['Valuation spread', (o) => o.valuation?.spread, (v) => pct(v, 1)],
-  ['Worst-case DSCR', (o) => o.stress?.[5]?.dscr, ratio],
+  // Find by label, not index — the stress panel is a labeled array and a
+  // reordered/added shock would silently swap scenarios positionally.
+  ['Worst-case DSCR', (o) => o.stress?.find?.((s) => /combined/i.test(s.label))?.dscr, ratio],
   ['Yr-1 tax benefit (REP on)', (o) => o.tax?.year1?.benefit_rep_on, usd],
   ['Total profit (proforma)', (o) => o.proforma?.exit?.total_profit, usd],
 ];

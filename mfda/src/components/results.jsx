@@ -387,7 +387,7 @@ export function StrPanel({ out, inputs }) {
     ['NOI', usd(out.derived.noi), usd(s.noi)],
     ['Cash flow (yr 1)', usd(ltr.cfbt), usd(s.cfbt)],
     ['Cash-on-cash', pct(ltr.cash_on_cash, 1), pct(s.cash_on_cash, 1)],
-    ['DSCR', ltr.dscr.toFixed(2), s.dscr.toFixed(2)],
+    ['DSCR', ratio(ltr.dscr), ratio(s.dscr)],
   ];
   return (
     <Panel

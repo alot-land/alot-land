@@ -17,7 +17,7 @@ import { buildZipRents, presetForState, parcelDealInput, streetViewUrl, ownerEqu
 import RatingControl from '../components/RatingControl';
 import NotesCard from '../components/NotesCard';
 import { underwrite } from '../lib/underwrite';
-import { usd, pct, num } from '../lib/format';
+import { usd, pct, num, ratio } from '../lib/format';
 import { Tip } from '../components/fields';
 
 const VERDICT_STYLES = {
@@ -127,8 +127,10 @@ export default function OffMarketDeal() {
       if (Number(units) > 0 && Number(rent) > 0) {
         // units.sqft is NOT NULL — use the building average when known, else 0.
         const sqft = p.building_sqft ? Math.round(Number(p.building_sqft) / Number(units)) : 0;
+        // actual_rent = market rent: in-place rents are unknown off-market;
+        // at-market keeps loss-to-lease honestly 0 rather than a fake 100%.
         await replaceUnits(org.id, deal.id, [
-          { type: 'avg unit', count: Number(units), sqft, actual_rent: 0, market_rent: Number(rent) },
+          { type: 'avg unit', count: Number(units), sqft, actual_rent: Number(rent), market_rent: Number(rent) },
         ]);
       }
       qc.invalidateQueries({ queryKey: ['deals', org.id] });
@@ -310,7 +312,7 @@ export default function OffMarketDeal() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
               {[
-                ['DSCR', dscrFin ? dscrFin.dscr.toFixed(2) : '—', 'Net income ÷ loan payments. Lenders want ≥ 1.20–1.25.'],
+                ['DSCR', dscrFin ? ratio(dscrFin.dscr) : '—', 'Net income ÷ loan payments. Lenders want ≥ 1.20–1.25.'],
                 ['Cash-on-cash', dscrFin ? pct(dscrFin.cash_on_cash, 1) : '—', 'Year-1 cash flow ÷ cash invested.'],
                 ['5-yr IRR', dscrFin ? pct(dscrFin.irr, 1) : '—', 'Annualized total return including cash flows and the year-5 sale.'],
                 ['Break-even occupancy', dscrFin ? pct(dscrFin.break_even_occupancy, 0) : '—', 'The occupancy where cash flow hits zero — lower is safer.'],

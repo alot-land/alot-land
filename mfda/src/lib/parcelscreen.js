@@ -132,10 +132,13 @@ export function parcelDealInput(parcel, { units, rentPerUnit, anchor, preset }) 
     price: anchor,
     units: [
       {
+        // UnitType requires numbers. actual_rent = market rent (we don't know
+        // in-place rents on off-market parcels; assuming at-market keeps
+        // loss-to-lease honestly at 0 instead of a fake 100%).
         type: 'avg unit',
         count: units,
-        sqft: parcel.building_sqft ? Math.round(parcel.building_sqft / units) : null,
-        actual_rent: null,
+        sqft: parcel.building_sqft ? Math.round(parcel.building_sqft / units) : 0,
+        actual_rent: rentPerUnit,
         market_rent: rentPerUnit,
       },
     ],

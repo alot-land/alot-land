@@ -1,6 +1,6 @@
 {
   "name": "@alot/mf-calc",
-  "version": "1.0.0",
+  "version": "1.11.0",
   "description": "MFDA multifamily underwriting calc engine. Pure TypeScript financial math — frozen once green. LLMs never do arithmetic; this module is the only place financial calculations live.",
   "type": "module",
   "main": "./src/index.ts",
@@ -13,7 +13,12 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
-  "keywords": ["multifamily", "underwriting", "real-estate", "mfda"],
+  "keywords": [
+    "multifamily",
+    "underwriting",
+    "real-estate",
+    "mfda"
+  ],
   "author": "Alot Of Land LLC",
   "license": "UNLICENSED",
   "private": true,
