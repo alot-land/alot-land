@@ -15,6 +15,7 @@ import {
   goalProgress,
   equitySpread,
   equityCapture,
+  discountedEntryCashflows,
   annualDebtService,
 } from '../src/index.js';
 
@@ -155,6 +156,42 @@ describe('equityCapture (v1.7.0) — the buy-under-value + cash-out-refi play', 
   });
 });
 
+describe('discountedEntryCashflows (v1.8.0) — the discount IS cash flow', () => {
+  // Same building, two prices: at full value the deal earns the standard CoC;
+  // at a discount, the SAME NOI carries a smaller loan → more cash flow.
+  const inp = {
+    price: 600_000,
+    market_value: 600_000 / 0.7,
+    down_payment_rate: 0.25,
+    closing_cost_rate: 0.03,
+    cash_on_cash: 0.08,
+    bank_rate: 0.075,
+    refi_ltv: 0.7,
+    refi_rate: 0.075,
+  };
+  const r = discountedEntryCashflows(inp);
+  const V = inp.market_value;
+
+  it('implies the NOI from the at-value conventional deal', () => {
+    const cfAtValue = (V * 0.28 * 0.08) / 12;
+    const debtAtValue = annualDebtService(V * 0.75, 0.075, 30) / 12;
+    expect(r.noi_monthly).toBeCloseTo(cfAtValue + debtAtValue, 6);
+  });
+
+  it('pre-refi cash flow beats the at-value deal (smaller loan, same NOI)', () => {
+    const preDebt = annualDebtService(450_000, 0.075, 30) / 12;
+    expect(r.pre_refi_monthly_cashflow).toBeCloseTo(r.noi_monthly - preDebt, 6);
+    expect(r.pre_refi_monthly_cashflow).toBeGreaterThan((168_000 * 0.08) / 12); // > $1,120
+  });
+
+  it('post-refi cash flow charges the full 70%-of-value loan and stays positive here', () => {
+    const postDebt = annualDebtService(0.7 * V, 0.075, 30) / 12;
+    expect(r.post_refi_monthly_cashflow).toBeCloseTo(r.noi_monthly - postDebt, 6);
+    expect(r.post_refi_monthly_cashflow).toBeGreaterThan(0);
+    expect(r.post_refi_monthly_cashflow).toBeLessThan(r.pre_refi_monthly_cashflow);
+  });
+});
+
 describe('simulateGoal refi cash-flow delta (v1.7.0)', () => {
   it('applies the post-refi debt-service hit at each refi event', () => {
     const r = simulateGoal({
@@ -223,13 +260,22 @@ describe('goalScenarios', () => {
     expect(s.map((x) => x.key)).toEqual(['conventional', 'seller_finance', 'value_add_recycle', 'equity_capture']);
   });
 
-  it('equity capture: refi cash-back derives from the value spread and cuts cash flow', () => {
+  it('equity capture: discount entry cash flow + refi cash-back from the value spread', () => {
     const ec = s[3]!;
     // price 600k at 70% of value → value ≈ 857,143; refi 70% → 600k loan;
     // purchase loan 450k → cash out 150k on 168k in.
     expect(ec.per_deal_cash).toBeCloseTo(168_000, 6);
     expect(ec.refi_cash_back).toBeCloseTo(0.7 * (600_000 / 0.7) - 450_000, 0);
+    // Entry cash flow reflects the discount: same NOI, smaller loan.
+    expect(ec.per_deal_monthly_cashflow).toBeGreaterThan(s[0]!.per_deal_monthly_cashflow);
+    expect(ec.post_refi_monthly_cashflow!).toBeGreaterThan(0);
     expect(ec.result.months_to_goal).not.toBeNull();
+  });
+
+  it('buying at a real discount beats paying-full-price BRRRR on timeline', () => {
+    const brrrr = s[2]!;
+    const ec = s[3]!;
+    expect(ec.result.months_to_goal!).toBeLessThan(brrrr.result.months_to_goal!);
   });
 
   it('conventional: deal cash = price × (down + closing); cf = cash × CoC ÷ 12', () => {

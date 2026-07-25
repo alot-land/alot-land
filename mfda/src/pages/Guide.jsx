@@ -303,7 +303,7 @@ const MANUAL = [
       },
       {
         t: 'The four paths',
-        b: 'Conventional: bank loans, 25% down — most cash per deal, simplest. Seller finance: ~10% down with the owner carrying — what your long-hold absentee list makes possible. Value-add + refi recycle: improve, refinance your cash out, repeat (BRRRR). Equity capture: buy at a discount to real value (a $1.1M building for $700k), then cash-out refi against FULL value — the refi can return MORE than you put in while you keep the leftover equity. The added debt service is honestly charged against cash flow.',
+        b: 'Conventional: bank loans at market price, 25% down. Seller finance: ~10% down with the owner carrying. Value-add + refi recycle (BRRRR): buy at market, improve, refi your cash out — assumes the rent bump covers the bigger loan. Equity capture: buy at a DISCOUNT to real value, cash-out refi against full value. The discount pays twice: the same rents carry a smaller loan (cash flow beats a full-price deal from day one) AND the refi returns your capital for the next purchase, honestly stepping cash flow down to the full-value loan afterward. Each card shows pre- and post-refi cash flow.',
       },
       {
         t: 'Finding equity-capture candidates (the 💰 pills)',

@@ -150,6 +150,46 @@ export function equityCapture(inp: EquityCaptureInputs): EquityCaptureResult {
   };
 }
 
+export interface DiscountedEntryInputs {
+  price: number;
+  market_value: number;
+  down_payment_rate: number;
+  closing_cost_rate: number;
+  /** CoC the SAME building would earn if bought AT market value. */
+  cash_on_cash: number;
+  bank_rate: number;
+  refi_ltv: number;
+  refi_rate: number;
+  amort_years?: number;
+}
+
+export interface DiscountedEntryResult {
+  noi_monthly: number;
+  pre_refi_monthly_cashflow: number;
+  post_refi_monthly_cashflow: number;
+}
+
+/**
+ * The discount IS cash flow (v1.8.0). A building's NOI doesn't care what you
+ * paid — implied from the at-value conventional deal's CoC, the discounted
+ * purchase carries a smaller loan (better cash flow before refi) and the
+ * cash-out refi carries the full-value loan (honest cash flow after).
+ */
+export function discountedEntryCashflows(inp: DiscountedEntryInputs): DiscountedEntryResult {
+  const amort = inp.amort_years ?? 30;
+  const cashAtValue = inp.market_value * (inp.down_payment_rate + inp.closing_cost_rate);
+  const cfAtValue = (cashAtValue * inp.cash_on_cash) / 12;
+  const debtAtValue = annualDebtService(inp.market_value * (1 - inp.down_payment_rate), inp.bank_rate, amort) / 12;
+  const noiMonthly = cfAtValue + debtAtValue;
+  const preDebt = annualDebtService(inp.price * (1 - inp.down_payment_rate), inp.bank_rate, amort) / 12;
+  const postDebt = annualDebtService(inp.refi_ltv * inp.market_value, inp.refi_rate, amort) / 12;
+  return {
+    noi_monthly: noiMonthly,
+    pre_refi_monthly_cashflow: noiMonthly - preDebt,
+    post_refi_monthly_cashflow: noiMonthly - postDebt,
+  };
+}
+
 export interface GoalProgressInputs {
   target_monthly: number;
   /** Monthly cash flow of each deal assigned to the goal (underwritten or actual). */
@@ -200,6 +240,7 @@ export interface GoalScenarioInputs {
   purchase_discount?: number;
   refi_ltv?: number;
   refi_rate?: number;
+  bank_rate?: number;
   max_months?: number;
 }
 
@@ -212,6 +253,8 @@ export interface GoalScenario {
   doors_at_goal: number;
   /** Cash returned at each deal's refi (equity-capture strategy). */
   refi_cash_back?: number;
+  /** Cash flow after the cash-out refi (equity-capture strategy). */
+  post_refi_monthly_cashflow?: number;
   result: SimulateGoalResult;
 }
 
@@ -257,6 +300,7 @@ export function goalScenarios(inp: GoalScenarioInputs): GoalScenario[] {
   const discount = inp.purchase_discount ?? 0.7;
   const refiLtv = inp.refi_ltv ?? 0.7;
   const refiRate = inp.refi_rate ?? 0.075;
+  const bankRate = inp.bank_rate ?? 0.075;
   const ec = equityCapture({
     purchase_price: price,
     market_value: price / discount,
@@ -265,14 +309,27 @@ export function goalScenarios(inp: GoalScenarioInputs): GoalScenario[] {
     refi_ltv: refiLtv,
     refi_rate: refiRate,
   });
-  const ecCf = (ec.cash_in * inp.cash_on_cash) / 12;
+  // The discount is cash flow: same NOI, smaller loan pre-refi; the honest
+  // full-value loan post-refi (v1.8.0 — earlier versions charged the refi
+  // debt without crediting the discounted entry, unfairly penalizing this
+  // strategy vs BRRRR).
+  const entry = discountedEntryCashflows({
+    price,
+    market_value: price / discount,
+    down_payment_rate: inp.down_payment_rate,
+    closing_cost_rate: inp.closing_cost_rate,
+    cash_on_cash: inp.cash_on_cash,
+    bank_rate: bankRate,
+    refi_ltv: refiLtv,
+    refi_rate: refiRate,
+  });
   const ecResult = simulateGoal({
     ...common,
     per_deal_cash: ec.cash_in,
-    per_deal_monthly_cashflow: ecCf,
+    per_deal_monthly_cashflow: entry.pre_refi_monthly_cashflow,
     refi_cash_back_fraction: ec.cash_in > 0 ? ec.cash_out / ec.cash_in : 0,
     refi_months: inp.refi_months,
-    refi_monthly_cashflow_delta: -ec.added_monthly_debt_service,
+    refi_monthly_cashflow_delta: entry.post_refi_monthly_cashflow - entry.pre_refi_monthly_cashflow,
   });
 
   return [
@@ -302,9 +359,10 @@ export function goalScenarios(inp: GoalScenarioInputs): GoalScenario[] {
       label: 'Equity capture (buy under value + cash-out refi)',
       per_deal_price: price,
       per_deal_cash: ec.cash_in,
-      per_deal_monthly_cashflow: ecCf,
+      per_deal_monthly_cashflow: entry.pre_refi_monthly_cashflow,
       doors_at_goal: ecResult.deals_needed * inp.avg_units_per_deal,
       refi_cash_back: ec.cash_out,
+      post_refi_monthly_cashflow: entry.post_refi_monthly_cashflow,
       result: ecResult,
     },
   ];

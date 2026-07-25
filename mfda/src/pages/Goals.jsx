@@ -23,6 +23,7 @@ const DEFAULT_INPUTS = {
   purchase_discount: 0.7,
   refi_ltv: 0.7,
   refi_rate: 0.075,
+  bank_rate: 0.075,
 };
 
 const fmtMonths = (m) => {
@@ -39,9 +40,9 @@ const SCENARIO_TIPS = {
   seller_finance:
     'Owner carries the note at ~10% down — exactly what long-hold, high-equity off-market sellers can offer. Less cash per deal and cheaper debt means faster doors, but every deal takes a negotiated seller.',
   value_add_recycle:
-    'Buy under-rented buildings, improve, refinance, and pull most of your cash back out to buy the next one (BRRRR-style). Fastest path on paper — and the most work per deal.',
+    'Buy AT market price, improve, refinance most of your cash back out (BRRRR-style). Assumes the value-add rent increase covers the bigger refi loan — cash flow per deal holds steady. The most work per building.',
   equity_capture:
-    "Buy at a DISCOUNT to real value (e.g. a $1.1M building for $700k), then cash-out refi against the FULL value — the refi can return more than you put in, funding the next down payment while you keep the leftover equity. The added loan's debt service is honestly charged against cash flow. This is what the off-market machine hunts: motivated owners with big equity who can sell under value.",
+    "Buy at a DISCOUNT to real value (a $1.1M building for $700k), then cash-out refi against FULL value. The discount pays twice: the same rents carry a smaller loan, so cash flow beats a full-price deal from day one — and the refi returns your capital (sometimes more) for the next purchase. After the refi, cash flow honestly steps down to the full-value loan. This is what the off-market 💰 leads feed.",
 };
 
 const FIELD_DEFS = [
@@ -57,6 +58,7 @@ const FIELD_DEFS = [
   ['purchase_discount', 'Buy at % of value', 'Equity capture: price ÷ real value, decimal. 0.7 = paying $700k for a $1M building.', 0.05],
   ['refi_ltv', 'Refi LTV', 'Equity capture: cash-out refi loan as a share of FULL market value, decimal.', 0.05],
   ['refi_rate', 'Refi rate', 'Interest rate on the cash-out refi, decimal.', 0.005],
+  ['bank_rate', 'Bank rate', 'Purchase-loan interest rate (used to translate CoC into NOI for the equity-capture math), decimal.', 0.005],
 ];
 
 function ScenarioGrid({ target, inputs }) {
@@ -90,9 +92,15 @@ function ScenarioGrid({ target, inputs }) {
               <span className="tabular-nums">{usd(s.per_deal_cash)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted">Cash flow per deal</span>
+              <span className="text-muted">{s.post_refi_monthly_cashflow != null ? 'Cash flow (pre-refi)' : 'Cash flow per deal'}</span>
               <span className="tabular-nums">{usd(s.per_deal_monthly_cashflow)}/mo</span>
             </div>
+            {s.post_refi_monthly_cashflow != null && (
+              <div className="flex justify-between">
+                <span className="text-muted">Cash flow (after refi)</span>
+                <span className="tabular-nums">{usd(s.post_refi_monthly_cashflow)}/mo</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-muted">Total cash deployed</span>
               <span className="tabular-nums">{usd(s.result.total_cash_invested)}</span>
