@@ -123,7 +123,7 @@ export function toRentBandRows(parsed, { orgId, state, period, now }) {
       if (rent == null) continue;
       out.push({
         org_id: orgId,
-        source: 'hud_safmr',
+        source: 'hud-safmr',
         zip: row.zip,
         state: state || null,
         period: period || (row.year ? String(row.year) : fallbackYear),

@@ -7,7 +7,7 @@
 -- tell a 1BR unit from a 3BR. Two fixes arrive together —
 --
 --   free : HUD Small Area FMR gives a bedroom SHAPE per ZIP (worker writes
---          it into rent_bands with source 'hud_safmr'). No new table needed.
+--          it into rent_bands with source 'hud-safmr'). No new table needed.
 --   paid : RentCast gives an address-level estimate. THIS table caches every
 --          answer so re-underwriting the same property costs nothing and a
 --          50-request free tier lasts.

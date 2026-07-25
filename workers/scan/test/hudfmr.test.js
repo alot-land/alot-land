@@ -111,7 +111,7 @@ describe('toRentBandRows', () => {
   it('marks the source and flags the figures as low confidence', () => {
     const [row] = toRentBandRows(parsed, { orgId: 'org1' });
     // These are policy figures — the app uses their RATIOS, never their level.
-    expect(row.source).toBe('hud_safmr');
+    expect(row.source).toBe('hud-safmr');
     expect(row.confidence).toBe('low');
   });
 

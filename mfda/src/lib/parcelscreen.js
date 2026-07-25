@@ -17,7 +17,7 @@ export function buildZipRents(bands) {
     if (!b.zip || !(Number(b.rent) > 0)) continue;
     // HUD SAFMR rows are a bedroom SHAPE, not market rent — they must never
     // set the level. buildZipBedroomRatios consumes them instead.
-    if (b.source === 'hud_safmr') continue;
+    if (b.source === 'hud-safmr') continue;
     const arr = byZip.get(b.zip) || [];
     arr.push(b);
     byZip.set(b.zip, arr);
@@ -44,7 +44,7 @@ export function buildZipRents(bands) {
 export function buildZipBedroomRatios(bands) {
   const byZip = new Map();
   for (const b of bands || []) {
-    if (b.source !== 'hud_safmr' || !b.zip || !(Number(b.rent) > 0)) continue;
+    if (b.source !== 'hud-safmr' || !b.zip || !(Number(b.rent) > 0)) continue;
     const cur = byZip.get(b.zip) || {};
     // Newest vintage wins when several years are stored.
     const prev = cur[`__period_${b.bedrooms}`];
