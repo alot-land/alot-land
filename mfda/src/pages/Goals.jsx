@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrg } from '../lib/org';
 import { useAuth } from '../lib/auth';
-import { Link } from 'react-router-dom';
-import { listGoals, createGoal, setGoalStatus, listGoalDeals } from '../lib/queries';
-import { usd, pct } from '../lib/format';
+import { listGoals, createGoal, updateGoal, setGoalStatus, listGoalDeals } from '../lib/queries';
+import { usd } from '../lib/format';
 import { Tip } from '../components/fields';
 import { goalScenarios, goalProgress, CALC_VERSION } from '@alot/mf-calc';
 
@@ -44,74 +44,101 @@ const SCENARIO_TIPS = {
     "Buy at a DISCOUNT to real value (e.g. a $1.1M building for $700k), then cash-out refi against the FULL value — the refi can return more than you put in, funding the next down payment while you keep the leftover equity. The added loan's debt service is honestly charged against cash flow. This is what the off-market machine hunts: motivated owners with big equity who can sell under value.",
 };
 
-export default function Goals() {
-  const { org } = useOrg();
-  const { user } = useAuth();
-  const qc = useQueryClient();
+const FIELD_DEFS = [
+  ['avg_price_per_unit', '$ / unit', 'Typical all-in price per unit in your target markets.', 1000],
+  ['avg_units_per_deal', 'Units / deal', 'Typical building size you buy.', 1],
+  ['cash_on_cash', 'CoC (bank)', 'Cash-on-cash on a conventionally financed deal, decimal (0.08 = 8%). Steal the real number from your underwritten deals.', 0.01],
+  ['down_payment_rate', 'Down %', 'Bank down payment, decimal.', 0.01],
+  ['closing_cost_rate', 'Closing %', 'Closing costs as a share of price, decimal.', 0.01],
+  ['seller_down_rate', 'Seller down %', 'Down payment when the seller carries, decimal.', 0.01],
+  ['seller_cash_on_cash', 'CoC (seller)', 'Cash-on-cash under seller terms — usually higher (cheaper debt), decimal.', 0.01],
+  ['refi_cash_back_fraction', 'Refi cash-back', 'Share of invested cash returned at refi in the value-add strategy, decimal.', 0.05],
+  ['refi_months', 'Months to refi', 'Time from purchase to the refinance (value-add and equity-capture).', 1],
+  ['purchase_discount', 'Buy at % of value', 'Equity capture: price ÷ real value, decimal. 0.7 = paying $700k for a $1M building.', 0.05],
+  ['refi_ltv', 'Refi LTV', 'Equity capture: cash-out refi loan as a share of FULL market value, decimal.', 0.05],
+  ['refi_rate', 'Refi rate', 'Interest rate on the cash-out refi, decimal.', 0.005],
+];
 
-  const goals = useQuery({ queryKey: ['goals', org?.id], queryFn: () => listGoals(org.id), enabled: !!org });
-  const goalDeals = useQuery({ queryKey: ['goal-deals', org?.id], queryFn: () => listGoalDeals(org.id), enabled: !!org });
-  const active = (goals.data || []).find((g) => g.status === 'active');
-  const achieved = (goals.data || []).filter((g) => g.status === 'achieved');
-
-  // Deals committed to the active goal: underwritten monthly CFBT (mf-calc
-  // output), else the operator's pledged per-deal target.
-  const assigned = useMemo(
-    () => (goalDeals.data || []).filter((d) => active && d.goal_id === active.id),
-    [goalDeals.data, active],
-  );
-  const progress = useMemo(() => {
-    if (!active) return null;
-    const cfs = assigned
-      .map((d) =>
-        d.latest_outputs?.financing?.dscr?.cfbt != null
-          ? d.latest_outputs.financing.dscr.cfbt / 12
-          : d.deal_target_monthly != null
-            ? Number(d.deal_target_monthly)
-            : null,
-      )
-      .filter((v) => v != null);
-    return goalProgress({ target_monthly: Number(active.target_monthly), deal_monthly_cashflows: cfs });
-  }, [active, assigned]);
-
-  const [name, setName] = useState('');
-  const [target, setTarget] = useState(10_000);
-  const [inputs, setInputs] = useState(DEFAULT_INPUTS);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  // When a goal is active, plan against ITS saved assumptions.
-  const planTarget = active ? Number(active.target_monthly) : Number(target) || 0;
-  const planInputs = active ? { ...DEFAULT_INPUTS, ...(active.inputs || {}) } : inputs;
-
+function ScenarioGrid({ target, inputs }) {
   const scenarios = useMemo(() => {
-    if (!(planTarget > 0)) return [];
+    if (!(target > 0)) return [];
     try {
-      return goalScenarios({ target_monthly_cashflow: planTarget, ...planInputs });
+      return goalScenarios({ target_monthly_cashflow: target, ...DEFAULT_INPUTS, ...inputs });
     } catch {
       return [];
     }
-  }, [planTarget, planInputs]);
+  }, [target, inputs]);
+  if (!scenarios.length) return null;
 
-  async function save() {
-    setSaving(true);
-    try {
-      await createGoal(org.id, user.id, {
-        name: name.trim() || `${usd(Number(target))}/month`,
-        target_monthly: Number(target),
-        inputs,
-      });
-      setName('');
-      qc.invalidateQueries({ queryKey: ['goals', org.id] });
-    } finally {
-      setSaving(false);
-    }
-  }
+  return (
+    <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+      {scenarios.map((s) => (
+        <div key={s.key} className="card p-4 flex flex-col">
+          <div className="text-sm font-medium flex items-center">
+            {s.label}
+            <Tip text={SCENARIO_TIPS[s.key]} />
+          </div>
+          <div className="stat mt-2">{fmtMonths(s.result.months_to_goal)}</div>
+          <div className="text-xs text-muted">to {usd(target)}/month</div>
+          <div className="mt-3 space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted">Deals / doors</span>
+              <span className="tabular-nums">{s.result.deals_needed} / {s.doors_at_goal}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted">Cash per deal</span>
+              <span className="tabular-nums">{usd(s.per_deal_cash)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted">Cash flow per deal</span>
+              <span className="tabular-nums">{usd(s.per_deal_monthly_cashflow)}/mo</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted">Total cash deployed</span>
+              <span className="tabular-nums">{usd(s.result.total_cash_invested)}</span>
+            </div>
+            {s.refi_cash_back != null && s.refi_cash_back > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted">Refi cash back / deal</span>
+                <span className="tabular-nums text-green-deep">{usd(s.refi_cash_back)}</span>
+              </div>
+            )}
+            {s.result.refi_cash_returned > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted">Refi cash recycled</span>
+                <span className="tabular-nums">{usd(s.result.refi_cash_returned)}</span>
+              </div>
+            )}
+          </div>
+          {s.result.reached && s.result.purchases.length > 0 && (
+            <div className="mt-3 pt-2 border-t border-border text-xs text-muted">
+              <div className="font-medium text-ink-2 mb-1">Buying schedule</div>
+              {s.result.purchases.slice(0, 6).map((pch) => (
+                <div key={pch.deal_number}>
+                  Deal {pch.deal_number} — {pch.month === 0 ? 'now' : `month ${pch.month}`}
+                </div>
+              ))}
+              {s.result.purchases.length > 6 && <div>… {s.result.purchases.length - 6} more</div>}
+            </div>
+          )}
+          {!s.result.reached && (
+            <div className="mt-3 text-xs text-warn">
+              {s.result.deals_needed === 0 && (inputs.capital_available ?? 0) < s.per_deal_cash
+                ? `Never gets off the ground: ${usd(inputs.capital_available ?? 0)} to start doesn't cover the ${usd(s.per_deal_cash)} this strategy needs per deal${!((inputs.monthly_savings ?? 0) > 0) ? ', and at $0/month added nothing grows' : ''}. Lower the cash per deal or add monthly savings.`
+                : "Converges too slowly (50+ years): cash flow alone can't accumulate the next down payment fast enough. Add savings, lower-down financing, or refi recycling."}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
-  async function markAchieved(g) {
-    await setGoalStatus(g.id, 'achieved');
-    qc.invalidateQueries({ queryKey: ['goals', org.id] });
-  }
+function GoalForm({ initial, submitLabel, onSave, onCancel, saving }) {
+  const [name, setName] = useState(initial?.name || '');
+  const [target, setTarget] = useState(initial?.target ?? 10_000);
+  const [inputs, setInputs] = useState({ ...DEFAULT_INPUTS, ...(initial?.inputs || {}) });
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const num = (key, label, tip, step = 1) => (
     <label key={key} className="flex flex-col gap-0.5 text-xs text-muted">
@@ -127,188 +154,243 @@ export default function Goals() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-semibold">Goals</h1>
-        <p className="text-muted text-sm">
-          Name the monthly cash flow you want — see the paths, the price tags, and the timelines.
-          <Tip text="Three strategies run through a month-by-month simulation: your capital grows from savings plus the cash flow of each deal you buy (the snowball), and a new deal is bought whenever the war chest covers one. All math in the tested calc engine — the timelines are arithmetic, not vibes." />
-        </p>
+    <div>
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="flex flex-col gap-0.5 text-xs text-muted">
+          <span>Goal name</span>
+          <input
+            className="input w-52 text-sm"
+            placeholder="e.g. Replace my income"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </label>
+        <label className="flex flex-col gap-0.5 text-xs text-muted">
+          <span className="flex items-center">
+            Target cash flow / month
+            <Tip text="Net monthly rental cash flow after all expenses and loan payments, portfolio-wide. Savings never count toward this — they only fund purchases." />
+          </span>
+          <input className="input w-36 text-sm" type="number" value={target} onChange={(e) => setTarget(e.target.value)} />
+        </label>
+        {num('capital_available', 'Cash to start', 'What you can deploy today — down payments, closing, reserves.')}
+        {num('monthly_savings', 'Saving / month (optional)', "NOT part of the goal — outside money toward the NEXT down payment. $0 is allowed; then only the buildings' cash flow and refis fund purchases.")}
+        <button
+          type="button"
+          onClick={() => onSave({ name: name.trim(), target: Number(target), inputs })}
+          disabled={saving || !(Number(target) > 0)}
+          className="btn-gold text-sm disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : submitLabel}
+        </button>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="btn-ghost text-sm">
+            Cancel
+          </button>
+        )}
+      </div>
+      <button type="button" onClick={() => setShowAdvanced((v) => !v)} className="text-xs text-muted underline mt-3">
+        {showAdvanced ? 'Hide' : 'Edit'} deal assumptions
+      </button>
+      {showAdvanced && (
+        <div className="flex flex-wrap gap-3 mt-3">
+          {FIELD_DEFS.map(([key, label, tip, step]) => num(key, label, tip, step))}
+        </div>
+      )}
+      <div className="mt-4">
+        <ScenarioGrid target={Number(target)} inputs={inputs} />
+      </div>
+    </div>
+  );
+}
+
+export default function Goals() {
+  const { org } = useOrg();
+  const { user } = useAuth();
+  const qc = useQueryClient();
+
+  const goals = useQuery({ queryKey: ['goals', org?.id], queryFn: () => listGoals(org.id), enabled: !!org });
+  const goalDeals = useQuery({ queryKey: ['goal-deals', org?.id], queryFn: () => listGoalDeals(org.id), enabled: !!org });
+  const actives = (goals.data || []).filter((g) => g.status === 'active');
+  const achieved = (goals.data || []).filter((g) => g.status === 'achieved');
+
+  const [showNew, setShowNew] = useState(false);
+  const [newInitial, setNewInitial] = useState(null); // set by "Duplicate"
+  const [expanded, setExpanded] = useState({});
+  const [editingId, setEditingId] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const isOpen = (id) => expanded[id] ?? actives.length === 1; // solo goal opens by default
+
+  const refresh = () => qc.invalidateQueries({ queryKey: ['goals', org.id] });
+
+  function progressFor(goal) {
+    const assigned = (goalDeals.data || []).filter((d) => d.goal_id === goal.id);
+    const cfs = assigned
+      .map((d) =>
+        d.latest_outputs?.financing?.dscr?.cfbt != null
+          ? d.latest_outputs.financing.dscr.cfbt / 12
+          : d.deal_target_monthly != null
+            ? Number(d.deal_target_monthly)
+            : null,
+      )
+      .filter((v) => v != null);
+    return { assigned, progress: goalProgress({ target_monthly: Number(goal.target_monthly), deal_monthly_cashflows: cfs }) };
+  }
+
+  async function saveNew({ name, target, inputs }) {
+    setSaving(true);
+    try {
+      await createGoal(org.id, user.id, { name: name || `${usd(target)}/month`, target_monthly: target, inputs });
+      setShowNew(false);
+      setNewInitial(null);
+      refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveEdit(goal, { name, target, inputs }) {
+    setSaving(true);
+    try {
+      await updateGoal(goal.id, { name: name || goal.name, target_monthly: target, inputs });
+      setEditingId(null);
+      refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function markAchieved(g) {
+    await setGoalStatus(g.id, 'achieved');
+    refresh();
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Goals</h1>
+          <p className="text-muted text-sm">
+            Run as many goals as you want — each with its own assumptions, strategies, and committed deals.
+            <Tip text="Four strategies run through a month-by-month simulation per goal: capital grows from savings plus the cash flow of each deal bought (the snowball), and a new deal is bought whenever the war chest covers one. All math in the tested calc engine. Deals pick which goal they serve from their results page." />
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setNewInitial(null);
+            setShowNew((v) => !v);
+          }}
+          className="btn-gold text-sm"
+        >
+          {showNew ? 'Close' : '+ New goal'}
+        </button>
       </div>
 
-      {/* Active goal, or the form to set one */}
-      {active ? (
+      {(showNew || actives.length === 0) && (
         <div className="card p-4 mb-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <div>
-              <div className="text-xs text-muted">Active goal</div>
-              <div className="font-display text-xl font-semibold">{active.name}</div>
-              <div className="text-sm text-ink-2">{usd(Number(active.target_monthly))}/month target</div>
-            </div>
-            <button type="button" onClick={() => markAchieved(active)} className="btn-gold text-sm ml-auto">
-              🎉 Made it — mark achieved
-            </button>
-          </div>
-          {progress && (
-            <div className="mt-4">
-              <div className="flex items-center justify-between text-sm mb-1">
-                <span className="flex items-center">
-                  <span className="font-medium">{usd(progress.committed)}/mo committed</span>
-                  <Tip text="Sum of the underwritten monthly cash flow (or your pledged per-deal target) of every deal assigned to this goal from its results page." />
-                </span>
-                <span className="text-muted">
-                  {progress.met
-                    ? '🎉 target covered by committed deals'
-                    : `${usd(progress.remaining)}/mo to go${progress.est_more_deals != null ? ` · ≈ ${progress.est_more_deals} more deal${progress.est_more_deals === 1 ? '' : 's'} like these` : ''}`}
-                </span>
-              </div>
-              <div className="h-2.5 rounded-full bg-surface-2 overflow-hidden">
-                <div
-                  className="h-full bg-green rounded-full transition-all"
-                  style={{ width: `${Math.round(progress.pct * 100)}%` }}
-                />
-              </div>
-              {assigned.length > 0 && (
-                <div className="mt-2 text-xs text-muted flex flex-wrap gap-x-4 gap-y-1">
-                  {assigned.map((d) => (
-                    <Link key={d.id} to={`/deals/${d.id}`} className="hover:underline">
-                      {d.address || 'deal'}
-                      {d.status === 'contract' && ' (under contract)'}
-                      {d.status === 'closed' && ' (closed ✓)'}
-                    </Link>
-                  ))}
-                </div>
-              )}
-              {assigned.length === 0 && (
-                <p className="text-xs text-muted mt-2">
-                  No deals committed yet — on any deal’s results page, use “Part of goal” to count it here.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="card p-4 mb-6">
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="flex flex-col gap-0.5 text-xs text-muted">
-              <span>Goal name</span>
-              <input
-                className="input w-52 text-sm"
-                placeholder="e.g. Replace my income"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </label>
-            <label className="flex flex-col gap-0.5 text-xs text-muted">
-              <span className="flex items-center">
-                Target cash flow / month
-                <Tip text="Net monthly cash flow after all expenses and loan payments, across the whole portfolio." />
-              </span>
-              <input
-                className="input w-36 text-sm"
-                type="number"
-                value={target}
-                onChange={(e) => setTarget(e.target.value)}
-              />
-            </label>
-            {num('capital_available', 'Cash to start', 'What you can deploy today — down payments, closing, reserves.')}
-            {num('monthly_savings', 'Saving / month (optional)', "NOT part of the goal — the goal is pure rental cash flow. This is outside money you put toward the NEXT down payment. $0 is allowed: then only the buildings' own cash flow (and refis) fund the next purchase, which is much slower — that's the honest math, and it's why the low-down seller-finance path wins at $0.")}
-            <button type="button" onClick={save} disabled={saving || !(Number(target) > 0)} className="btn-gold text-sm disabled:opacity-50">
-              {saving ? 'Saving…' : 'Set goal'}
-            </button>
-          </div>
-          <button type="button" onClick={() => setShowAdvanced((v) => !v)} className="text-xs text-muted underline mt-3">
-            {showAdvanced ? 'Hide' : 'Edit'} deal assumptions
-          </button>
-          {showAdvanced && (
-            <div className="flex flex-wrap gap-3 mt-3">
-              {num('avg_price_per_unit', '$ / unit', 'Typical all-in price per unit in your target markets. Phoenix 2–4s run higher; Nashville duplexes lower.', 1000)}
-              {num('avg_units_per_deal', 'Units / deal', 'Typical building size you buy.')}
-              {num('cash_on_cash', 'CoC (bank)', 'Cash-on-cash return on a conventionally financed deal, as a decimal (0.08 = 8%). Your underwritten deals tell you what is realistic.', 0.01)}
-              {num('down_payment_rate', 'Down %', 'Bank down payment, decimal.', 0.01)}
-              {num('closing_cost_rate', 'Closing %', 'Closing costs as a share of price, decimal.', 0.01)}
-              {num('seller_down_rate', 'Seller down %', 'Down payment when the seller carries, decimal.', 0.01)}
-              {num('seller_cash_on_cash', 'CoC (seller)', 'Cash-on-cash under seller terms — usually higher because the debt is cheaper, decimal.', 0.01)}
-              {num('refi_cash_back_fraction', 'Refi cash-back', 'Share of invested cash returned at refinance in the value-add strategy, decimal (0.6 = 60%).', 0.05)}
-              {num('refi_months', 'Months to refi', 'Time from purchase to the refinance (value-add and equity-capture strategies).')}
-              {num('purchase_discount', 'Buy at % of value', 'Equity capture: price ÷ real value, decimal. 0.7 means paying $700k for a $1M building. The off-market list is where these come from.', 0.05)}
-              {num('refi_ltv', 'Refi LTV', 'Equity capture: the cash-out refi loan as a share of FULL market value, decimal.', 0.05)}
-              {num('refi_rate', 'Refi rate', 'Interest rate on the cash-out refi, decimal.', 0.005)}
-            </div>
-          )}
+          <div className="text-sm font-medium mb-3">{newInitial ? `New goal (duplicated from “${newInitial.name}”)` : 'New goal'}</div>
+          <GoalForm
+            initial={newInitial}
+            submitLabel="Set goal"
+            onSave={saveNew}
+            onCancel={actives.length > 0 ? () => { setShowNew(false); setNewInitial(null); } : null}
+            saving={saving}
+          />
         </div>
       )}
 
-      {/* The three paths */}
-      {scenarios.length > 0 && (
-        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {scenarios.map((s) => (
-            <div key={s.key} className="card p-4 flex flex-col">
-              <div className="text-sm font-medium flex items-center">
-                {s.label}
-                <Tip text={SCENARIO_TIPS[s.key]} />
-              </div>
-              <div className="stat mt-2">{fmtMonths(s.result.months_to_goal)}</div>
-              <div className="text-xs text-muted">to {usd(planTarget)}/month</div>
-              <div className="mt-3 space-y-1.5 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted">Deals / doors</span>
-                  <span className="tabular-nums">
-                    {s.result.deals_needed} / {s.doors_at_goal}
-                  </span>
+      <div className="space-y-4">
+        {actives.map((g) => {
+          const { assigned, progress } = progressFor(g);
+          const open = isOpen(g.id);
+          return (
+            <div key={g.id} className="card overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setExpanded((s) => ({ ...s, [g.id]: !open }))}
+                className="w-full text-left px-4 py-3 flex flex-wrap items-center gap-4 hover:bg-surface-2/50"
+              >
+                <span className="text-muted">{open ? '▾' : '▸'}</span>
+                <div>
+                  <div className="font-display text-lg font-semibold">{g.name}</div>
+                  <div className="text-xs text-muted">{usd(Number(g.target_monthly))}/month target</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted">Cash per deal</span>
-                  <span className="tabular-nums">{usd(s.per_deal_cash)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted">Cash flow per deal</span>
-                  <span className="tabular-nums">{usd(s.per_deal_monthly_cashflow)}/mo</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted">Total cash deployed</span>
-                  <span className="tabular-nums">{usd(s.result.total_cash_invested)}</span>
-                </div>
-                {s.refi_cash_back != null && s.refi_cash_back > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted">Refi cash back / deal</span>
-                    <span className="tabular-nums text-green-deep">{usd(s.refi_cash_back)}</span>
+                <div className="flex-1 min-w-[160px] max-w-md">
+                  <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
+                    <div className="h-full bg-green rounded-full" style={{ width: `${Math.round(progress.pct * 100)}%` }} />
                   </div>
-                )}
-                {s.result.refi_cash_returned > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted">Refi cash recycled</span>
-                    <span className="tabular-nums">{usd(s.result.refi_cash_returned)}</span>
+                  <div className="text-xs text-muted mt-0.5">
+                    {usd(progress.committed)}/mo committed · {assigned.length} deal{assigned.length === 1 ? '' : 's'}
+                    {progress.met && ' · 🎉 covered'}
                   </div>
-                )}
-              </div>
-              {s.result.reached && s.result.purchases.length > 0 && (
-                <div className="mt-3 pt-2 border-t border-border text-xs text-muted">
-                  <div className="font-medium text-ink-2 mb-1">Buying schedule</div>
-                  {s.result.purchases.slice(0, 6).map((pch) => (
-                    <div key={pch.deal_number}>
-                      Deal {pch.deal_number} — {pch.month === 0 ? 'now' : `month ${pch.month}`}
-                    </div>
-                  ))}
-                  {s.result.purchases.length > 6 && <div>… {s.result.purchases.length - 6} more</div>}
                 </div>
-              )}
-              {!s.result.reached && (
-                <div className="mt-3 text-xs text-warn">
-                  {s.result.deals_needed === 0 && planInputs.capital_available < s.per_deal_cash
-                    ? `Never gets off the ground: ${usd(planInputs.capital_available)} to start doesn't cover the ${usd(s.per_deal_cash)} this strategy needs per deal${!(planInputs.monthly_savings > 0) ? ", and at $0/month added nothing grows" : ''}. Lower the cash per deal (seller finance, smaller buildings) or add monthly savings.`
-                    : "Converges too slowly (50+ years): the buildings' cash flow alone can't accumulate the next down payment fast enough. Add monthly savings, use lower-down financing, or recycle cash via refis."}
+              </button>
+
+              {open && (
+                <div className="px-4 pb-4 border-t border-border pt-4">
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <button type="button" onClick={() => setEditingId(editingId === g.id ? null : g.id)} className="btn-ghost text-sm py-1">
+                      {editingId === g.id ? 'Close editor' : '✎ Edit goal'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewInitial({ name: g.name, target: Number(g.target_monthly), inputs: g.inputs || {} });
+                        setShowNew(true);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="btn-ghost text-sm py-1"
+                      title="Copy this goal's numbers into a new goal — tweak assumptions to compare scenarios side by side"
+                    >
+                      ⧉ Duplicate as new
+                    </button>
+                    <button type="button" onClick={() => markAchieved(g)} className="btn-gold text-sm py-1 ml-auto">
+                      🎉 Made it — mark achieved
+                    </button>
+                  </div>
+
+                  {editingId === g.id ? (
+                    <GoalForm
+                      initial={{ name: g.name, target: Number(g.target_monthly), inputs: g.inputs || {} }}
+                      submitLabel="Save changes"
+                      onSave={(v) => saveEdit(g, v)}
+                      onCancel={() => setEditingId(null)}
+                      saving={saving}
+                    />
+                  ) : (
+                    <>
+                      {assigned.length > 0 ? (
+                        <div className="mb-4 text-xs text-muted flex flex-wrap gap-x-4 gap-y-1">
+                          {!progress.met && progress.est_more_deals != null && (
+                            <span>{usd(progress.remaining)}/mo to go · ≈ {progress.est_more_deals} more deal{progress.est_more_deals === 1 ? '' : 's'} like these</span>
+                          )}
+                          {assigned.map((d) => (
+                            <Link key={d.id} to={`/deals/${d.id}`} className="hover:underline">
+                              {d.address || 'deal'}
+                              {d.status === 'contract' && ' (under contract)'}
+                              {d.status === 'closed' && ' (closed ✓)'}
+                            </Link>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted mb-4">
+                          No deals committed yet — on any deal’s results page, use “Part of goal” to count it here.
+                        </p>
+                      )}
+                      <ScenarioGrid target={Number(g.target_monthly)} inputs={g.inputs || {}} />
+                    </>
+                  )}
                 </div>
               )}
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       <p className="text-xs text-muted mt-4">
         Simulations, honestly labeled: constant per-deal assumptions, no appreciation or rent growth
-        counted (upside on top). CoC defaults are editable — steal the real numbers from your
-        underwritten deals. calc v{CALC_VERSION}.
+        counted (upside on top). calc v{CALC_VERSION}.
       </p>
 
       {achieved.length > 0 && (

@@ -282,8 +282,16 @@ const MANUAL = [
     section: 'Goals (the "why" behind the deals)',
     entries: [
       {
-        t: 'Setting a goal',
-        b: 'Goals → enter the monthly cash flow you want (say $10,000), your starting cash, and what you can add monthly. Three strategy paths compute instantly, each with a timeline, deal count, doors, and total capital required. Set the goal to lock it in; when you hit it, mark it achieved 🎉 and set the next one — achieved goals stay on the trophy list.',
+        t: 'Setting goals (as many as you want)',
+        b: 'Goals → "+ New goal": enter the monthly cash flow you want (say $10,000), your starting cash, and optional monthly savings — the four strategy paths compute live right in the form before you even save. You can run MULTIPLE goals at once, each with its own assumptions and its own committed deals. Goals collapse to a one-line summary with a progress bar; click to expand the full detail. Mark one achieved 🎉 and it moves to the trophy list.',
+      },
+      {
+        t: 'Editing and duplicating goals',
+        b: 'Expand a goal → "✎ Edit goal" changes anything — name, target, every assumption — and the strategy timelines recompute as you type. "⧉ Duplicate as new" copies a goal\'s numbers into a fresh goal, which is the scenario-comparison workflow: duplicate your $10k goal, change one assumption (seller terms, buy-at-% of value, savings rate), and compare the two cards side by side. Committed deals stay with the original.',
+      },
+      {
+        t: 'Deals choose their goal',
+        b: 'With multiple goals active, every deal\'s results page lists them all in the "Part of goal" dropdown — commit each deal to whichever goal it serves. A deal counts toward exactly one goal at a time; its underwritten monthly cash flow feeds that goal\'s progress bar.',
       },
       {
         t: '"Saving / month" is fuel, not part of the goal',

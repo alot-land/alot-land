@@ -513,6 +513,11 @@ export async function createGoal(orgId, userId, { name, target_monthly, inputs }
   return data;
 }
 
+export async function updateGoal(id, { name, target_monthly, inputs }) {
+  const { error } = await supabase.from('goals').update({ name, target_monthly, inputs }).eq('id', id);
+  if (error) throw error;
+}
+
 export async function setGoalStatus(id, status) {
   const { error } = await supabase
     .from('goals')
