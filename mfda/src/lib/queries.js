@@ -415,14 +415,19 @@ export async function listParcelValueIndex(orgId) {
 // ---- Address-level rent estimates (RentCast, cached) ----------------------
 // The cache is the point: RentCast's free tier is 50 requests/month, so a
 // property already fetched must never be fetched again by accident.
+// -1 = "no bedroom count" — a sentinel, not a null, so the unique index and
+// the upsert conflict target are a plain column list (NULLs never match one).
+const bedKey = (b) => (b == null || b === '' ? -1 : Number(b));
+
 export async function getRentEstimate(orgId, addrKey, bedrooms = null) {
-  let q = supabase
+  const { data, error } = await supabase
     .from('rent_estimates')
     .select('*')
     .eq('org_id', orgId)
-    .eq('addr_key', addrKey);
-  q = bedrooms == null ? q.is('bedrooms', null) : q.eq('bedrooms', bedrooms);
-  const { data, error } = await q.order('fetched_at', { ascending: false }).limit(1);
+    .eq('addr_key', addrKey)
+    .eq('bedrooms', bedKey(bedrooms))
+    .order('fetched_at', { ascending: false })
+    .limit(1);
   if (error) throw error;
   return data?.[0] || null;
 }
@@ -431,7 +436,7 @@ export async function saveRentEstimate(orgId, userId, row) {
   const { data, error } = await supabase
     .from('rent_estimates')
     .upsert(
-      { org_id: orgId, created_by: userId, ...row },
+      { org_id: orgId, created_by: userId, ...row, bedrooms: bedKey(row.bedrooms) },
       { onConflict: 'org_id,addr_key,source,bedrooms' },
     )
     .select()

@@ -21,7 +21,11 @@ create table if not exists public.rent_estimates (
   -- Normalized address key (same scheme as the parcel/listing join).
   addr_key     text not null,
   address      text,
-  bedrooms     int,                       -- null = whole-property estimate
+  -- -1 = whole-property / bedroom count unknown. NOT NULL with a sentinel
+  -- rather than a nullable column: the upsert conflict target must be a plain
+  -- column list, and NULLs would never match one. Same -1 convention the
+  -- rent_bands table already uses for a blended figure.
+  bedrooms     int not null default -1,
   rent         numeric not null,
   rent_low     numeric,
   rent_high    numeric,
@@ -32,7 +36,7 @@ create table if not exists public.rent_estimates (
 );
 
 create unique index if not exists rent_estimates_key_idx
-  on public.rent_estimates(org_id, addr_key, source, coalesce(bedrooms, -1));
+  on public.rent_estimates(org_id, addr_key, source, bedrooms);
 create index if not exists rent_estimates_org_idx on public.rent_estimates(org_id, fetched_at desc);
 
 alter table public.rent_estimates enable row level security;
