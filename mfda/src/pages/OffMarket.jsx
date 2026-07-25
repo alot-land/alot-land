@@ -58,6 +58,7 @@ export default function OffMarket() {
   const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [highEquity, setHighEquity] = useState(false);
+  const [listsOpen, setListsOpen] = useState(false);
   const [ratingFilter, setRatingFilter] = useState('all'); // all | heart | up | down | none
   const [verdictFilter, setVerdictFilter] = useState('all'); // all | pursue | consider | pass | insufficient
   const [sort, setSort] = useState('screen'); // screen | units | value
@@ -185,11 +186,6 @@ export default function OffMarket() {
           </p>
         </div>
         <div className="flex gap-2">
-          {(lists.data || []).length > 0 && (
-            <a href="#saved-lists" className="btn-ghost text-sm">
-              Saved lists ({lists.data.length})
-            </a>
-          )}
           <button
             type="button"
             onClick={saveList}
@@ -208,6 +204,46 @@ export default function OffMarket() {
           </button>
         </div>
       </div>
+
+      {(lists.data || []).length > 0 && (
+        <div className="card mb-4 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setListsOpen((v) => !v)}
+            className="w-full text-left px-4 py-3 flex items-center gap-2 font-medium hover:bg-surface-2/50"
+          >
+            <span className="text-muted">{listsOpen ? '▾' : '▸'}</span>
+            Saved mail lists ({lists.data.length})
+            <Tip text="Frozen snapshots of parcels at save time — re-exporting a saved list gives the same rows even after new imports. Exports are logged for campaign history." />
+          </button>
+          {listsOpen && (
+            <table className="w-full text-sm border-t border-border">
+              <thead className="bg-surface-2">
+                <tr>
+                  <th className="th">Name</th>
+                  <th className="th text-right">Parcels</th>
+                  <th className="th text-right">Created</th>
+                  <th className="th"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {lists.data.map((l) => (
+                  <tr key={l.id} className="hover:bg-surface-2/60">
+                    <td className="td font-medium">{l.name}</td>
+                    <td className="td text-right">{l.mail_list_items?.[0]?.count ?? '—'}</td>
+                    <td className="td text-right text-muted">{new Date(l.created_at).toLocaleDateString()}</td>
+                    <td className="td text-right">
+                      <button type="button" onClick={() => exportSavedList(l)} className="btn-ghost text-sm py-1">
+                        Export CSV
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <input
@@ -458,38 +494,6 @@ export default function OffMarket() {
         </div>
       )}
 
-      {(lists.data || []).length > 0 && (
-        <div id="saved-lists" className="card mt-6 overflow-hidden scroll-mt-20">
-          <div className="px-4 py-3 border-b border-border font-medium">
-            Saved mail lists
-            <Tip text="A frozen snapshot of parcels at save time — re-exporting a saved list gives the same rows even after new imports. Exports are logged for campaign history." />
-          </div>
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2">
-              <tr>
-                <th className="th">Name</th>
-                <th className="th text-right">Parcels</th>
-                <th className="th text-right">Created</th>
-                <th className="th"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {lists.data.map((l) => (
-                <tr key={l.id} className="hover:bg-surface-2/60">
-                  <td className="td font-medium">{l.name}</td>
-                  <td className="td text-right">{l.mail_list_items?.[0]?.count ?? '—'}</td>
-                  <td className="td text-right text-muted">{new Date(l.created_at).toLocaleDateString()}</td>
-                  <td className="td text-right">
-                    <button type="button" onClick={() => exportSavedList(l)} className="btn-ghost text-sm py-1">
-                      Export CSV
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }
