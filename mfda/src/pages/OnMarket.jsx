@@ -17,6 +17,7 @@ import {
   screenListingRow,
   buildParcelValueMap,
   listingEquity,
+  streetViewUrl,
 } from '../lib/parcelscreen';
 import RatingControl from '../components/RatingControl';
 import { Tip } from '../components/fields';
@@ -291,6 +292,14 @@ export default function OnMarket() {
                           {' · '}
                           <a href={d.listing_url} target="_blank" rel="noreferrer" className="underline hover:text-ink">
                             Redfin ↗
+                          </a>
+                        </>
+                      )}
+                      {streetViewUrl(d) && (
+                        <>
+                          {' · '}
+                          <a href={streetViewUrl(d)} target="_blank" rel="noreferrer" className="underline hover:text-ink">
+                            Street ↗
                           </a>
                         </>
                       )}

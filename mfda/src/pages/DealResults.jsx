@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getDeal, listScenarios, getListingContact } from '../lib/queries';
 import { Suspense, useState } from 'react';
 import { lazyReload } from '../lib/lazyReload';
+import { streetViewUrl } from '../lib/parcelscreen';
 import HeartButton from '../components/HeartButton';
 import NotesCard from '../components/NotesCard';
 import DealTrackingCard from '../components/DealTrackingCard';
@@ -66,6 +67,21 @@ export default function DealResults() {
                 </option>
               ))}
             </select>
+          )}
+          {streetViewUrl(deal.data) && (
+            <a
+              href={streetViewUrl(deal.data)}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-ghost"
+              title={
+                deal.data.lat != null
+                  ? 'Google Street View at this property\'s coordinates'
+                  : 'Google Maps search for this address — no coordinates on this deal, so it may land nearby rather than on the building'
+              }
+            >
+              Street View ↗
+            </a>
           )}
           {out && (
             <Suspense fallback={<span className="btn-primary opacity-60">PDF…</span>}>

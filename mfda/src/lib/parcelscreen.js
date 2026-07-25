@@ -137,13 +137,25 @@ export function ownerEquity(parcel) {
   });
 }
 
-/** Google Street View (pano when we have coordinates, address search otherwise). */
+/**
+ * Google Street View (pano when we have coordinates, address search
+ * otherwise). Accepts either shape — parcels carry situs_* fields, deals
+ * carry plain address/city/zip — so one link works on every page.
+ */
 export function streetViewUrl(p) {
+  if (!p) return null;
   if (p.lat != null && p.lng != null) {
     return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.lat},${p.lng}`;
   }
   const q = encodeURIComponent(
-    [p.situs_address, p.situs_city, p.state, p.situs_zip].filter(Boolean).join(', '),
+    [
+      p.situs_address ?? p.address,
+      p.situs_city ?? p.city,
+      p.state,
+      p.situs_zip ?? p.zip,
+    ]
+      .filter(Boolean)
+      .join(', '),
   );
   return q ? `https://www.google.com/maps/search/?api=1&query=${q}` : null;
 }
