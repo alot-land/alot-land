@@ -140,15 +140,30 @@ export default function DealNew() {
 
   // Auto-seed the STR ADR + occupancy from the rent data so the LTR-vs-STR
   // panel appears without hunting — glance-level estimate, editable, flagged.
+  //
+  // The suggestion must TRACK the rents, not latch onto the first value it
+  // ever saw. A blank form starts at the placeholder $1,400/mo, so seeding
+  // once and then refusing to update (because ADR was no longer blank) showed
+  // the same $117 on every property, whatever its real rents.
+  //
+  // seededAdrRef remembers what we last wrote, which is what distinguishes
+  // "our own estimate, still ours to refine" from "a number the operator
+  // typed" — the latter is never touched.
+  const seededAdrRef = useRef(null);
   useEffect(() => {
     if (!hydrated || !strSuggestion) return;
-    setF((p) =>
-      p.str.adr != null && p.str.adr !== ''
-        ? p
-        : { ...p, str: { ...p.str, adr: strSuggestion.adr, occupancy_rate: p.str.occupancy_rate ?? strSuggestion.occupancy_rate } },
-    );
+    const cur = f.str.adr;
+    const blank = cur == null || cur === '';
+    const ours = seededAdrRef.current != null && Number(cur) === Number(seededAdrRef.current);
+    if (!blank && !ours) return; // operator-entered — leave it alone
+    if (!blank && Number(cur) === Number(strSuggestion.adr)) return; // already current
+    seededAdrRef.current = strSuggestion.adr;
+    setNested('str', {
+      adr: strSuggestion.adr,
+      occupancy_rate: f.str.occupancy_rate ?? strSuggestion.occupancy_rate,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, strSuggestion]);
+  }, [hydrated, strSuggestion, f.str.adr, f.str.occupancy_rate]);
 
   // Apply market defaults when a market is picked.
   function applyMarket(marketId) {
@@ -334,7 +349,13 @@ export default function DealNew() {
           <Field
             label="ADR ($/night)"
             tip="Average daily rate per unit. Auto-seeded from this deal's market rent (roughly rent ÷ 12 — a short-term night grosses about 2.5× the long-term nightly equivalent). That's a glance-level estimate: once a deal interests you, refine it from AirDNA or nearby Airbnb comps for the same bedroom count."
-            hint={strSuggestion ? `≈ suggested from ${usd(Math.round(avgMarketRent))}/mo rent — refine with AirDNA` : undefined}
+            hint={
+              !strSuggestion
+                ? undefined
+                : f.str.adr != null && f.str.adr !== '' && Number(f.str.adr) !== Number(strSuggestion.adr)
+                  ? `your figure — this deal's ${usd(Math.round(avgMarketRent))}/mo rent suggests ${usd(strSuggestion.adr)}`
+                  : `≈ suggested from ${usd(Math.round(avgMarketRent))}/mo rent — refine with AirDNA`
+            }
           >
             <NumberInput value={f.str.adr} onChange={(v) => setNested('str', { adr: v })} suffix="$" />
           </Field>
