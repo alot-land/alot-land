@@ -286,6 +286,10 @@ const MANUAL = [
         b: 'Goals → enter the monthly cash flow you want (say $10,000), your starting cash, and what you can add monthly. Three strategy paths compute instantly, each with a timeline, deal count, doors, and total capital required. Set the goal to lock it in; when you hit it, mark it achieved 🎉 and set the next one — achieved goals stay on the trophy list.',
       },
       {
+        t: '"Saving / month" is fuel, not part of the goal',
+        b: 'The goal itself is pure rental cash flow — savings never count toward the $10,000. But every next purchase needs a down payment, and there are only three sources: money you add monthly, the cash flow of buildings you already own, and refi proceeds. At $0/month added, conventional 25%-down deals often never get off the ground (the first down payment alone can exceed your starting cash) while the low-down seller-finance path still converges — which is exactly why the off-market machine hunts seller-finance candidates.',
+      },
+      {
         t: 'How the timelines are computed',
         b: 'A month-by-month simulation, not a guess: your war chest grows from savings plus the cash flow of every deal you\'ve already bought (the snowball effect), and a new deal is bought the month you can afford one. No appreciation or rent growth is counted — real results should beat the projection.',
       },

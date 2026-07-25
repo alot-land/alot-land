@@ -207,7 +207,7 @@ export default function Goals() {
               />
             </label>
             {num('capital_available', 'Cash to start', 'What you can deploy today — down payments, closing, reserves.')}
-            {num('monthly_savings', 'Adding / month', 'Outside money you add to the war chest monthly (savings, business income).')}
+            {num('monthly_savings', 'Saving / month (optional)', "NOT part of the goal — the goal is pure rental cash flow. This is outside money you put toward the NEXT down payment. $0 is allowed: then only the buildings' own cash flow (and refis) fund the next purchase, which is much slower — that's the honest math, and it's why the low-down seller-finance path wins at $0.")}
             <button type="button" onClick={save} disabled={saving || !(Number(target) > 0)} className="btn-gold text-sm disabled:opacity-50">
               {saving ? 'Saving…' : 'Set goal'}
             </button>
@@ -281,7 +281,9 @@ export default function Goals() {
               )}
               {!s.result.reached && (
                 <div className="mt-3 text-xs text-warn">
-                  Doesn’t converge within 50 years on these assumptions — raise savings, CoC, or lower the target.
+                  {s.result.deals_needed === 0 && planInputs.capital_available < s.per_deal_cash
+                    ? `Never gets off the ground: ${usd(planInputs.capital_available)} to start doesn't cover the ${usd(s.per_deal_cash)} this strategy needs per deal${!(planInputs.monthly_savings > 0) ? ", and at $0/month added nothing grows" : ''}. Lower the cash per deal (seller finance, smaller buildings) or add monthly savings.`
+                    : "Converges too slowly (50+ years): the buildings' cash flow alone can't accumulate the next down payment fast enough. Add monthly savings, use lower-down financing, or recycle cash via refis."}
                 </div>
               )}
             </div>
