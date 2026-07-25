@@ -43,25 +43,63 @@ export function inspectReport(res, label = '') {
   return lines.join('\n');
 }
 
-/** Chunked upsert into parcels. Returns stats. */
+/**
+ * Chunked upsert into parcels, tolerant of individual bad rows.
+ *
+ * A failing chunk is split in half and retried rather than abandoned, so one
+ * malformed value costs its own row instead of the 499 around it (a single
+ * unrounded lot size took down a whole 12k import, field-verified
+ * 2026-07-25). Binary isolation keeps that cheap: ~log2(chunk) extra calls
+ * per bad row instead of one call per row.
+ *
+ * Rejected rows are RETURNED, never swallowed — the caller reports them.
+ * Silent partial imports are the failure mode worth fearing here: a mail
+ * list that quietly lost rows still looks complete.
+ */
 export async function importParcels(db, orgId, parcels) {
   const rows = parcels.map((p) => ({
     org_id: orgId,
     dedupe_key: `apn:${p.county_fips || 'na'}:${p.apn}`.toLowerCase(),
     ...p,
   }));
-  const CHUNK = 500;
-  for (let i = 0; i < rows.length; i += CHUNK) {
+  const failed = [];
+
+  async function upsert(slice) {
+    if (!slice.length) return 0;
     const { error } = await db.supabase
       .from('parcels')
-      .upsert(rows.slice(i, i + CHUNK), { onConflict: 'org_id,dedupe_key' });
-    if (error) throw new Error(`parcels upsert failed: ${error.message}`);
+      .upsert(slice, { onConflict: 'org_id,dedupe_key' });
+    if (!error) return slice.length;
+    if (slice.length === 1) {
+      failed.push({ apn: slice[0].apn, error: error.message });
+      return 0;
+    }
+    const mid = Math.floor(slice.length / 2);
+    return (await upsert(slice.slice(0, mid))) + (await upsert(slice.slice(mid)));
   }
+
+  const CHUNK = 500;
+  let imported = 0;
+  for (let i = 0; i < rows.length; i += CHUNK) imported += await upsert(rows.slice(i, i + CHUNK));
+
+  // A handful of odd rows is data reality; a broad failure is a bug, and
+  // should stop the run rather than leave a plausible-looking partial table.
+  // Both bars must be cleared — a ratio alone would trip on tiny batches
+  // where one bad row is 25%, a count alone would ignore 24 losses in 30.
+  if (failed.length > Math.max(25, rows.length * 0.02)) {
+    throw new Error(
+      `parcels upsert rejected ${failed.length} of ${rows.length} rows (>2%) — imported ${imported} before stopping. ` +
+        `First errors: ${failed.slice(0, 3).map((f) => `${f.apn}: ${f.error}`).join(' | ')}`,
+    );
+  }
+
+  const ok = rows.filter((r) => !failed.some((f) => f.apn === r.apn));
   return {
-    imported: rows.length,
-    absentee: rows.filter((r) => r.absentee).length,
-    entity: rows.filter((r) => r.owner_is_entity).length,
-    withUnits: rows.filter((r) => r.units != null).length,
+    imported,
+    failed,
+    absentee: ok.filter((r) => r.absentee).length,
+    entity: ok.filter((r) => r.owner_is_entity).length,
+    withUnits: ok.filter((r) => r.units != null).length,
   };
 }
 

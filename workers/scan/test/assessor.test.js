@@ -278,6 +278,37 @@ describe('assessorToParcels — Nashville ArcGIS Hub export shape', () => {
   });
 });
 
+describe('integer columns', () => {
+  // parcels.units / year_built / building_sqft / lot_sqft are `int` in
+  // Postgres, and ArcGIS declares sqft fields as esriFieldTypeDouble — an
+  // unrounded value is an insert ERROR, not a silent truncation.
+  const DOUBLES = [
+    'APN|Owner Name|Mail Address|Mail Zip|Situs Address|Situs Zip|PUC|Year Built|Living Area|Land Area|Units',
+    '111-22-333|SMITH LLC|1 MAIN ST|85001|500 W VAN BUREN|85003|APARTMENTS 5-9 UNITS|1985.0|4210.75|326073.22|5.0',
+  ].join('\n');
+
+  it('rounds every int-typed field', () => {
+    const p = assessorToParcels(DOUBLES, PRESETS.maricopa).parcels[0];
+    expect(p.lot_sqft).toBe(326073);
+    expect(p.building_sqft).toBe(4211);
+    expect(p.year_built).toBe(1985);
+    expect(p.units).toBe(5);
+    for (const f of ['lot_sqft', 'building_sqft', 'year_built', 'units']) {
+      expect(Number.isInteger(p[f]), `${f} must be an integer`).toBe(true);
+    }
+  });
+
+  it('still rounds when converting acres to square feet', () => {
+    const acres = [
+      'APN|Owner Name|Mail Address|Mail Zip|Situs Address|Situs Zip|PUC|Acres',
+      '111-22-333|SMITH LLC|1 MAIN ST|85001|500 W VAN BUREN|85003|DUPLEX|1.37',
+    ].join('\n');
+    const p = assessorToParcels(acres, PRESETS.maricopa).parcels[0];
+    expect(p.lot_sqft).toBe(Math.round(1.37 * 43560));
+    expect(Number.isInteger(p.lot_sqft)).toBe(true);
+  });
+});
+
 describe('unitsFromClass', () => {
   it('reads plex sizes out of land-use descriptions', () => {
     expect(unitsFromClass('DUPLEX')).toBe(2);

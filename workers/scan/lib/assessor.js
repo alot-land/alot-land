@@ -179,6 +179,17 @@ function num(v) {
   return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * For the parcels columns Postgres declares as `int` — units, year_built,
+ * building_sqft, lot_sqft. County APIs hand these back as doubles
+ * ("326073.22" for a lot size, field-verified on Maricopa 2026-07-25), and
+ * an unrounded decimal is a hard insert error, not a coercion.
+ */
+function int(v) {
+  const n = num(v);
+  return n == null ? null : Math.round(n);
+}
+
 function parseDate(v) {
   if (!v) return null;
   const s = String(v).trim();
@@ -220,7 +231,7 @@ export function assessorToParcels(text, preset, opts = {}) {
     }
     const logical = {
       property_class: get(r, 'property_class'),
-      units: num(get(r, 'units')) ?? unitsFromClass(get(r, 'property_class')),
+      units: int(get(r, 'units')) ?? unitsFromClass(get(r, 'property_class')),
     };
     if (!preset.isMultifamily(logical)) continue;
 
@@ -246,11 +257,11 @@ export function assessorToParcels(text, preset, opts = {}) {
       absentee: isAbsentee(situsAddr, situsZip, mailAddr, mailZip),
       property_class: logical.property_class || null,
       units: logical.units,
-      year_built: num(get(r, 'year_built')),
-      building_sqft: num(get(r, 'building_sqft')),
+      year_built: int(get(r, 'year_built')),
+      building_sqft: int(get(r, 'building_sqft')),
       lot_sqft: (() => {
         const v = num(get(r, 'lot_sqft'));
-        return v == null ? null : lotIsAcres ? Math.round(v * 43560) : v;
+        return v == null ? null : Math.round(lotIsAcres ? v * 43560 : v);
       })(),
       last_sale_date: parseDate(get(r, 'last_sale_date')),
       last_sale_price: num(get(r, 'last_sale_price')),

@@ -544,13 +544,20 @@ for (const key of toRun) {
     console.log(
       `✓ ${key}: imported ${stats.imported} MF parcels · absentee ${stats.absentee} · entity ${stats.entity} · with units ${stats.withUnits}`,
     );
+    if (stats.failed?.length) {
+      console.warn(`  ⚠ ${stats.failed.length} row(s) rejected by the database — NOT in the table:`);
+      for (const f of stats.failed.slice(0, 10)) console.warn(`    ${f.apn}: ${f.error}`);
+      if (stats.failed.length > 10) console.warn(`    … ${stats.failed.length - 10} more`);
+    }
     await db.finishScanRun(runId, {
       ok: true,
       blocked: false,
       rows_fetched: out.res.total,
       rows_active: stats.imported,
       rows_sold: 0,
-      notes: `parcels auto-import: ${stats.imported} imported, ${stats.absentee} absentee, ${stats.entity} entity`,
+      notes:
+        `parcels auto-import: ${stats.imported} imported, ${stats.absentee} absentee, ${stats.entity} entity` +
+        (stats.failed?.length ? `, ${stats.failed.length} rejected` : ''),
     });
     await db.logCost(orgId, `parcels auto-import ${key}: ${stats.imported} rows`);
   } catch (e) {

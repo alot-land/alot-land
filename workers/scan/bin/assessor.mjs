@@ -100,4 +100,9 @@ await db.logCost(orgId, `assessor import ${source}: ${stats.imported} MF parcels
 
 console.log(`✓ Imported ${stats.imported} multifamily parcels.`);
 console.log(`  absentee: ${stats.absentee} · entity-owned: ${stats.entity} · with real unit counts: ${stats.withUnits}`);
+if (stats.failed?.length) {
+  console.warn(`  ⚠ ${stats.failed.length} row(s) rejected by the database — NOT in the table:`);
+  for (const f of stats.failed.slice(0, 10)) console.warn(`    ${f.apn}: ${f.error}`);
+  if (stats.failed.length > 10) console.warn(`    … ${stats.failed.length - 10} more`);
+}
 console.log('  Open the app → Off-Market to build lists and export FreedomSoft CSVs.');
