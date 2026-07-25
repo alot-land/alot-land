@@ -9,6 +9,7 @@ import {
   listParcelCounties,
   listMailLists,
   createMailList,
+  deleteMailList,
   listParcelsForMailList,
   logMailExport,
   listAllRentBands,
@@ -176,6 +177,12 @@ export default function OffMarket() {
     exportCSV(items, list.name, list.id);
   }
 
+  async function removeList(list) {
+    if (!window.confirm(`Delete the mail list “${list.name}”? Its snapshot is removed; past export logs are kept.`)) return;
+    await deleteMailList(list.id);
+    qc.invalidateQueries({ queryKey: ['mail-lists', org.id] });
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
@@ -233,9 +240,19 @@ export default function OffMarket() {
                     <td className="td text-right">{l.mail_list_items?.[0]?.count ?? '—'}</td>
                     <td className="td text-right text-muted">{new Date(l.created_at).toLocaleDateString()}</td>
                     <td className="td text-right">
-                      <button type="button" onClick={() => exportSavedList(l)} className="btn-ghost text-sm py-1">
-                        Export CSV
-                      </button>
+                      <div className="inline-flex gap-2">
+                        <button type="button" onClick={() => exportSavedList(l)} className="btn-ghost text-sm py-1">
+                          Export CSV
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeList(l)}
+                          className="btn-ghost text-sm py-1 text-danger"
+                          title="Delete this list (snapshot removed; export history kept)"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

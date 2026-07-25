@@ -411,6 +411,13 @@ export async function createMailList(orgId, userId, { name, filters, parcelIds }
   return list;
 }
 
+// Deleting a list removes its snapshot (items cascade); logged exports keep
+// their history with the list reference cleared.
+export async function deleteMailList(id) {
+  const { error } = await supabase.from('mail_lists').delete().eq('id', id);
+  if (error) throw error;
+}
+
 export async function listParcelsForMailList(listId) {
   const { rows } = await fetchPaged(
     () => supabase.from('mail_list_items').select('parcels(*)').eq('list_id', listId).order('parcel_id'),
