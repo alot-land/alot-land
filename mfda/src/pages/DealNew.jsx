@@ -55,6 +55,10 @@ export default function DealNew() {
   const [f, setF] = useState(blankForm);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  // For a new deal we're ready immediately; for edit, only after the deal's
+  // real state loads — otherwise the market auto-picker fires on the default
+  // 'AZ' state and locks in Phoenix before the true state arrives.
+  const [hydrated, setHydrated] = useState(!editing);
 
   const markets = useQuery({ queryKey: ['markets', org?.id], queryFn: () => listMarkets(org.id), enabled: !!org });
   const agent = useQuery({ queryKey: ['listing-contact', id], queryFn: () => getListingContact(id), enabled: editing });
@@ -75,6 +79,7 @@ export default function DealNew() {
         lat: deal.lat, lng: deal.lng, beds_total: deal.beds_total, unit_bucket: deal.unit_bucket,
         units: units.length ? units.map((u) => ({ type: u.type, count: u.count, sqft: u.sqft, actual_rent: Number(u.actual_rent), market_rent: Number(u.market_rent) })) : prev.units,
       }));
+      setHydrated(true);
     })().catch((e) => setErr(e.message));
   }, [editing, id]);
 
@@ -82,11 +87,11 @@ export default function DealNew() {
   // picks Phoenix/Maricopa) and apply its smart defaults — unless a market was
   // already chosen in a previous underwrite.
   useEffect(() => {
-    if (!markets.data?.length || f.market_id || !f.state) return;
+    if (!hydrated || !markets.data?.length || f.market_id || !f.state) return;
     const match = markets.data.find((m) => m.state === f.state);
     if (match) applyMarket(match.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [markets.data, f.state, f.market_id]);
+  }, [hydrated, markets.data, f.state, f.market_id]);
 
   const set = (patch) => setF((p) => ({ ...p, ...patch }));
   const setNested = (key, patch) => setF((p) => ({ ...p, [key]: { ...p[key], ...patch } }));
