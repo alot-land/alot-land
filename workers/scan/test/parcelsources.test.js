@@ -9,7 +9,14 @@ import {
   NASHVILLE_HUB_DATASETS,
   mergeOwnership,
 } from '../lib/parcelsources.js';
-import { looksLikeEntity, isAbsentee } from '../lib/assessor.js';
+import {
+  arcgisLayerFromMeta,
+  arcgisQueryUrl,
+  pickClassField,
+  featuresToRows,
+  rowsToCsv,
+} from '../lib/parcelsources.js';
+import { looksLikeEntity, isAbsentee, assessorToParcels, PRESETS } from '../lib/assessor.js';
 
 describe('extractLinks', () => {
   it('resolves relative and absolute hrefs against the page URL', () => {
@@ -110,6 +117,61 @@ describe('socrataCsvUrl', () => {
     expect(socrataCsvUrl('data.nashville.gov', 'bbbb-2222', { limit: 1000, offset: 2000 })).toBe(
       'https://data.nashville.gov/resource/bbbb-2222.csv?$limit=1000&$offset=2000&$order=:id',
     );
+  });
+});
+
+describe('ArcGIS helpers (Maricopa GIS route)', () => {
+  it('arcgisLayerFromMeta pulls the layer URL and field names', () => {
+    const meta = {
+      data: {
+        attributes: {
+          url: 'https://services.arcgis.com/XXX/arcgis/rest/services/Parcels/FeatureServer/0/',
+          fields: [{ name: 'APN' }, { name: 'OWNER_NAME' }, { name: 'PUC' }],
+        },
+      },
+    };
+    const l = arcgisLayerFromMeta(meta);
+    expect(l.url).toBe('https://services.arcgis.com/XXX/arcgis/rest/services/Parcels/FeatureServer/0');
+    expect(l.fields).toEqual(['APN', 'OWNER_NAME', 'PUC']);
+    expect(arcgisLayerFromMeta({})).toBeNull();
+  });
+
+  it('pickClassField prefers PUC, falls back to use/class fields', () => {
+    expect(pickClassField(['APN', 'PUC', 'LAND_USE'])).toBe('PUC');
+    expect(pickClassField(['APN', 'LandUseCode'])).toBe('LandUseCode');
+    expect(pickClassField(['APN', 'ACRES'])).toBeNull();
+  });
+
+  it('arcgisQueryUrl builds a paged, geometry-free query', () => {
+    const u = arcgisQueryUrl('https://x.test/FeatureServer/0', { where: "PUC LIKE '03%'", offset: 4000 });
+    expect(u).toContain('https://x.test/FeatureServer/0/query?');
+    expect(u).toContain('where=PUC+LIKE+%2703%25%27');
+    expect(u).toContain('returnGeometry=false');
+    expect(u).toContain('resultOffset=4000');
+  });
+
+  it('featuresToRows → rowsToCsv → assessor parser round-trips API data', () => {
+    const json = {
+      features: [
+        { attributes: { APN: '111-22-333', OWNER_NAME: 'SMITH JOHN', MAIL_ADDRESS: '1 ELSEWHERE RD', MAIL_ZIP: '85251', PHYSICAL_ADDRESS: '123 E MAIN ST', PHYSICAL_ZIP: '85004', PUC: '0324' } },
+        { attributes: { APN: '111-22-334', OWNER_NAME: 'X, LLC', MAIL_ADDRESS: 'PO BOX 9', MAIL_ZIP: '85251', PHYSICAL_ADDRESS: '4 OAK AVE', PHYSICAL_ZIP: '85007', PUC: '0101' } },
+      ],
+    };
+    const csv = rowsToCsv(featuresToRows(json));
+    const res = assessorToParcels(csv, PRESETS.maricopa);
+    expect(res.kept).toBe(1); // 0324 kept, 0101 filtered
+    const p = res.parcels[0];
+    expect(p.apn).toBe('111-22-333');
+    expect(p.owner_name).toBe('SMITH JOHN');
+    expect(p.situs_address).toBe('123 E MAIN ST');
+    expect(p.mailing_address).toBe('1 ELSEWHERE RD');
+    expect(p.absentee).toBe(true);
+  });
+
+  it('rowsToCsv quotes commas and unions keys across rows', () => {
+    const csv = rowsToCsv([{ A: 'x,y' }, { A: 'z', B: 2 }]);
+    expect(csv.split('\n')[0]).toBe('A,B');
+    expect(csv).toContain('"x,y"');
   });
 });
 

@@ -154,9 +154,22 @@ export default function OffMarket() {
             <option key={c.county_fips} value={c.county_fips}>{countyLabel(c.county_fips)}</option>
           ))}
         </select>
-        <input className="input w-24" type="number" placeholder="Min units" value={minUnits} onChange={(e) => setMinUnits(e.target.value)} />
-        <input className="input w-24" type="number" placeholder="Max units" value={maxUnits} onChange={(e) => setMaxUnits(e.target.value)} />
-        <input className="input w-28" type="number" placeholder="Held ≥ yrs" value={heldYears} onChange={(e) => setHeldYears(e.target.value)} />
+        {[
+          ['Min units', minUnits, setMinUnits, 'e.g. 3', 'Only parcels with at least this many units. Unit counts come from the assessor or the land-use class (DUPLEX=2…); apartments without a stated count are excluded when this is set.'],
+          ['Max units', maxUnits, setMaxUnits, 'e.g. 20', 'Upper bound on units — keeps you in your 2–20 unit wheelhouse.'],
+          ['Held ≥ years', heldYears, setHeldYears, 'e.g. 10', 'Owner\'s last recorded sale is at least this many years back. Long holds = equity + used-up depreciation — classic sellers. Needs sale dates in the county data.'],
+        ].map(([label, value, set, ph, tip]) => (
+          <label key={label} className="flex flex-col gap-0.5 text-xs text-muted">
+            <span className="flex items-center">{label}<Tip text={tip} /></span>
+            <input
+              className="input w-28 text-sm"
+              type="number"
+              placeholder={ph}
+              value={value}
+              onChange={(e) => set(e.target.value)}
+            />
+          </label>
+        ))}
         <label className="flex items-center gap-1.5 text-sm text-ink-2 px-1">
           <input type="checkbox" checked={absentee} onChange={(e) => setAbsentee(e.target.checked)} />
           Absentee
@@ -169,8 +182,28 @@ export default function OffMarket() {
         </label>
       </div>
 
+      {/* Live feedback — there's no Search button; results follow the filters. */}
+      {parcels.data && (
+        <div className="text-sm text-ink-2 mb-3">
+          <span className="font-semibold tabular-nums">{total.toLocaleString()}</span> parcels match
+          {parcels.isFetching && <span className="text-muted"> · updating…</span>}
+          <span className="text-muted"> — results update as you type; no search button needed.</span>
+        </div>
+      )}
+
       {parcels.isLoading && <div className="text-muted">Loading…</div>}
       {parcels.error && <div className="text-danger text-sm">{String(parcels.error.message)}</div>}
+
+      {parcels.data && total === 0 && (search || state !== 'all' || absentee || entity || minUnits || maxUnits || heldYears) && (
+        <div className="card p-8 text-center">
+          <p className="font-medium">0 parcels match these filters</p>
+          <p className="text-muted text-sm mt-2 max-w-lg mx-auto">
+            Loosen one filter at a time to see which is excluding everything. Two common causes:
+            “Min units” drops apartment parcels whose county file doesn’t state a unit count, and
+            “Held ≥ years” drops parcels whose file lacks a sale date.
+          </p>
+        </div>
+      )}
 
       {parcels.data && total === 0 && !search && state === 'all' && !absentee && !entity && !minUnits && (
         <div className="card p-10 text-center">

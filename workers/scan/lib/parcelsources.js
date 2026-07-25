@@ -15,11 +15,70 @@
  * bin/parcels.mjs.
  */
 
-export const MARICOPA_PAGES = [
-  'https://www.mcassessor.maricopa.gov/page/data_sales/',
-  'https://api.mcassessor.maricopa.gov/page/data_sales/',
-  'https://ftp.mcassessor.maricopa.gov/data-sales/',
+// api./ftp. subdomains are firewalled from datacenters (TCP ETIMEDOUT,
+// field-verified 2026-07-24) — only www is reachable, and its public
+// data-sales pages expose samples + layout docs, not full files.
+export const MARICOPA_PAGES = ['https://www.mcassessor.maricopa.gov/page/data_sales/'];
+
+// PRIMARY Maricopa route: the county's GIS parcels on ArcGIS (same Hub
+// infrastructure that serves the Nashville parcels). Queried server-side by
+// multifamily PUC so we never pull the county's 1.4M single-family rows.
+export const MARICOPA_HUB_DATASETS = [
+  'c937f17330f64e64abd41976fc8bb17f_0', // "Parcels" (GIS Open Data)
+  'e22983d41d91490d90965544b718a120_0', // "Residential Master"
 ];
+
+export const hubDatasetMetaUrl = (id) => `https://hub.arcgis.com/api/v3/datasets/${id}`;
+
+/** Hub v3 dataset metadata → { url: FeatureServer layer URL, fields: [names] }. */
+export function arcgisLayerFromMeta(meta) {
+  const a = meta?.data?.attributes || {};
+  const url = a.url || a.layer?.url || a.server?.url || null;
+  const rawFields = a.fields || a.layer?.fields || [];
+  const fields = rawFields.map((f) => (typeof f === 'string' ? f : f?.name)).filter(Boolean);
+  return url ? { url: String(url).replace(/\/+$/, ''), fields } : null;
+}
+
+/** Find the property-use-code/class field on an ArcGIS layer. */
+export function pickClassField(fields) {
+  const fs = fields.map(String);
+  return (
+    fs.find((f) => /^puc$/i.test(f)) ||
+    fs.find((f) => /^puc[_a-z]*$/i.test(f)) ||
+    fs.find((f) => /property.?use|land.?use|use.?code|prop.?class|class.?code/i.test(f)) ||
+    null
+  );
+}
+
+export function arcgisQueryUrl(layerUrl, { where = '1=1', offset = 0, count = 2000 } = {}) {
+  const p = new URLSearchParams({
+    where,
+    outFields: '*',
+    returnGeometry: 'false',
+    f: 'json',
+    resultOffset: String(offset),
+    resultRecordCount: String(count),
+  });
+  return `${layerUrl}/query?${p.toString()}`;
+}
+
+/** ArcGIS query JSON → plain attribute rows. */
+export function featuresToRows(json) {
+  return (json?.features || []).map((f) => f.attributes).filter(Boolean);
+}
+
+/** Attribute rows → CSV text (union of keys), so the standard assessor
+ * parser — column resolution, inspect reports, essentials gate — applies
+ * unchanged to API-sourced data. */
+export function rowsToCsv(rows) {
+  if (!rows.length) return '';
+  const headers = [...new Set(rows.flatMap((r) => Object.keys(r)))];
+  const esc = (v) => {
+    const s = v == null ? '' : String(v);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return [headers.join(','), ...rows.map((r) => headers.map((h) => esc(r[h])).join(','))].join('\n');
+}
 
 // Nashville migrated its portal from Socrata to ArcGIS Hub (confirmed
 // 2026-07: the Socrata catalog 404s and datasets live on

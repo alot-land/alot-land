@@ -31,9 +31,16 @@ import { assessorToParcels, looksLikeEntity, isAbsentee, PRESETS } from '../lib/
 import { request as httpsRequest } from 'node:https';
 import {
   MARICOPA_PAGES,
+  MARICOPA_HUB_DATASETS,
   NASHVILLE_CATALOG_URL,
   NASHVILLE_HUB_DATASETS,
   hubDownloadUrl,
+  hubDatasetMetaUrl,
+  arcgisLayerFromMeta,
+  arcgisQueryUrl,
+  pickClassField,
+  featuresToRows,
+  rowsToCsv,
   extractLinks,
   extractFileUrls,
   pickMaricopaFiles,
@@ -153,7 +160,64 @@ async function downloadDataFile(url, label, { viaMaricopa = false } = {}) {
 }
 
 // ---- Maricopa lane --------------------------------------------------------
+// Primary: county GIS parcels via ArcGIS, filtered server-side to
+// multifamily PUC (03xx) so only ~tens of thousands of rows transfer.
+// Fallback: scrape the assessor's data-sales pages for bulk files.
+async function maricopaViaArcgis() {
+  let lastErr = null;
+  for (const id of MARICOPA_HUB_DATASETS) {
+    try {
+      console.log(`  dataset ${id}: fetching layer metadata`);
+      const meta = JSON.parse(await (await fetchOk(hubDatasetMetaUrl(id))).text());
+      const layer = arcgisLayerFromMeta(meta);
+      if (!layer?.url) throw new Error('no layer URL in Hub metadata');
+      const classField = pickClassField(layer.fields);
+      console.log(`  layer ${layer.url}`);
+      console.log(`  fields (${layer.fields.length}): ${layer.fields.join(', ')}`);
+      if (!classField) throw new Error('no PUC/land-use field — paste the field list above into the build chat');
+
+      const where = `${classField} LIKE '03%'`;
+      console.log(`  querying where ${where}`);
+      const rows = [];
+      for (let offset = 0; offset < 300000; offset += 2000) {
+        const j = JSON.parse(await (await fetchOk(arcgisQueryUrl(layer.url, { where, offset }))).text());
+        if (j.error) throw new Error(`arcgis error: ${JSON.stringify(j.error).slice(0, 200)}`);
+        const page = featuresToRows(j);
+        rows.push(...page);
+        process.stdout.write(`  ${rows.length} multifamily features…\r`);
+        if (page.length < 2000) break;
+      }
+      console.log('');
+      if (!rows.length) throw new Error(`0 rows for "${where}" — the class field may be numeric or coded differently`);
+      if (DISCOVER_ONLY) return { discovered: { dataset: id, layer: layer.url, classField, rows: rows.length } };
+      return { text: rowsToCsv(rows), via: `arcgis:${id}` };
+    } catch (e) {
+      lastErr = e;
+      console.warn(`  ${id}: ${e.message}`);
+    }
+  }
+  throw lastErr || new Error('no ArcGIS datasets configured');
+}
+
 async function maricopaLane() {
+  try {
+    const got = await maricopaViaArcgis();
+    if (got.discovered) return got;
+    const res = assessorToParcels(got.text, PRESETS.maricopa);
+    console.log(inspectReport(res, `maricopa ${got.via}`));
+    if (!essentialsOk(res)) {
+      throw new Error(`essential fields unresolved (${res.unresolved.join(', ')}) — imported nothing; paste the parse report into the build chat`);
+    }
+    if (!res.kept) throw new Error('0 rows passed the multifamily filter — paste the report above into the build chat');
+    return { res };
+  } catch (e) {
+    console.warn(`  ArcGIS route failed: ${e.message}`);
+    console.log('  falling back to assessor-site page scrape');
+    return maricopaViaPages();
+  }
+}
+
+async function maricopaViaPages() {
   let picked = null;
   for (const page of MARICOPA_PAGES) {
     try {
