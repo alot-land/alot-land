@@ -4,13 +4,11 @@
   publish = "dist"
   functions = "netlify/functions"
 
-# Functions must resolve before the SPA catch-all, or /.netlify/* would be
-# rewritten to index.html.
-[[redirects]]
-  from = "/.netlify/functions/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-
+# No redirect is needed for /.netlify/functions/* — Netlify resolves function
+# routes BEFORE the redirect engine, so the SPA catch-all below cannot swallow
+# them. Netlify also rejects any redirect whose source starts with /.netlify/
+# ("Invalid /.netlify path in redirect source"), so adding one only produces a
+# build warning.
 [[redirects]]
   from = "/*"
   to = "/index.html"
