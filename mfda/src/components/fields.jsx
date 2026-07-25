@@ -1,20 +1,67 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
-/** Hover/tap info bubble. Keyboard-focusable; resets the label's uppercase. */
+/**
+ * Hover/tap info bubble. The bubble is portaled to <body> with fixed
+ * positioning so no ancestor's overflow (e.g. a table's overflow-x-auto,
+ * which also clips vertical overflow) can hide it. Flips below the trigger
+ * when there isn't room above.
+ */
 export function Tip({ text }) {
+  const ref = useRef(null);
+  const [pos, setPos] = useState(null); // {top, left, placement}
+
+  useLayoutEffect(() => {
+    if (!pos || !ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    const W = 256; // w-64
+    const margin = 8;
+    const above = r.top > 140;
+    let left = r.left + r.width / 2 - W / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - W - margin));
+    setPos((p) => ({
+      ...p,
+      left,
+      top: above ? r.top - margin : r.bottom + margin,
+      placement: above ? 'above' : 'below',
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pos?.open]);
+
   if (!text) return null;
+  const show = () => setPos({ open: true });
+  const hide = () => setPos(null);
+
   return (
-    <span className="relative inline-block group align-middle ml-1">
+    <span className="inline-block align-middle ml-1">
       <span
+        ref={ref}
         tabIndex={0}
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onBlur={hide}
         className="cursor-help select-none text-muted border border-border-hi rounded-full w-4 h-4 inline-flex items-center justify-center text-[10px] leading-none bg-surface"
         aria-label="What is this?"
       >
         i
       </span>
-      <span className="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition-opacity absolute z-30 left-0 bottom-full mb-1.5 w-64 bg-ink text-bg text-xs font-normal normal-case tracking-normal rounded-lg px-3 py-2 shadow-xl pointer-events-none">
-        {text}
-      </span>
+      {pos &&
+        createPortal(
+          <span
+            style={{
+              position: 'fixed',
+              top: pos.top,
+              left: pos.left ?? -9999,
+              width: 256,
+              transform: pos.placement === 'above' ? 'translateY(-100%)' : 'none',
+            }}
+            className="z-[9999] bg-ink text-bg text-xs font-normal normal-case tracking-normal rounded-lg px-3 py-2 shadow-xl pointer-events-none"
+          >
+            {text}
+          </span>,
+          document.body,
+        )}
     </span>
   );
 }
