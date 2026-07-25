@@ -4,17 +4,25 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../lib/auth';
 import { useOrg } from '../lib/org';
 import { underwrite } from '../lib/underwrite';
-import { suggestStrDefaults, estimateOperatingExpenses } from '@alot/mf-calc';
+import { suggestStrDefaults, estimateOperatingExpenses, bedroomsFromLabel as suggestBedrooms } from '@alot/mf-calc';
 import { usd } from '../lib/format';
 import {
   getDeal, getUnits, upsertDeal, replaceUnits, saveScenario, logCost, listMarkets, listScenarios,
-  getListingContact,
+  getListingContact, listAllRentBands,
 } from '../lib/queries';
 import { Field, TextInput, NumberInput, PercentInput, Section, Grid, Tip } from '../components/fields';
+import { buildZipRents, buildZipBedroomRatios, zipRentForUnit } from '../lib/parcelscreen';
 import UnitMixEditor from '../components/UnitMixEditor';
 import CompsAssist from '../components/CompsAssist';
 import RentBandsCard from '../components/RentBandsCard';
 import RentEstimator from '../components/RentEstimator';
+
+// The unit mix a form starts with when nothing is known yet. It is a
+// PLACEHOLDER, not data: leaving it in place made every scraped lead
+// underwrite at 4 × $1,400, which in turn made the STR panel suggest the same
+// $117 ADR on every property in the pipeline. The seeding effect below
+// replaces it with real ZIP rents as soon as they are available.
+const PLACEHOLDER_UNIT = { type: '2BR/1BA', count: 4, sqft: 850, actual_rent: 1200, market_rent: 1400 };
 
 function blankForm() {
   return {
@@ -23,7 +31,7 @@ function blankForm() {
     price: null, status: 'analyzing',
     lat: null, lng: null, beds_total: null, unit_bucket: null,
     market_id: '',
-    units: [{ type: '2BR/1BA', count: 4, sqft: 850, actual_rent: 1200, market_rent: 1400 }],
+    units: [{ ...PLACEHOLDER_UNIT }],
     // income
     rent_basis: 'market', other_income: 0, vacancy_rate: 0.05,
     // expenses (annual $)
@@ -65,12 +73,27 @@ export default function DealNew() {
 
   const markets = useQuery({ queryKey: ['markets', org?.id], queryFn: () => listMarkets(org.id), enabled: !!org });
   const agent = useQuery({ queryKey: ['listing-contact', id], queryFn: () => getListingContact(id), enabled: editing });
+  // Same cache key the rent estimator uses, so this costs no extra request.
+  const bands = useQuery({
+    queryKey: ['rent-bands-all', org?.id],
+    queryFn: () => listAllRentBands(org.id),
+    enabled: !!org,
+    staleTime: 30 * 60 * 1000,
+  });
+  const zipRents = useMemo(() => buildZipRents(bands.data), [bands.data]);
+  const bedroomRatios = useMemo(() => buildZipBedroomRatios(bands.data), [bands.data]);
+
+  // True once we know the deal had a unit mix saved by a human. A scraped
+  // lead promoted with "Analyze" has none, so the form shows the placeholder
+  // and the rent seeder below is allowed to fill it in.
+  const hadSavedUnitsRef = useRef(false);
 
   // Load existing deal (edit mode): deal + units + latest scenario inputs.
   useEffect(() => {
     if (!editing) return;
     (async () => {
       const [deal, units, scenarios] = await Promise.all([getDeal(id), getUnits(id), listScenarios(id)]);
+      hadSavedUnitsRef.current = units.length > 0;
       const base = scenarios[0]?.inputs || {};
       setF((prev) => ({
         ...prev,
@@ -108,6 +131,36 @@ export default function DealNew() {
     return gross > 0 ? gross / count : null;
   }, [f.units]);
   const strSuggestion = useMemo(() => suggestStrDefaults(avgMarketRent), [avgMarketRent]);
+
+  // Replace the placeholder rents with this ZIP's real market rent (bedroom
+  // adjusted where SAFMR covers the zip) before anything downstream reads
+  // them. Only fires when NOTHING was ever saved for this deal and the mix is
+  // still untouched — a saved unit mix, or one the operator has typed into,
+  // is never overwritten.
+  const seededRentsRef = useRef(false);
+  useEffect(() => {
+    if (!hydrated || seededRentsRef.current || hadSavedUnitsRef.current) return;
+    const units = f.units || [];
+    if (units.length !== 1) return;
+    const u = units[0];
+    const pristine =
+      Number(u.actual_rent) === PLACEHOLDER_UNIT.actual_rent &&
+      Number(u.market_rent) === PLACEHOLDER_UNIT.market_rent;
+    if (!pristine) return;
+    const got = zipRentForUnit(f.zip, {
+      zipRents,
+      bedroomRatios,
+      bedrooms: suggestBedrooms(u.type),
+    });
+    if (got.rent == null) return;
+    seededRentsRef.current = true;
+    const r = Math.round(got.rent);
+    // actual = market: we don't know in-place rents on a scraped listing, and
+    // assuming they're at market keeps loss-to-lease honestly at 0 rather than
+    // inventing upside. Replace with the real rent roll when you get it.
+    set({ units: [{ ...u, actual_rent: r, market_rent: r }] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, f.zip, f.units, zipRents, bedroomRatios]);
 
   // Auto-estimate operating expenses (real annual $) from unit count + rents
   // the first time we have income to work with and the fields are still blank,

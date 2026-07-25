@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrg } from '../lib/org';
-import { listDeals, listAllRentBands, listMarkets } from '../lib/queries';
+import { listDeals, listAllRentBands, listMarkets, deleteDeals } from '../lib/queries';
 import { buildZipRents, presetForState, dealMonthlyNet } from '../lib/parcelscreen';
 import { usd } from '../lib/format';
 import { Tip } from '../components/fields';
@@ -62,8 +62,13 @@ export default function Deals() {
   });
   const markets = useQuery({ queryKey: ['markets', org?.id], queryFn: () => listMarkets(org.id), enabled: !!org });
   const zipRents = useMemo(() => buildZipRents(bands.data), [bands.data]);
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [heartedOnly, setHeartedOnly] = useState(false);
+  const [selected, setSelected] = useState(() => new Set());
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [delError, setDelError] = useState(null);
   const rows = useMemo(() => {
     let r = (deals.data || []).map((d) => ({
       ...d,
@@ -80,6 +85,49 @@ export default function Deals() {
     return [...r].sort((a, b) => Number(b.favorite || 0) - Number(a.favorite || 0));
   }, [deals.data, search, heartedOnly, zipRents, markets.data]);
   const heartedCount = useMemo(() => (deals.data || []).filter((d) => d.favorite).length, [deals.data]);
+
+  // Only ever act on rows that are actually on screen — deleting something
+  // filtered out of view would be a nasty surprise.
+  const visibleIds = useMemo(() => rows.map((d) => d.id), [rows]);
+  const selectedVisible = useMemo(() => visibleIds.filter((id) => selected.has(id)), [visibleIds, selected]);
+  const allVisibleSelected = visibleIds.length > 0 && selectedVisible.length === visibleIds.length;
+
+  function toggleRow(id) {
+    setConfirmDelete(false);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllVisible() {
+    setConfirmDelete(false);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) visibleIds.forEach((id) => next.delete(id));
+      else visibleIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }
+
+  async function runDelete() {
+    setDeleting(true);
+    setDelError(null);
+    try {
+      await deleteDeals(org.id, selectedVisible);
+      setSelected(new Set());
+      setConfirmDelete(false);
+      // Goals read committed deals, so refresh those too.
+      qc.invalidateQueries({ queryKey: ['deals'] });
+      qc.invalidateQueries({ queryKey: ['goal-deals'] });
+    } catch (e) {
+      setDelError(e.message || String(e));
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -108,7 +156,46 @@ export default function Deals() {
         >
           ♥ Hearted{heartedCount ? ` (${heartedCount})` : ''}
         </button>
+
+        {selectedVisible.length > 0 && (
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-sm text-muted">{selectedVisible.length} selected</span>
+            {confirmDelete ? (
+              <>
+                <button
+                  type="button"
+                  onClick={runDelete}
+                  disabled={deleting}
+                  className="px-3 py-2 rounded-lg border border-danger bg-danger text-white text-sm disabled:opacity-60"
+                >
+                  {deleting ? 'Deleting…' : `Yes, delete ${selectedVisible.length} permanently`}
+                </button>
+                <button type="button" onClick={() => setConfirmDelete(false)} className="btn-ghost text-sm">
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="px-3 py-2 rounded-lg border border-danger text-danger text-sm hover:bg-danger/10"
+              >
+                Delete selected
+              </button>
+            )}
+          </div>
+        )}
       </div>
+
+      {confirmDelete && (
+        <p className="text-xs text-warn mb-3">
+          This removes the {selectedVisible.length === 1 ? 'deal' : `${selectedVisible.length} deals`} along with
+          every saved scenario, unit mix, and note attached to {selectedVisible.length === 1 ? 'it' : 'them'}. It
+          cannot be undone. Off-market parcels and on-market listings are untouched — a deleted deal can be
+          re-analyzed from its source.
+        </p>
+      )}
+      {delError && <p className="text-sm text-danger mb-3">{delError}</p>}
 
       {deals.isLoading && <div className="text-muted">Loading…</div>}
       {deals.error && <div className="text-danger text-sm">{String(deals.error.message)}</div>}
@@ -126,6 +213,15 @@ export default function Deals() {
           <table className="w-full text-sm">
             <thead className="bg-surface-2">
               <tr>
+                <th className="th w-8 text-center">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={toggleAllVisible}
+                    aria-label={allVisibleSelected ? 'Clear selection' : 'Select all shown'}
+                    title={allVisibleSelected ? 'Clear selection' : 'Select all shown'}
+                  />
+                </th>
                 <th className="th w-10"></th>
                 <th className="th">Property</th>
                 <th className="th">Market</th>
@@ -141,7 +237,15 @@ export default function Deals() {
             </thead>
             <tbody>
               {rows.map((d) => (
-                <tr key={d.id} className="hover:bg-surface-2/60">
+                <tr key={d.id} className={`hover:bg-surface-2/60 ${selected.has(d.id) ? 'bg-danger/5' : ''}`}>
+                  <td className="td w-8 text-center">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(d.id)}
+                      onChange={() => toggleRow(d.id)}
+                      aria-label={`Select ${d.address || 'deal'}`}
+                    />
+                  </td>
                   <td className="td w-10 text-center">
                     <HeartButton deal={d} />
                   </td>

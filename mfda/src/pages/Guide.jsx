@@ -96,6 +96,10 @@ const MANUAL = [
         b: 'Inside Valuation comps: sold multifamily comps from the scanned store — filtered by radius when the deal has coordinates (scraped listings do), falling back to STATEWIDE comps when it doesn\'t (off-market promotions and hand-entered deals), honestly labeled as the rougher guide. Median price, $/bed, and $/sqft show with sample sizes (n=); values with 3+ comps AUTO-FILL the empty valuation inputs on load and stay fully editable. Expand "Show nearest/recent" for the individual comps with Redfin links.',
       },
       {
+        t: 'Where a new deal\'s rents come from',
+        b: 'A scraped listing arrives with a price and a ZIP but no rent roll, so the form used to open on a placeholder mix of 4 units at $1,400 — which every downstream number then inherited, including an identical $117 STR nightly rate on every property in the pipeline. Now, whenever a deal has no saved unit mix, the rents seed from that ZIP\'s market rent (bedroom-adjusted where HUD SAFMR covers it) the moment the form loads. Actual and market rent are seeded to the SAME figure on purpose: nobody knows the in-place rents on a scraped listing, and assuming they are at market keeps loss-to-lease honestly at zero instead of inventing upside. Replace both with the real rent roll when the seller sends it. A unit mix you have saved or typed into is never overwritten.',
+      },
+      {
         t: 'Market rent estimates — free path and paid path',
         b: 'Above the unit mix is a rent estimator with two ladders. FREE: the blended Zillow ZORI rent for the ZIP, reshaped to each unit type\'s bedroom count using HUD Small Area FMR ratios — SAFMR levels are policy figures (roughly a 40th percentile), so only the RATIOS between bedroom counts are used, never the level itself. That turns one blended number into a real 1BR/2BR/3BR spread for $0. PAID: an address-level RentCast estimate with a comp-backed range, fetched only when you click "Address-level" and cached forever afterwards, because the free tier is 50 requests a month. Neither writes into your unit mix until you press Apply. Rent is the single largest source of error in every downstream figure — NOI, cap rate, DSCR, verdict, max offer — so this is the input most worth improving.',
       },
@@ -423,6 +427,10 @@ const MANUAL = [
       {
         t: 'Dark mode',
         b: 'The moon/sun button in the top bar switches between light and dark themes. Your choice is remembered on this browser; first visit follows your device\'s setting. Printed PDF reports always stay light — they\'re built for paper.',
+      },
+      {
+        t: 'Deleting deals',
+        b: 'Every row on the Deals page has a checkbox, and the header checkbox selects everything currently shown — so filter or search first if you only want a subset. "Delete selected" asks once before it acts. Deleting removes the deal along with its saved scenarios, unit mix, and notes; it cannot be undone. What it does NOT touch is the source: off-market parcels and on-market listings stay where they are, so a deleted deal can always be re-analyzed from scratch. That makes it safe to clear out test deals without losing any scraped or imported data.',
       },
       {
         t: 'The "Net / mo" column on Deals',

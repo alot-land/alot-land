@@ -80,6 +80,38 @@ export async function listOnMarket(orgId) {
   return data;
 }
 
+/**
+ * Delete deals and everything hanging off them.
+ *
+ * units and scenarios cascade from the deals FK, but notes are polymorphic
+ * (entity_type/entity_id, no FK) so they must be swept explicitly or they
+ * outlive the deal as orphans that nothing can ever show or clean up.
+ *
+ * Returns the number of deals removed. Scoped by org_id as well as id so a
+ * stray id from another org can never delete anything.
+ */
+export async function deleteDeals(orgId, ids) {
+  const list = (Array.isArray(ids) ? ids : [ids]).filter(Boolean);
+  if (!list.length) return 0;
+
+  const { error: noteErr } = await supabase
+    .from('notes')
+    .delete()
+    .eq('org_id', orgId)
+    .eq('entity_type', 'deal')
+    .in('entity_id', list);
+  if (noteErr) throw noteErr;
+
+  const { data, error } = await supabase
+    .from('deals')
+    .delete()
+    .eq('org_id', orgId)
+    .in('id', list)
+    .select('id');
+  if (error) throw error;
+  return data?.length ?? 0;
+}
+
 export async function setDealStatus(id, status) {
   const { error } = await supabase.from('deals').update({ status }).eq('id', id);
   if (error) throw error;
