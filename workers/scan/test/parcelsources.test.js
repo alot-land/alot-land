@@ -18,8 +18,11 @@ import {
   pickMaricopaService,
   pickPortalService,
   PORTAL_SEARCH_URL,
+  PORTAL_SELF_URL,
+  portalOrgId,
   MARICOPA_PORTALS,
   multifamilyWhereClauses,
+  rankClassFields,
   layerFieldNames,
   featuresToRows,
   rowsToCsv,
@@ -205,11 +208,57 @@ describe('pickPortalService (county-owned ArcGIS portal search)', () => {
     ).toBeNull();
   });
 
-  it('builds a portal-scoped search URL', () => {
-    const url = PORTAL_SEARCH_URL(MARICOPA_PORTALS[0], 'parcels type:"Feature Service"', 5);
-    expect(url).toContain('maricopa.maps.arcgis.com/sharing/rest/search');
-    expect(url).toContain('num=5');
-    expect(url).toContain(encodeURIComponent('parcels type:"Feature Service"'));
+  it('rejects another county outright when `must` names ours', () => {
+    // The real 2026-07-25 failure: an unscoped portal search returned Napa's
+    // parcel layer, which outscored everything else on title alone.
+    const search = {
+      results: [
+        { id: 'napa', title: 'Napa County Public Parcels', owner: 'napagis', type: 'Feature Service', snippet: 'assessor parcels with land use codes and ownership', url: 'https://x/napa' },
+        { id: 'mc', title: 'Parcels', owner: 'MaricopaCountyGIS', type: 'Feature Service', snippet: 'assessor', url: 'https://x/mc' },
+      ],
+    };
+    // Napa scores higher on its own merits, so only the guard saves us.
+    expect(pickPortalService(search).id).toBe('napa');
+    expect(pickPortalService(search, { must: ['maricopa'] }).id).toBe('mc');
+    // No Maricopa item at all → nothing, rather than a foreign county.
+    expect(pickPortalService({ results: [search.results[0]] }, { must: ['maricopa'] })).toBeNull();
+  });
+
+  it('scopes the search to one org when the id is known', () => {
+    const q = 'parcels type:"Feature Service"';
+    const unscoped = PORTAL_SEARCH_URL(MARICOPA_PORTALS[0], q, 5);
+    expect(unscoped).toContain('maricopa.maps.arcgis.com/sharing/rest/search');
+    expect(unscoped).toContain('num=5');
+    expect(unscoped).toContain(encodeURIComponent(q));
+
+    const scoped = PORTAL_SEARCH_URL(MARICOPA_PORTALS[0], q, 5, 'ABC123');
+    expect(scoped).toContain(encodeURIComponent(`orgid:ABC123 AND (${q})`));
+  });
+
+  it('reads the org id off portals/self', () => {
+    expect(PORTAL_SELF_URL('https://maricopa.maps.arcgis.com')).toBe(
+      'https://maricopa.maps.arcgis.com/sharing/rest/portals/self?f=json',
+    );
+    expect(portalOrgId({ id: 'ABC123', name: 'Maricopa County' })).toBe('ABC123');
+    expect(portalOrgId({})).toBeNull();
+  });
+});
+
+describe('rankClassFields', () => {
+  it('prefers the land-USE code over a legal-CLASS code', () => {
+    // Maricopa's parcel layer carries all three; only PropertyUseCode holds
+    // the 03xx multifamily PUCs. LandLegalClassCode ("3", "4.1") matched the
+    // old picker's regex and returned 0 rows for every clause.
+    const ranked = rankClassFields(['OBJECTID', 'LandLegalClassCode', 'PropertyUseCode', 'PropertyUseDescription', 'APN']);
+    expect(ranked[0]).toBe('PropertyUseCode');
+    expect(ranked[1]).toBe('PropertyUseDescription');
+    // Kept as a last resort rather than dropped — some counties do use it.
+    expect(ranked[ranked.length - 1]).toBe('LandLegalClassCode');
+  });
+
+  it('still puts a bare PUC column first and ignores unrelated fields', () => {
+    expect(rankClassFields(['OWNER', 'PUC', 'LandUse'])).toEqual(['PUC', 'LandUse']);
+    expect(rankClassFields(['OBJECTID', 'Shape__Area'])).toEqual([]);
   });
 });
 

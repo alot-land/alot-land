@@ -74,9 +74,22 @@ export const MARICOPA_PORTALS = [
   'https://mcgis.maps.arcgis.com',
 ];
 
-/** Portal-scoped item search (no org filter needed — the host IS the filter). */
-export const PORTAL_SEARCH_URL = (portal, q, num = 25) =>
-  `${portal}/sharing/rest/search?f=json&num=${num}&q=${encodeURIComponent(q)}`;
+// A portal's /search endpoint does NOT restrict results to that portal's own
+// items — it searches all of ArcGIS Online, so "parcels" on the Maricopa host
+// happily returned "Napa County Public Parcels" (field-verified 2026-07-25).
+// The org id has to be asked for and passed explicitly.
+export const PORTAL_SELF_URL = (portal) => `${portal}/sharing/rest/portals/self?f=json`;
+
+/** portals/self JSON → the org id used to scope a search. */
+export function portalOrgId(selfJson) {
+  return selfJson?.id || null;
+}
+
+/** Item search, restricted to one org when its id is known. */
+export const PORTAL_SEARCH_URL = (portal, q, num = 25, orgId = null) => {
+  const query = orgId ? `orgid:${orgId} AND (${q})` : q;
+  return `${portal}/sharing/rest/search?f=json&num=${num}&q=${encodeURIComponent(query)}`;
+};
 
 export const MARICOPA_PORTAL_QUERIES = [
   'parcels type:"Feature Service"',
@@ -84,16 +97,21 @@ export const MARICOPA_PORTAL_QUERIES = [
 ];
 
 /**
- * Rank portal search results. Everything here already belongs to the county,
- * so the job is picking the parcel layer rather than proving provenance.
+ * Rank portal search results for the parcel layer.
+ *
+ * `must` is a hard filter, not a score: an item that doesn't name the county
+ * anywhere is rejected outright. Without it a well-titled parcel layer from
+ * ANY county outscores the right county's, which is exactly how "Napa County
+ * Public Parcels" won a Maricopa search.
  */
-export function pickPortalService(searchJson) {
+export function pickPortalService(searchJson, { must = [] } = {}) {
   const items = searchJson?.results || [];
   let best = null;
   for (const it of items) {
     if (!it?.url || !/(feature|map)\s*service/i.test(it.type || '')) continue;
     const title = String(it.title || '');
-    const hay = `${title} ${it.snippet || ''} ${(it.tags || []).join(' ')}`.toLowerCase();
+    const hay = `${title} ${it.owner || ''} ${it.snippet || ''} ${(it.tags || []).join(' ')}`.toLowerCase();
+    if (must.length && !must.every((m) => hay.includes(String(m).toLowerCase()))) continue;
     let score = 0;
     if (/parcel/i.test(title)) score += 4;
     if (/assessor|ownership|owner|cadastr/.test(hay)) score += 3;
@@ -166,13 +184,38 @@ export function arcgisLayerFromMeta(meta) {
 
 /** Find the property-use-code/class field on an ArcGIS layer. */
 export function pickClassField(fields) {
+  return rankClassFields(fields)[0] ?? null;
+}
+
+/**
+ * Every plausible use/class field, best first — a layer usually has several
+ * and only one of them carries the multifamily codes.
+ *
+ * Field-verified on Maricopa's IndividualService/Parcel layer (2026-07-25):
+ * it exposes PropertyUseCode (the 03xx PUC we want), PropertyUseDescription,
+ * AND LandLegalClassCode, which holds statutory legal classes ("3", "4.1")
+ * that match none of the multifamily patterns. Picking one field and giving
+ * up cost a full droplet round-trip, so the caller now tries them in order.
+ */
+export function rankClassFields(fields) {
   const fs = fields.map(String);
-  return (
-    fs.find((f) => /^puc$/i.test(f)) ||
-    fs.find((f) => /^puc[_a-z]*$/i.test(f)) ||
-    fs.find((f) => /property.?use|land.?use|use.?code|prop.?class|class.?code/i.test(f)) ||
-    null
-  );
+  const tier = (f) => {
+    // Legal/assessment CLASS is a different taxonomy from land USE — it can
+    // look like a match by name, so it sorts last rather than being dropped.
+    if (/legal.?class|assess.*class|class.?code$/i.test(f) && !/use/i.test(f)) return 4;
+    if (/^puc$/i.test(f)) return 0;
+    if (/^puc/i.test(f)) return 1;
+    if (/property.?use|use.?code|land.?use/i.test(f)) return 1;
+    if (/use.?desc|property.?use.?desc/i.test(f)) return 2;
+    if (/prop.?class|classification|property.?type/i.test(f)) return 3;
+    return null;
+  };
+  return fs
+    .map((f) => ({ f, t: tier(f) }))
+    .filter((x) => x.t != null)
+    // Codes before descriptions within a tier; stable otherwise.
+    .sort((a, b) => a.t - b.t)
+    .map((x) => x.f);
 }
 
 export function arcgisQueryUrl(layerUrl, { where = '1=1', offset = 0, count = 2000 } = {}) {

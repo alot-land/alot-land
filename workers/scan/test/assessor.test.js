@@ -82,6 +82,26 @@ describe('resolveColumns', () => {
     const idx = resolveColumns(['Living Units', 'Units']);
     expect(idx.units).toBe(1);
   });
+
+  it('matches camelCase API headers with no separators', () => {
+    // ArcGIS layers hand back "PropertyUseDescription" / "PhysicalAddress",
+    // which normalize to one word and missed every underscored synonym.
+    const idx = resolveColumns([
+      'APN', 'Ownership', 'PhysicalAddress', 'PropertyUseDescription', 'SaleDate', 'FullCashValue',
+    ]);
+    expect(idx.apn).toBe(0);
+    expect(idx.owner_name).toBe(1);
+    expect(idx.situs_address).toBe(2);
+    expect(idx.property_class).toBe(3);
+    expect(idx.last_sale_date).toBe(4);
+    expect(idx.assessed_value).toBe(5);
+  });
+
+  it('prefers an exact header match over a separator-insensitive one', () => {
+    // 'Units' is exact for the first candidate; 'DwellingUnits' only squashes.
+    const idx = resolveColumns(['DwellingUnits', 'Units']);
+    expect(idx.units).toBe(1);
+  });
 });
 
 describe('looksLikeEntity', () => {

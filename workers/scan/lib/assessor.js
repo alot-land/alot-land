@@ -37,7 +37,7 @@ export function parseDSV(text, delim) {
  */
 const GENERIC = {
   apn: ['apn', 'parcel', 'parcel_number', 'parcelid', 'parcel_id', 'parid', 'parcel_no', 'parcelno', 'parcel_num', 'assessor_parcel_number'],
-  owner_name: ['owner_name', 'owner', 'ownername', 'owner1', 'current_owner', 'taxpayer_name', 'taxpayer'],
+  owner_name: ['owner_name', 'owner', 'ownership', 'ownername', 'owner1', 'current_owner', 'taxpayer_name', 'taxpayer'],
   // 'ownaddr1'/'propaddr' style: Nashville ArcGIS Hub parcel export (2026-07)
   mailing_address: ['mailing_address', 'mail_address', 'mail_addr', 'owner_address', 'mailing_addr1', 'mail_line1', 'taxpayer_address', 'ownaddr1', 'own_addr1'],
   mailing_city: ['mailing_city', 'mail_city', 'owner_city', 'taxpayer_city', 'owncity'],
@@ -94,16 +94,26 @@ export const PRESETS = {
   },
 };
 
-/** Resolve logical fields to column indexes for this file's headers. */
+/**
+ * Resolve logical fields to column indexes for this file's headers.
+ *
+ * Two passes per candidate: an exact match on the separator-normalized
+ * header, then a separator-INSENSITIVE match. API-sourced data arrives with
+ * camelCase headers ("PropertyUseDescription") that normalize to one word and
+ * would otherwise miss every underscored synonym — field-verified against
+ * Maricopa's ArcGIS parcel layer, 2026-07-25.
+ */
 export function resolveColumns(headers, columns = GENERIC) {
   const norm = headers.map((h) => String(h).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''));
+  const squashed = norm.map((h) => h.replace(/_/g, ''));
   const idx = {};
   for (const [field, candidates] of Object.entries(columns)) {
     idx[field] = -1;
     for (const cand of candidates) {
       const i = norm.indexOf(cand);
-      if (i >= 0) {
-        idx[field] = i;
+      const j = i >= 0 ? i : squashed.indexOf(cand.replace(/_/g, ''));
+      if (j >= 0) {
+        idx[field] = j;
         break;
       }
     }

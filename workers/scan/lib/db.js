@@ -4,12 +4,44 @@
  * browser app. RLS is bypassed by design; org scoping is explicit here.
  */
 import { createClient } from '@supabase/supabase-js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+/** `KEY=value` lines → object. Comments, blanks, and quotes handled. */
+export function parseEnvFile(text) {
+  const out = {};
+  for (const line of String(text).split(/\r?\n/)) {
+    const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
+    if (!m || /^\s*#/.test(line)) continue;
+    out[m[1]] = m[2].trim().replace(/^(['"])(.*)\1$/, '$2');
+  }
+  return out;
+}
+
+/**
+ * Populate process.env from workers/scan/.env when the DB vars are missing,
+ * so `node bin/parcels.mjs` works without `--env-file` or a sourced shell.
+ * Never overrides a variable that is already set.
+ */
+export function loadEnvFile(path) {
+  const file = path || join(dirname(dirname(fileURLToPath(import.meta.url))), '.env');
+  let parsed;
+  try {
+    parsed = parseEnvFile(readFileSync(file, 'utf8'));
+  } catch {
+    return false; // no .env — the caller's error message still applies
+  }
+  for (const [k, v] of Object.entries(parsed)) if (process.env[k] === undefined) process.env[k] = v;
+  return true;
+}
 
 export function makeDb(env = process.env) {
+  if (env === process.env && !(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY)) loadEnvFile();
   const url = env.SUPABASE_URL;
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
-    throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (see .env.example)');
+    throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (see .env.example, or run with --env-file=.env)');
   }
   const supabase = createClient(url, key, { auth: { persistSession: false } });
 

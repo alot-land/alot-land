@@ -40,8 +40,11 @@ import {
   MARICOPA_PORTALS,
   MARICOPA_PORTAL_QUERIES,
   PORTAL_SEARCH_URL,
+  PORTAL_SELF_URL,
+  portalOrgId,
   pickPortalService,
   multifamilyWhereClauses,
+  rankClassFields,
   layerFieldNames,
   NASHVILLE_CATALOG_URL,
   NASHVILLE_HUB_DATASETS,
@@ -193,33 +196,51 @@ async function tryParcelLayer(layerUrl) {
   const fields = layerFieldNames(layerJson);
   if (!fields.length) throw new Error('no fields');
   console.log(`  fields (${fields.length}): ${fields.join(', ')}`);
-  const classField = pickClassField(fields);
-  if (!classField) throw new Error('no PUC/land-use field');
-  // The class column may be text or numeric, or hold descriptions rather
-  // than codes — try each shape before declaring the layer unusable.
+  // A layer usually carries several use/class columns and only one holds the
+  // multifamily codes, so sweep them best-first. Each column may be text or
+  // numeric, or hold descriptions rather than codes — try every shape.
+  const candidates = rankClassFields(fields);
+  if (!candidates.length) throw new Error('no PUC/land-use field');
+  console.log(`  class-field candidates: ${candidates.join(' · ')}`);
   const attempts = [];
-  for (const where of multifamilyWhereClauses(classField)) {
-    try {
-      console.log(`  querying where ${where}`);
-      const rows = await queryArcgisLayer(layerUrl, where);
-      if (rows.length) return rows;
-      attempts.push(`"${where}" → 0 rows`);
-    } catch (e) {
-      attempts.push(`"${where}" → ${e.message}`);
+  for (const classField of candidates) {
+    for (const where of multifamilyWhereClauses(classField)) {
+      try {
+        console.log(`  querying where ${where}`);
+        const rows = await queryArcgisLayer(layerUrl, where);
+        if (rows.length) {
+          console.log(`  ✓ ${rows.length} rows via ${classField}`);
+          return rows;
+        }
+        attempts.push(`"${where}" → 0 rows`);
+      } catch (e) {
+        attempts.push(`"${where}" → ${e.message}`);
+      }
     }
   }
-  throw new Error(`no multifamily rows on ${classField}: ${attempts.join(' · ')}`);
+  throw new Error(`no multifamily rows on any of ${candidates.join(', ')}: ${attempts.join(' · ')}`);
 }
 
 /** Maricopa's own ArcGIS Online portals — only county-published items. */
 async function maricopaViaPortal() {
   let lastErr = null;
   for (const portal of MARICOPA_PORTALS) {
+    // /search is NOT scoped to the host portal — without the org id it
+    // returns items from every county on ArcGIS Online.
+    let orgId = null;
+    try {
+      orgId = portalOrgId(JSON.parse(await (await fetchOk(PORTAL_SELF_URL(portal))).text()));
+      console.log(`  ${portal} org id: ${orgId || 'unknown'}`);
+    } catch (e) {
+      console.warn(`  ${portal} portals/self: ${e.message}`);
+    }
     for (const q of MARICOPA_PORTAL_QUERIES) {
       try {
         console.log(`  portal search: ${portal} · ${q}`);
-        const search = JSON.parse(await (await fetchOk(PORTAL_SEARCH_URL(portal, q))).text());
-        const svc = pickPortalService(search);
+        const search = JSON.parse(await (await fetchOk(PORTAL_SEARCH_URL(portal, q, 25, orgId))).text());
+        // Name guard as well as the org filter: if portals/self failed we are
+        // searching all of ArcGIS Online and must not accept another county.
+        const svc = pickPortalService(search, { must: orgId ? [] : ['maricopa'] });
         if (!svc) {
           const titles = (search?.results || []).map((r) => `"${r.title}"`).slice(0, 10);
           throw new Error(`no parcel service matched; top results: ${titles.join(' · ') || 'none'}`);
