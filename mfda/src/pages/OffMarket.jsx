@@ -57,6 +57,7 @@ export default function OffMarket() {
   const [heldYears, setHeldYears] = useState('');
   const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
+  const [highEquity, setHighEquity] = useState(false);
   const [ratingFilter, setRatingFilter] = useState('all'); // all | heart | up | down | none
   const [verdictFilter, setVerdictFilter] = useState('all'); // all | pursue | consider | pass | insufficient
   const [sort, setSort] = useState('screen'); // screen | units | value
@@ -111,6 +112,12 @@ export default function OffMarket() {
     const raw = parcels.data?.rows || [];
     let scored = raw.map((p) => ({ ...p, screen: screenRow(p, zipRents, presetForState(markets.data, p.state)) }));
     if (verdictFilter !== 'all') scored = scored.filter((p) => p.screen.verdict === verdictFilter);
+    if (highEquity) {
+      scored = scored.filter((p) => {
+        const eq = ownerEquity(p);
+        return eq != null && eq.pct >= 0.5;
+      });
+    }
     const by = {
       screen: (a, b) =>
         VERDICT_RANK[a.screen.verdict] - VERDICT_RANK[b.screen.verdict] ||
@@ -119,7 +126,7 @@ export default function OffMarket() {
       value: (a, b) => (b.assessed_value ?? 0) - (a.assessed_value ?? 0),
     };
     return [...scored].sort(by[sort] || by.screen);
-  }, [parcels.data, zipRents, markets.data, sort, verdictFilter]);
+  }, [parcels.data, zipRents, markets.data, sort, verdictFilter, highEquity]);
   const total = parcels.data?.count ?? 0;
 
   async function rate(p, rating) {
@@ -241,6 +248,11 @@ export default function OffMarket() {
           Entity-owned
           <Tip text="Owner name looks like an LLC / corp / trust. These are investors, not homeowners — different mail copy, and principals can be looked up via the Secretary of State." />
         </label>
+        <label className="flex items-center gap-1.5 text-sm text-ink-2 px-1">
+          <input type="checkbox" checked={highEquity} onChange={(e) => setHighEquity(e.target.checked)} />
+          💰 High equity
+          <Tip text="County value at least double what the owner paid (50%+ equity). These owners can sell you a discount or carry financing and still profit — the raw material of the equity-capture strategy. Needs a recorded sale price; owners with no sale on record are excluded even though many have huge equity too." />
+        </label>
         <select className="input w-auto" value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)}>
           <option value="all">Any rating</option>
           <option value="heart">♥ Hearted</option>
@@ -277,7 +289,7 @@ export default function OffMarket() {
       {/* Live feedback — there's no Search button; results follow the filters. */}
       {parcels.data && (
         <div className="text-sm text-ink-2 mb-3">
-          <span className="font-semibold tabular-nums">{total.toLocaleString()}</span> parcels match
+          <span className="font-semibold tabular-nums">{rows.length.toLocaleString()}</span> parcels match
           {parcels.isFetching && <span className="text-muted"> · updating…</span>}
           <span className="text-muted"> — results update as you type; no search button needed.</span>
         </div>
@@ -323,8 +335,8 @@ export default function OffMarket() {
       {rows.length > 0 && view === 'list' && (
         <div className="card overflow-x-auto">
           <div className="px-3 py-2 text-xs text-muted border-b border-border">
-            {total.toLocaleString()} parcels match
-            {total > rows.length && ` (showing first ${rows.length.toLocaleString()} — tighten filters to export the rest)`}
+            {rows.length.toLocaleString()} parcels match
+            {total > 10000 && ' (server cap 10,000 reached — tighten filters for full coverage)'}
           </div>
           <table className="w-full text-sm min-w-[980px]">
             <thead className="bg-surface-2">
