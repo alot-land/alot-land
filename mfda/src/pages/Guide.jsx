@@ -437,6 +437,10 @@ const MANUAL = [
         b: 'Every row on the Deals page has a checkbox, and the header checkbox selects everything currently shown — so filter or search first if you only want a subset. "Delete selected" asks once before it acts. Deleting removes the deal along with its saved scenarios, unit mix, and notes; it cannot be undone. What it does NOT touch is the source: off-market parcels and on-market listings stay where they are, so a deleted deal can always be re-analyzed from scratch. That makes it safe to clear out test deals without losing any scraped or imported data.',
       },
       {
+        t: 'Knowing where a deal came from',
+        b: 'The Source column on the Deals page says how each property entered the pipeline, because it changes what the numbers mean. ON-MARKET (blue) came from a scraped Redfin listing — the price is a real asking price and there is a listing agent to call, but Redfin only publishes a unit BUCKET, so confirm the real count. Click the pill to open the original listing. OFF-MARKET (amber) was promoted from a county assessor parcel — nobody is selling it, and the "price" is the county appraisal, which is an anchor for screening rather than a number anyone has agreed to; hovering shows the APN. MANUAL (grey) means you typed it in, so every figure is yours.',
+      },
+      {
         t: 'The "Net / mo" column on Deals',
         b: 'Monthly cash flow after the mortgage, before income tax (CFBT ÷ 12) — green when positive, red when it bleeds. A solid figure comes from that deal\'s latest saved scenario: your rents, your expenses, your financing. An italic figure tagged "est" means the deal has no scenario yet, so it is screened like an off-market parcel — zip-band rent × unit count, standard expense rates, 75% LTV against the asking price. Underwrite the deal and the estimate is replaced by the real number. A dash means something essential is missing (hover it to see what: usually units, a price, or a rent band for that ZIP).',
       },

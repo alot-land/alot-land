@@ -17,6 +17,47 @@ const STATUS_STYLES = {
   closed: 'bg-green/15 text-green-deep',
 };
 
+/**
+ * Where a deal entered the pipeline. The values are written at promotion
+ * time: 'redfin' by the scanner, 'offmarket' by a parcel promotion, 'manual'
+ * by hand entry (the column default, so anything unrecognised reads as
+ * manual rather than as a blank).
+ */
+const SOURCE_META = {
+  redfin: {
+    label: 'On-market',
+    className: 'bg-blue/15 text-blue',
+    tip: 'Scraped from a Redfin listing and promoted with Analyze. It has an asking price and a listing agent, but only a unit BUCKET — confirm the real unit count.',
+  },
+  offmarket: {
+    label: 'Off-market',
+    className: 'bg-gold/20 text-warn',
+    tip: 'Promoted from a county assessor parcel — not for sale. Real owner and mailing address, but the price is the county appraisal, not an asking price.',
+  },
+  manual: {
+    label: 'Manual',
+    className: 'bg-surface-2 text-ink-2',
+    tip: 'Entered by hand — every number is yours.',
+  },
+};
+
+function SourceCell({ deal }) {
+  const meta = SOURCE_META[deal.source] || SOURCE_META.manual;
+  const detail =
+    deal.source === 'offmarket' && deal.apn
+      ? `${meta.tip}\n\nAPN ${deal.apn}`
+      : meta.tip;
+  const pill = <span className={`pill ${meta.className}`} title={detail}>{meta.label}</span>;
+  // On-market deals keep a link back to the listing they came from.
+  return deal.source === 'redfin' && deal.listing_url ? (
+    <a href={deal.listing_url} target="_blank" rel="noreferrer" className="hover:underline">
+      {pill}
+    </a>
+  ) : (
+    pill
+  );
+}
+
 const MISSING_LABELS = {
   units: 'unit count',
   market_rent_monthly: 'a rent band for this ZIP',
@@ -225,6 +266,10 @@ export default function Deals() {
                 <th className="th w-10"></th>
                 <th className="th">Property</th>
                 <th className="th">Market</th>
+                <th className="th">
+                  Source
+                  <Tip text="Where the deal came in from. On-market = a scraped Redfin listing (click through to it). Off-market = a county assessor parcel you promoted, so the price shown is the county appraisal rather than an asking price. Manual = you typed it in." />
+                </th>
                 <th className="th text-right">Units</th>
                 <th className="th text-right">Price</th>
                 <th className="th text-right whitespace-nowrap">
@@ -255,6 +300,7 @@ export default function Deals() {
                     </Link>
                   </td>
                   <td className="td text-ink-2">{[d.city, d.state].filter(Boolean).join(', ') || '—'}</td>
+                  <td className="td"><SourceCell deal={d} /></td>
                   <td className="td text-right">{d.units_count ?? '—'}</td>
                   <td className="td text-right">{d.price != null ? usd(Number(d.price)) : '—'}</td>
                   <td className="td text-right whitespace-nowrap tabular-nums">
