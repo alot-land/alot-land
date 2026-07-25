@@ -61,15 +61,22 @@ describe('strComparison', () => {
     expect(r.turns).toBeCloseTo(949 / 3, 6);
   });
 
-  it('builds the STR expense stack on top of the carried-over base', () => {
-    expect(r.expenses.str_cleaning).toBeCloseTo((949 / 3) * 120, 4);
+  it('cleaning defaults to a guest pass-through (net owner cost 0)', () => {
+    // No cleaning_fee_per_stay given → defaults to cost_per_turn → nets to 0.
+    expect(r.expenses.str_cleaning).toBe(0);
     expect(r.expenses.management).toBeCloseTo(0.22 * 142_350, 4);
     expect(r.expenses.str_platform_fees).toBeCloseTo(0.03 * 142_350, 4);
-    expect(r.opex_total).toBeCloseTo(12_000 + (949 / 3) * 120 + 0.22 * 142_350 + 0.03 * 142_350, 4);
+    expect(r.opex_total).toBeCloseTo(12_000 + 0.22 * 142_350 + 0.03 * 142_350, 4);
+  });
+
+  it('charges only the UNRECOVERED cleaning when the owner absorbs part', () => {
+    const absorb = strComparison({ ...inp, cost_per_turn: 120, cleaning_fee_per_stay: 90 });
+    const turns = (4 * 365 * 0.65) / 3;
+    expect(absorb.expenses.str_cleaning).toBeCloseTo(turns * 30, 4); // 120 − 90
   });
 
   it('NOI, DSCR, cash flow, CoC on the same loan', () => {
-    const noi = 142_350 - r.opex_total;
+    const noi = r.gross_revenue - r.opex_total;
     expect(r.noi).toBeCloseTo(noi, 4);
     const debt = annualDebtService(450_000, 0.075, 30);
     expect(r.dscr).toBeCloseTo(noi / debt, 6);

@@ -40,8 +40,12 @@ export interface StrComparisonInputs {
   /** Occupied share of nights, 0–1. */
   occupancy_rate: number;
   avg_stay_days: number;
-  /** Cleaning/turnover cost per stay. */
+  /** Cleaning/turnover cost per stay (what the cleaner charges you). */
   cost_per_turn: number;
+  /** Cleaning fee charged to the GUEST per stay. Cleaning is normally a
+   * pass-through, so this defaults to cost_per_turn (net owner cost 0);
+   * lower it if you absorb part of the turnover. */
+  cleaning_fee_per_stay?: number;
   /** STR management, share of revenue (typically 0.20–0.25). */
   str_management_rate: number;
   /** Platform/host fees, share of revenue. */
@@ -83,10 +87,15 @@ export function strComparison(inp: StrComparisonInputs): StrComparisonResult | n
   const gross = occupiedNights * inp.adr;
   const turns = occupiedNights / inp.avg_stay_days;
 
+  // Cleaning is a guest pass-through: the guest's cleaning fee offsets what
+  // the cleaner charges. Only the UNRECOVERED portion is an owner expense.
+  const cleaningFee = inp.cleaning_fee_per_stay ?? inp.cost_per_turn;
+  const netCleaningPerTurn = Math.max(0, inp.cost_per_turn - cleaningFee);
+
   const expenses: ExpenseInputs = {
     ...emptyExpenses(),
     management: inp.str_management_rate * gross,
-    str_cleaning: turns * inp.cost_per_turn,
+    str_cleaning: turns * netCleaningPerTurn,
     str_platform_fees: inp.platform_fee_rate * gross,
     other: inp.base_operating_expenses,
   };

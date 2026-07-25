@@ -326,6 +326,7 @@ export function underwrite(dealInput) {
           occupancy_rate: strInputs.occupancy_rate,
           avg_stay_days: strInputs.avg_stay_days ?? 3,
           cost_per_turn: strInputs.cost_per_turn ?? 120,
+          cleaning_fee_per_stay: strInputs.cleaning_fee_per_stay ?? strInputs.cost_per_turn ?? 120,
           str_management_rate: strInputs.management_rate ?? 0.22,
           platform_fee_rate: strInputs.platform_fee_rate ?? 0.03,
           base_operating_expenses: opex - exp.management,

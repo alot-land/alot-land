@@ -393,7 +393,7 @@ export function StrPanel({ out, inputs }) {
     <Panel
       title="LTR vs STR"
       subtitle="Same building, same loan — two operating models"
-      tip="The long-term-rental underwrite beside the short-term case built from your ADR and occupancy inputs: STR revenue = occupied nights × ADR, with turn cleaning, platform fees, and STR-grade management stacked on the carried-over operating costs. STR usually grosses more and keeps less per dollar — the question is whether the spread survives the extra work and permit risk."
+      tip="The long-term-rental underwrite beside the short-term case built from your ADR and occupancy inputs: STR revenue = occupied nights × ADR, with platform fees, STR-grade management (20–25%), and any unrecovered cleaning stacked on the carried-over operating costs. Cleaning is treated as a guest pass-through by default (the cleaning fee you charge offsets the turnover cost), so it's not double-counted — adjust the cleaning fee on the deal form if you absorb part of it. STR usually grosses more and keeps less per dollar; the question is whether the spread survives the extra work and permit risk."
       right={
         <span className={`pill ${strWins ? 'bg-green/15 text-green-deep' : 'bg-surface-2 text-ink-2'}`}>
           {strWins ? `STR +${usd(s.cfbt_delta)}/yr` : `LTR +${usd(-s.cfbt_delta)}/yr`}

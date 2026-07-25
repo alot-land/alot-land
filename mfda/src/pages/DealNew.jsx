@@ -44,7 +44,7 @@ function blankForm() {
     // prescreen
     prescreen: { zoning_legal_nonconforming: false, master_metered: false, septic_or_well: false, rent_control_state: false, roof_age_years: null, hvac_age_years: null, str_permit_status: 'open' },
     // STR comparison (optional — panel appears in results when ADR + occupancy are set)
-    str: { adr: null, occupancy_rate: null, avg_stay_days: 3, cost_per_turn: 120, management_rate: 0.22, platform_fee_rate: 0.03 },
+    str: { adr: null, occupancy_rate: null, avg_stay_days: 3, cost_per_turn: 120, cleaning_fee_per_stay: 120, management_rate: 0.22, platform_fee_rate: 0.03 },
   };
 }
 
@@ -299,7 +299,8 @@ export default function DealNew() {
           </Field>
           <Field label="Occupancy" tip="Share of nights booked, yearly average. Seeded at a conservative 60%; Phoenix metro typically 55–70%, seasonal markets swing hard."><PercentInput value={f.str.occupancy_rate} onChange={(v) => setNested('str', { occupancy_rate: v })} /></Field>
           <Field label="Avg stay (nights)" tip="Typical booking length. 7 nights or less also opens the STR material-participation tax lane (see the tax panel)."><NumberInput value={f.str.avg_stay_days} onChange={(v) => setNested('str', { avg_stay_days: v })} /></Field>
-          <Field label="Cost per turn" tip="Cleaning + restocking per checkout. Shorter stays = more turns = this matters a lot."><NumberInput value={f.str.cost_per_turn} onChange={(v) => setNested('str', { cost_per_turn: v })} suffix="$" /></Field>
+          <Field label="Cost per turn" tip="What the cleaner charges you per checkout, including restocking."><NumberInput value={f.str.cost_per_turn} onChange={(v) => setNested('str', { cost_per_turn: v })} suffix="$" /></Field>
+          <Field label="Cleaning fee / stay" tip="What you charge the GUEST for cleaning per stay. Cleaning is normally a pass-through, so this defaults to equal your cost per turn — meaning it nets to $0 owner expense. Lower it below your cost only if you deliberately absorb part of the turnover to stay competitive."><NumberInput value={f.str.cleaning_fee_per_stay} onChange={(v) => setNested('str', { cleaning_fee_per_stay: v })} suffix="$" /></Field>
           <Field label="STR management" tip="Full-service STR management runs 20–25% of revenue (vs 8–10% for LTR). Self-managing? Enter what your time is honestly worth."><PercentInput value={f.str.management_rate} onChange={(v) => setNested('str', { management_rate: v })} /></Field>
           <Field label="Platform fees" tip="Airbnb/VRBO host-side fees as a share of revenue, typically ~3%."><PercentInput value={f.str.platform_fee_rate} onChange={(v) => setNested('str', { platform_fee_rate: v })} /></Field>
         </div>
