@@ -316,6 +316,28 @@ export function underwrite(dealInput) {
     cash_invested: d.price * (1 - fin.dscr.ltv) + otherCash,
   });
 
+  // --- Optional STR comparison (mf-calc): same building, same loan --------
+  const strInputs = d.str || {};
+  const strOut =
+    strInputs.adr > 0 && strInputs.occupancy_rate > 0
+      ? mf.strComparison({
+          units: unitsTotal,
+          adr: strInputs.adr,
+          occupancy_rate: strInputs.occupancy_rate,
+          avg_stay_days: strInputs.avg_stay_days ?? 3,
+          cost_per_turn: strInputs.cost_per_turn ?? 120,
+          str_management_rate: strInputs.management_rate ?? 0.22,
+          platform_fee_rate: strInputs.platform_fee_rate ?? 0.03,
+          base_operating_expenses: opex - exp.management,
+          loan_amount: d.price * fin.dscr.ltv,
+          annual_rate: fin.dscr.rate,
+          amort_years: fin.dscr.amort_years,
+          cash_invested: d.price * (1 - fin.dscr.ltv) + otherCash,
+          ltr_noi: noiValue,
+          ltr_cfbt: dscrLoan.cfbt,
+        })
+      : null;
+
   return {
     calc_version: mf.CALC_VERSION,
     basis,
@@ -346,6 +368,7 @@ export function underwrite(dealInput) {
     proforma,
     tax: { depreciation: dep, year1, exit, accumulated_depreciation: accumDep, str_eligible: strEligible },
     prescreen: prescreenFlags,
+    str_comparison: strOut,
     score,
     primary_value: primaryValue,
     value_spread: valueSpread,

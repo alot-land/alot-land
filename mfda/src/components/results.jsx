@@ -373,3 +373,68 @@ export function ProformaPanel({ out }) {
     </Panel>
   );
 }
+
+export function StrPanel({ out, inputs }) {
+  const s = out.str_comparison;
+  if (!s) return null;
+  const ltr = out.financing.dscr;
+  const ltrGross = out.basis === 'actual' ? out.derived.gpr_actual : out.derived.gpr_market;
+  const permit = inputs?.prescreen?.str_permit_status || 'open';
+  const strWins = s.cfbt_delta > 0;
+  const rows = [
+    ['Gross income', usd(ltrGross), usd(s.gross_revenue)],
+    ['Operating expenses', usd(out.derived.opex_total), usd(s.opex_total)],
+    ['NOI', usd(out.derived.noi), usd(s.noi)],
+    ['Cash flow (yr 1)', usd(ltr.cfbt), usd(s.cfbt)],
+    ['Cash-on-cash', pct(ltr.cash_on_cash, 1), pct(s.cash_on_cash, 1)],
+    ['DSCR', ltr.dscr.toFixed(2), s.dscr.toFixed(2)],
+  ];
+  return (
+    <Panel
+      title="LTR vs STR"
+      subtitle="Same building, same loan — two operating models"
+      tip="The long-term-rental underwrite beside the short-term case built from your ADR and occupancy inputs: STR revenue = occupied nights × ADR, with turn cleaning, platform fees, and STR-grade management stacked on the carried-over operating costs. STR usually grosses more and keeps less per dollar — the question is whether the spread survives the extra work and permit risk."
+      right={
+        <span className={`pill ${strWins ? 'bg-green/15 text-green-deep' : 'bg-surface-2 text-ink-2'}`}>
+          {strWins ? `STR +${usd(s.cfbt_delta)}/yr` : `LTR +${usd(-s.cfbt_delta)}/yr`}
+        </span>
+      }
+    >
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[420px]">
+          <thead className="bg-surface-2">
+            <tr>
+              <th className="th"></th>
+              <th className="th text-right">Long-term</th>
+              <th className="th text-right">Short-term</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(([label, l, r]) => (
+              <tr key={label}>
+                <td className="td text-muted">{label}</td>
+                <td className="td text-right tabular-nums">{l}</td>
+                <td className="td text-right tabular-nums">{r}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-wrap gap-2 mt-3 text-xs">
+        <span className="text-muted">
+          {num(s.occupied_nights)} occupied nights · {num(s.turns)} turns/yr
+        </span>
+        {permit !== 'open' && (
+          <span className={`pill ${permit === 'closed' ? 'bg-danger/15 text-danger' : 'bg-gold/20 text-warn'}`}>
+            STR permits {permit} in this market
+          </span>
+        )}
+        {s.material_participation_hint && (
+          <span className="pill bg-blue/15 text-blue" title="Average stays of 7 nights or less can qualify STR losses against active income WITHOUT Real Estate Professional status, if you materially participate. Ask your CPA — see the tax panel.">
+            ≤7-night stays: STR tax lane may apply
+          </span>
+        )}
+      </div>
+    </Panel>
+  );
+}

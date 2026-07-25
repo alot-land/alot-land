@@ -41,6 +41,8 @@ function blankForm() {
     valuation_comps: { price_per_unit: null, price_per_sqft: null, price_per_bed: null, market_grm: null, market_cap_rate: 0.08, replacement_cost_per_unit: null },
     // prescreen
     prescreen: { zoning_legal_nonconforming: false, master_metered: false, septic_or_well: false, rent_control_state: false, roof_age_years: null, hvac_age_years: null, str_permit_status: 'open' },
+    // STR comparison (optional — panel appears in results when ADR + occupancy are set)
+    str: { adr: null, occupancy_rate: null, avg_stay_days: 3, cost_per_turn: 120, management_rate: 0.22, platform_fee_rate: 0.03 },
   };
 }
 
@@ -255,6 +257,17 @@ export default function DealNew() {
           <Field label="Market cap rate" tip="What NOI yields sell for in this submarket. Value = NOI ÷ cap. The PRIMARY method for 5+ unit buildings. Ask brokers or derive from verified comps."><PercentInput value={f.valuation_comps.market_cap_rate} onChange={(v) => setNested('valuation_comps', { market_cap_rate: v })} /></Field>
           <Field label="Replacement $/unit" tip="What building one unit new would cost. Replacement cost is a CEILING sanity check — paying far above it means you could build cheaper than buy."><NumberInput value={f.valuation_comps.replacement_cost_per_unit} onChange={(v) => setNested('valuation_comps', { replacement_cost_per_unit: v })} suffix="$" /></Field>
         </Grid>
+      </Section>
+
+      <Section title="STR comparison" subtitle="Optional — see this building's short-term-rental case beside the LTR numbers" tip="Enter an average nightly rate and occupancy and the results page adds a side-by-side LTR vs STR panel: same building, same loan, STR income and expense stack (turn cleaning, platform fees, 22%-grade management). Leave ADR blank to skip. Check the market's STR permit status in the prescreen below — a great ADR means nothing where permits are closed." defaultOpen={false}>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Field label="ADR ($/night)" tip="Average daily rate per unit. Pull from AirDNA, or comp nearby Airbnb listings for the same bedroom count."><NumberInput value={f.str.adr} onChange={(v) => setNested('str', { adr: v })} suffix="$" /></Field>
+          <Field label="Occupancy" tip="Share of nights booked, yearly average. Phoenix metro typically 55–70%; seasonal markets swing hard."><PercentInput value={f.str.occupancy_rate} onChange={(v) => setNested('str', { occupancy_rate: v })} /></Field>
+          <Field label="Avg stay (nights)" tip="Typical booking length. 7 nights or less also opens the STR material-participation tax lane (see the tax panel)."><NumberInput value={f.str.avg_stay_days} onChange={(v) => setNested('str', { avg_stay_days: v })} /></Field>
+          <Field label="Cost per turn" tip="Cleaning + restocking per checkout. Shorter stays = more turns = this matters a lot."><NumberInput value={f.str.cost_per_turn} onChange={(v) => setNested('str', { cost_per_turn: v })} suffix="$" /></Field>
+          <Field label="STR management" tip="Full-service STR management runs 20–25% of revenue (vs 8–10% for LTR). Self-managing? Enter what your time is honestly worth."><PercentInput value={f.str.management_rate} onChange={(v) => setNested('str', { management_rate: v })} /></Field>
+          <Field label="Platform fees" tip="Airbnb/VRBO host-side fees as a share of revenue, typically ~3%."><PercentInput value={f.str.platform_fee_rate} onChange={(v) => setNested('str', { platform_fee_rate: v })} /></Field>
+        </div>
       </Section>
 
       <Section title="Prescreen & tax" subtitle="Deal-killers and tax assumptions" tip="Cheap red-flag checks that can kill a deal before you waste hours on it, plus the assumptions behind the cost-segregation and REP tax modeling." defaultOpen={false}>

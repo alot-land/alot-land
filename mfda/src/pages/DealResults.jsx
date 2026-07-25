@@ -9,7 +9,7 @@ import DealTrackingCard from '../components/DealTrackingCard';
 import {
   SummaryVerdict, ValuationPanel, FinancingComparator, InverseSolvers,
   StressPanel, TaxPanel, PrescreenFlags, ScoreBreakdown, ProvenanceTable,
-  ProformaPanel,
+  ProformaPanel, StrPanel,
 } from '../components/results';
 
 // @react-pdf is heavy — keep it out of the initial bundle.
@@ -108,6 +108,7 @@ export default function DealResults() {
             <StressPanel out={out} />
             <PrescreenFlags out={out} />
           </div>
+          <StrPanel out={out} inputs={scen.inputs} />
           <TaxPanel out={out} />
           <ProvenanceTable inputs={scen.inputs} />
           <NotesCard entityType="deal" entityId={id} />

@@ -1,0 +1,90 @@
+/**
+ * STR (short-term rental) comparison — added in calc v1.9.0 (new module +
+ * tests per the frozen-module protocol).
+ *
+ * Answers "what would this SAME building earn as a short-term rental?"
+ * against the LTR underwrite: ADR × occupancy income, the STR expense
+ * stack (turn cleaning, platform fees, STR-grade management) on top of the
+ * carried-over operating costs, same loan.
+ */
+import { annualDebtService } from './finance.js';
+import { emptyExpenses, type ExpenseInputs } from './types.js';
+
+export interface StrComparisonInputs {
+  units: number;
+  /** Average daily rate per unit. */
+  adr: number;
+  /** Occupied share of nights, 0–1. */
+  occupancy_rate: number;
+  avg_stay_days: number;
+  /** Cleaning/turnover cost per stay. */
+  cost_per_turn: number;
+  /** STR management, share of revenue (typically 0.20–0.25). */
+  str_management_rate: number;
+  /** Platform/host fees, share of revenue. */
+  platform_fee_rate: number;
+  /** LTR operating expenses EXCLUDING management — taxes, insurance,
+   * repairs, utilities, reserves carry over. */
+  base_operating_expenses: number;
+  loan_amount: number;
+  annual_rate: number;
+  amort_years: number;
+  cash_invested: number;
+  ltr_noi: number;
+  ltr_cfbt: number;
+}
+
+export interface StrComparisonResult {
+  occupied_nights: number;
+  turns: number;
+  gross_revenue: number;
+  expenses: ExpenseInputs;
+  opex_total: number;
+  noi: number;
+  dscr: number;
+  cfbt: number;
+  cash_on_cash: number;
+  noi_delta: number;
+  cfbt_delta: number;
+  /** Avg stay ≤ 7 nights → the STR material-participation tax lane may
+   * apply (see strMaterialParticipationEligible for the full test). */
+  material_participation_hint: boolean;
+}
+
+export function strComparison(inp: StrComparisonInputs): StrComparisonResult | null {
+  if (!(inp.units > 0) || !(inp.adr > 0)) return null;
+  if (!(inp.occupancy_rate > 0) || inp.occupancy_rate > 1) return null;
+  if (!(inp.avg_stay_days > 0)) return null;
+
+  const occupiedNights = inp.units * 365 * inp.occupancy_rate;
+  const gross = occupiedNights * inp.adr;
+  const turns = occupiedNights / inp.avg_stay_days;
+
+  const expenses: ExpenseInputs = {
+    ...emptyExpenses(),
+    management: inp.str_management_rate * gross,
+    str_cleaning: turns * inp.cost_per_turn,
+    str_platform_fees: inp.platform_fee_rate * gross,
+    other: inp.base_operating_expenses,
+  };
+  const opex =
+    expenses.management + expenses.str_cleaning + expenses.str_platform_fees + expenses.other;
+
+  const noi = gross - opex;
+  const debt = annualDebtService(inp.loan_amount, inp.annual_rate, inp.amort_years);
+  const cfbt = noi - debt;
+  return {
+    occupied_nights: occupiedNights,
+    turns,
+    gross_revenue: gross,
+    expenses,
+    opex_total: opex,
+    noi,
+    dscr: debt > 0 ? noi / debt : Infinity,
+    cfbt,
+    cash_on_cash: inp.cash_invested > 0 ? cfbt / inp.cash_invested : 0,
+    noi_delta: noi - inp.ltr_noi,
+    cfbt_delta: cfbt - inp.ltr_cfbt,
+    material_participation_hint: inp.avg_stay_days <= 7,
+  };
+}

@@ -172,6 +172,23 @@ const MANUAL = [
     ],
   },
   {
+    section: 'LTR vs STR',
+    entries: [
+      {
+        t: 'Comparing long-term vs short-term returns',
+        b: 'On the deal form, open the "STR comparison" section and enter an average nightly rate (ADR) and occupancy — that\'s all it takes. The results page then shows an "LTR vs STR" panel: the same building on the same loan, gross income, expenses, NOI, cash flow, cash-on-cash, and DSCR side by side, with a pill declaring the winner in $/yr. Leave ADR blank and the panel doesn\'t appear.',
+      },
+      {
+        t: 'Why STR grosses more but keeps less',
+        b: 'STR revenue = occupied nights × ADR, usually well above rent — but the expense stack bites: turn cleaning (every checkout), platform fees (~3%), and management at 20–25% of revenue vs 8–10% for LTR. The panel builds all of that honestly, and shows nights and turns per year so you can feel the operational load.',
+      },
+      {
+        t: 'Permits and the STR tax lane',
+        b: 'The panel warns when the market\'s STR permit status is restricted or closed — a great ADR means nothing where you can\'t operate legally. And when average stays are 7 nights or less, a blue pill flags the STR material-participation tax lane: losses can offset ACTIVE income without Real Estate Professional status. Confirm with your CPA.',
+      },
+    ],
+  },
+  {
     section: 'Versions, compare, and reports',
     entries: [
       {
