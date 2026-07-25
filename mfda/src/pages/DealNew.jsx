@@ -304,6 +304,7 @@ export default function DealNew() {
             lat={f.lat}
             lng={f.lng}
             unitBucket={f.unit_bucket}
+            values={f.valuation_comps}
             onUse={(patch) => setNested('valuation_comps', patch)}
           />
         </div>
