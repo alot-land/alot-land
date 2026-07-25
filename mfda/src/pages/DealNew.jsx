@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../lib/auth';
 import { useOrg } from '../lib/org';
 import { underwrite } from '../lib/underwrite';
-import { suggestStrDefaults } from '@alot/mf-calc';
+import { suggestStrDefaults, estimateOperatingExpenses } from '@alot/mf-calc';
 import { usd } from '../lib/format';
 import {
   getDeal, getUnits, upsertDeal, replaceUnits, saveScenario, logCost, listMarkets, listScenarios,
@@ -107,6 +107,35 @@ export default function DealNew() {
     return gross > 0 ? gross / count : null;
   }, [f.units]);
   const strSuggestion = useMemo(() => suggestStrDefaults(avgMarketRent), [avgMarketRent]);
+
+  // Auto-estimate operating expenses (real annual $) from unit count + rents
+  // the first time we have income to work with and the fields are still blank,
+  // so the deal opens with sensible dollar figures instead of zeros.
+  const estimatedExpRef = useRef(false);
+  useEffect(() => {
+    if (!hydrated || estimatedExpRef.current) return;
+    const units = f.units || [];
+    const count = units.reduce((a, u) => a + (Number(u.count) || 0), 0);
+    const gpr = units.reduce((a, u) => a + (Number(u.market_rent) || 0) * (Number(u.count) || 0), 0) * 12;
+    if (!count || !(gpr > 0)) return;
+    const e = f.expenses;
+    const blank = !e.insurance && !e.management && !e.utilities && !e.repairs_maintenance && !e.capex_reserve;
+    estimatedExpRef.current = true;
+    if (!blank) return; // respect anything already entered / saved
+    const est = estimateOperatingExpenses({ units: count, gross_potential_rent: gpr, vacancy_rate: f.vacancy_rate || 0.05 });
+    setF((p) => ({
+      ...p,
+      expenses: {
+        ...p.expenses,
+        insurance: Math.round(est.insurance),
+        management: Math.round(est.management),
+        utilities: Math.round(est.utilities),
+        repairs_maintenance: Math.round(est.repairs_maintenance),
+        capex_reserve: Math.round(est.capex_reserve),
+      },
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, f.units, f.expenses, f.vacancy_rate]);
 
   // Auto-seed the STR ADR + occupancy from the rent data so the LTR-vs-STR
   // panel appears without hunting — glance-level estimate, editable, flagged.
@@ -234,17 +263,17 @@ export default function DealNew() {
         </Grid>
       </Section>
 
-      <Section title="Operating expenses" subtitle="Annual $. Property tax is re-assessed at purchase price — never seller's" tip="Everything it costs to run the building yearly, BEFORE the mortgage. Income minus vacancy minus these = NOI, the number the whole valuation stands on. The #1 rookie error is copying the seller's (understated) numbers — these fields default conservative.">
+      <Section title="Operating expenses" subtitle="Each is an ANNUAL DOLLAR amount — auto-estimated from unit count and rents; override any" tip="Everything it costs to run the building yearly, BEFORE the mortgage. Income minus vacancy minus these = NOI, the number the whole valuation stands on. Insurance, management, utilities, repairs, and reserves open pre-filled with dollar estimates from the unit mix — replace with real quotes as you get them. Only the two % fields (property tax rate, vacancy) take percentages; everything else is dollars.">
         <Grid cols={3}>
           <Field label="Property tax rate" tip="County effective tax rate applied to YOUR purchase price — never the seller's old bill. Sales usually trigger reassessment, so the seller's current tax is misleadingly low." hint="effective rate applied to purchase price"><PercentInput value={f.property_tax_rate} onChange={(v) => set({ property_tax_rate: v })} /></Field>
           <Field label="Assessment ratio" tip="The fraction of market value the county actually taxes. AZ multifamily ≈ 10%, TN residential = 25%. Set 1 if your rate is already quoted on full value." hint="1 = rate on full market value"><NumberInput value={f.assessment_ratio} onChange={(v) => set({ assessment_ratio: v })} step="0.01" /></Field>
           <Field label="Land value" tip="The land portion of the price. Land can't be depreciated, so lower land value = bigger depreciation basis = bigger tax shelter. County assessor land values are a reasonable source." hint="excluded from depreciation basis"><NumberInput value={f.land_value} onChange={(v) => set({ land_value: v })} suffix="$" /></Field>
-          <Field label="Insurance" tip="Annual property insurance. Get a real quote for older buildings — this line has been rising fast, and the stress panel tests +30% on it."><NumberInput value={f.expenses.insurance} onChange={(v) => setNested('expenses', { insurance: v })} suffix="$" /></Field>
-          <Field label="Management" tip="Annual property-management cost. Budget 8–10% of collected income for long-term rentals even if you'll self-manage — your time isn't free, and lenders underwrite it in." hint="LTR 8–10% of EGI"><NumberInput value={f.expenses.management} onChange={(v) => setNested('expenses', { management: v })} suffix="$" /></Field>
-          <Field label="Utilities" tip="Annual owner-paid utilities. Master-metered buildings (one meter) put this on you — check the prescreen box below if so, and consider RUBS to bill it back."><NumberInput value={f.expenses.utilities} onChange={(v) => setNested('expenses', { utilities: v })} suffix="$" /></Field>
-          <Field label="Repairs & maintenance" tip="Annual routine upkeep: plumbing calls, appliances, turns, landscaping. Older buildings run higher. Rule of thumb: $500–$1,000/unit/yr depending on age."><NumberInput value={f.expenses.repairs_maintenance} onChange={(v) => setNested('expenses', { repairs_maintenance: v })} suffix="$" /></Field>
-          <Field label="Capex reserve" tip="Savings for big-ticket items: roof, HVAC, repaves. We count it as an operating expense (reducing NOI) — the conservative treatment that keeps DSCR honest. $250–$350/unit/yr is typical." hint="annual total (per-unit × units)"><NumberInput value={f.expenses.capex_reserve} onChange={(v) => setNested('expenses', { capex_reserve: v })} suffix="$" /></Field>
-          <Field label="Payroll" tip="On-site staff. Usually zero below ~20 units; larger buildings need a part-time manager." hint="if ≥ 20 units"><NumberInput value={f.expenses.payroll} onChange={(v) => setNested('expenses', { payroll: v })} suffix="$" /></Field>
+          <Field label="Insurance" tip="Annual property insurance in DOLLARS. Estimated at ~$500/unit/yr; get a real quote for older buildings — this line has been rising fast, and the stress panel tests +30% on it." hint="annual $ (est. ~$500/unit)"><NumberInput value={f.expenses.insurance} onChange={(v) => setNested('expenses', { insurance: v })} suffix="$" /></Field>
+          <Field label="Management" tip="Annual property-management cost in DOLLARS (not a percent — enter the dollar figure). Estimated at ~10% of effective income even if you self-manage; your time isn't free and lenders underwrite it in." hint="annual $ (≈10% of income)"><NumberInput value={f.expenses.management} onChange={(v) => setNested('expenses', { management: v })} suffix="$" /></Field>
+          <Field label="Utilities" tip="Annual owner-paid utilities in DOLLARS. Estimated at ~$300/unit/yr. Master-metered buildings put more on you — check the prescreen box below and consider RUBS to bill it back." hint="annual $ (owner-paid)"><NumberInput value={f.expenses.utilities} onChange={(v) => setNested('expenses', { utilities: v })} suffix="$" /></Field>
+          <Field label="Repairs & maintenance" tip="Annual routine upkeep in DOLLARS: plumbing, appliances, turns, landscaping. Estimated at ~8% of rent; older buildings run higher ($500–$1,000/unit/yr)." hint="annual $ (~8% of rent)"><NumberInput value={f.expenses.repairs_maintenance} onChange={(v) => setNested('expenses', { repairs_maintenance: v })} suffix="$" /></Field>
+          <Field label="Capex reserve" tip="Annual reserve in DOLLARS for big-ticket items: roof, HVAC, repaves. Estimated at ~$300/unit/yr. Counted as an operating expense (reducing NOI) — the conservative treatment that keeps DSCR honest." hint="annual $ (~$300/unit)"><NumberInput value={f.expenses.capex_reserve} onChange={(v) => setNested('expenses', { capex_reserve: v })} suffix="$" /></Field>
+          <Field label="Payroll" tip="On-site staff cost in DOLLARS per year. Usually zero below ~20 units; larger buildings need a part-time manager." hint="annual $ (if ≥ 20 units)"><NumberInput value={f.expenses.payroll} onChange={(v) => setNested('expenses', { payroll: v })} suffix="$" /></Field>
         </Grid>
       </Section>
 
