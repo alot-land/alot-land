@@ -20,6 +20,9 @@ const DEFAULT_INPUTS = {
   seller_cash_on_cash: 0.12,
   refi_cash_back_fraction: 0.6,
   refi_months: 12,
+  purchase_discount: 0.7,
+  refi_ltv: 0.7,
+  refi_rate: 0.075,
 };
 
 const fmtMonths = (m) => {
@@ -37,6 +40,8 @@ const SCENARIO_TIPS = {
     'Owner carries the note at ~10% down — exactly what long-hold, high-equity off-market sellers can offer. Less cash per deal and cheaper debt means faster doors, but every deal takes a negotiated seller.',
   value_add_recycle:
     'Buy under-rented buildings, improve, refinance, and pull most of your cash back out to buy the next one (BRRRR-style). Fastest path on paper — and the most work per deal.',
+  equity_capture:
+    "Buy at a DISCOUNT to real value (e.g. a $1.1M building for $700k), then cash-out refi against the FULL value — the refi can return more than you put in, funding the next down payment while you keep the leftover equity. The added loan's debt service is honestly charged against cash flow. This is what the off-market machine hunts: motivated owners with big equity who can sell under value.",
 };
 
 export default function Goals() {
@@ -225,7 +230,10 @@ export default function Goals() {
               {num('seller_down_rate', 'Seller down %', 'Down payment when the seller carries, decimal.', 0.01)}
               {num('seller_cash_on_cash', 'CoC (seller)', 'Cash-on-cash under seller terms — usually higher because the debt is cheaper, decimal.', 0.01)}
               {num('refi_cash_back_fraction', 'Refi cash-back', 'Share of invested cash returned at refinance in the value-add strategy, decimal (0.6 = 60%).', 0.05)}
-              {num('refi_months', 'Months to refi', 'Time from purchase to the value-add refinance.')}
+              {num('refi_months', 'Months to refi', 'Time from purchase to the refinance (value-add and equity-capture strategies).')}
+              {num('purchase_discount', 'Buy at % of value', 'Equity capture: price ÷ real value, decimal. 0.7 means paying $700k for a $1M building. The off-market list is where these come from.', 0.05)}
+              {num('refi_ltv', 'Refi LTV', 'Equity capture: the cash-out refi loan as a share of FULL market value, decimal.', 0.05)}
+              {num('refi_rate', 'Refi rate', 'Interest rate on the cash-out refi, decimal.', 0.005)}
             </div>
           )}
         </div>
@@ -233,7 +241,7 @@ export default function Goals() {
 
       {/* The three paths */}
       {scenarios.length > 0 && (
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
           {scenarios.map((s) => (
             <div key={s.key} className="card p-4 flex flex-col">
               <div className="text-sm font-medium flex items-center">
@@ -261,6 +269,12 @@ export default function Goals() {
                   <span className="text-muted">Total cash deployed</span>
                   <span className="tabular-nums">{usd(s.result.total_cash_invested)}</span>
                 </div>
+                {s.refi_cash_back != null && s.refi_cash_back > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-muted">Refi cash back / deal</span>
+                    <span className="tabular-nums text-green-deep">{usd(s.refi_cash_back)}</span>
+                  </div>
+                )}
                 {s.result.refi_cash_returned > 0 && (
                   <div className="flex justify-between">
                     <span className="text-muted">Refi cash recycled</span>

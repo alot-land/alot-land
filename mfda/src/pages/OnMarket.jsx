@@ -9,8 +9,15 @@ import {
   latestScanRun,
   listAllRentBands,
   listMarkets,
+  listParcelValueIndex,
 } from '../lib/queries';
-import { buildZipRents, presetForState, screenListingRow } from '../lib/parcelscreen';
+import {
+  buildZipRents,
+  presetForState,
+  screenListingRow,
+  buildParcelValueMap,
+  listingEquity,
+} from '../lib/parcelscreen';
 import RatingControl from '../components/RatingControl';
 import { Tip } from '../components/fields';
 import { usd, pct } from '../lib/format';
@@ -68,11 +75,19 @@ export default function OnMarket() {
     enabled: !!org,
   });
   const zipRents = useMemo(() => buildZipRents(bands.data), [bands.data]);
+  const parcelValues = useQuery({
+    queryKey: ['parcel-value-index', org?.id],
+    queryFn: () => listParcelValueIndex(org.id),
+    enabled: !!org,
+    staleTime: 30 * 60 * 1000,
+  });
+  const valueMap = useMemo(() => buildParcelValueMap(parcelValues.data), [parcelValues.data]);
 
   const rows = useMemo(() => {
     let r = (leads.data || []).map((d) => ({
       ...d,
       screen: screenListingRow(d, zipRents, presetForState(markets.data, d.state)),
+      equity: listingEquity(d, valueMap),
     }));
     if (ratingFilter !== 'all') {
       r = ratingFilter === 'none' ? r.filter((d) => !d.rating) : r.filter((d) => d.rating === ratingFilter);
@@ -96,9 +111,10 @@ export default function OnMarket() {
       price_desc: (a, b) => Number(b.price) - Number(a.price),
       dom: (a, b) => (b.days_on_market ?? 0) - (a.days_on_market ?? 0),
       year: (a, b) => (b.year_built ?? 0) - (a.year_built ?? 0),
+      equity: (a, b) => (b.equity?.dollars ?? -1e15) - (a.equity?.dollars ?? -1e15),
     };
     return [...r].sort(by[sort] || by.newest);
-  }, [leads.data, zipRents, markets.data, search, state, bucket, maxPrice, sort, ratingFilter, verdictFilter]);
+  }, [leads.data, zipRents, markets.data, valueMap, search, state, bucket, maxPrice, sort, ratingFilter, verdictFilter]);
 
   async function rate(deal, rating) {
     qc.setQueryData(['onmarket', org.id], (old) =>
@@ -194,6 +210,7 @@ export default function OnMarket() {
         <select className="input w-auto" value={sort} onChange={(e) => setSort(e.target.value)}>
           <option value="newest">Newest scan</option>
           <option value="screen">Best screen first</option>
+          <option value="equity">Most equity first</option>
           <option value="price_asc">Price ↑</option>
           <option value="price_desc">Price ↓</option>
           <option value="dom">Days on market</option>
@@ -256,7 +273,17 @@ export default function OnMarket() {
                     )}
                   </td>
                   <td className="td">
-                    <div className="font-medium">{d.address}</div>
+                    <div className="font-medium">
+                      {d.address}
+                      {d.equity && d.equity.pct >= 0.08 && (
+                        <span
+                          className="pill bg-green/15 text-green-deep ml-2 text-xs"
+                          title={`County appraisal ${usd(Number(d.price) + d.equity.dollars)} vs asking ${usd(Number(d.price))} — walk-in equity if the appraisal holds. Verify with comps before counting it.`}
+                        >
+                          💰 ≈{Math.round(d.equity.pct * 100)}% under value
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs text-muted">
                       {[d.city, d.state, d.zip].filter(Boolean).join(', ')}
                       {d.listing_url && (

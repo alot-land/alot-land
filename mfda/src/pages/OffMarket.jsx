@@ -15,7 +15,7 @@ import {
   listMarkets,
   setParcelRating,
 } from '../lib/queries';
-import { buildZipRents, presetForState, screenRow, streetViewUrl } from '../lib/parcelscreen';
+import { buildZipRents, presetForState, screenRow, streetViewUrl, ownerEquity } from '../lib/parcelscreen';
 import RatingControl from '../components/RatingControl';
 
 const OffMarketMap = lazyReload(() => import('../components/OffMarketMap'));
@@ -416,6 +416,17 @@ export default function OffMarket() {
                     <div className="flex flex-wrap gap-1">
                       {p.absentee && <span className="pill bg-gold/20 text-warn">absentee</span>}
                       {p.owner_is_entity && <span className="pill bg-blue/15 text-blue">entity</span>}
+                      {(() => {
+                        const eq = ownerEquity(p);
+                        return eq && eq.pct >= 0.5 ? (
+                          <span
+                            className="pill bg-green/15 text-green-deep"
+                            title={`Owner paid ${usd(Number(p.last_sale_price))}; county values it at ${usd(Number(p.assessed_value))} — ≈${usd(eq.dollars)} equity. Room to sell you a discount or carry financing and still win.`}
+                          >
+                            💰 {Math.round(eq.pct * 100)}% equity
+                          </span>
+                        ) : null;
+                      })()}
                     </div>
                   </td>
                 </tr>

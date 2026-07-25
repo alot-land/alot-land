@@ -8,6 +8,7 @@
  * one; optional refi events return a fraction of each deal's invested cash
  * `refi_months` after its purchase (BRRRR-style recycling).
  */
+import { annualDebtService } from './finance.js';
 
 export interface SimulateGoalInputs {
   target_monthly_cashflow: number;
@@ -15,10 +16,14 @@ export interface SimulateGoalInputs {
   monthly_savings: number;
   per_deal_cash: number;
   per_deal_monthly_cashflow: number;
-  /** Fraction of per_deal_cash returned at refi (0 = no refi). */
+  /** Fraction of per_deal_cash returned at refi (0 = no refi; may exceed 1
+   * when buying far enough under value). */
   refi_cash_back_fraction?: number;
   /** Months after purchase when the refi cash arrives. */
   refi_months?: number;
+  /** Monthly cash-flow change applied at each deal's refi (negative: the
+   * larger loan's added debt service). */
+  refi_monthly_cashflow_delta?: number;
   max_months?: number;
 }
 
@@ -43,6 +48,7 @@ export function simulateGoal(inp: SimulateGoalInputs): SimulateGoalResult {
   const refiFrac = inp.refi_cash_back_fraction ?? 0;
   const refiMonths = inp.refi_months ?? 0;
 
+  const refiDelta = inp.refi_monthly_cashflow_delta ?? 0;
   let capital = inp.capital_available;
   let cashflow = 0;
   let invested = 0;
@@ -69,6 +75,7 @@ export function simulateGoal(inp: SimulateGoalInputs): SimulateGoalResult {
       if (r.month === m) {
         capital += r.amount;
         refiReturned += r.amount;
+        cashflow += refiDelta;
       }
     }
     while (capital >= inp.per_deal_cash) {
@@ -81,6 +88,66 @@ export function simulateGoal(inp: SimulateGoalInputs): SimulateGoalResult {
     }
   }
   return done(false, null);
+}
+
+// ---------------------------------------------------------------------------
+// Equity math (v1.7.0): buy under value, cash-out refi, recycle the equity.
+// ---------------------------------------------------------------------------
+
+export interface EquitySpreadResult {
+  dollars: number;
+  pct: number;
+}
+
+/** Value minus price — the equity walked into at purchase. */
+export function equitySpread(inp: {
+  price: number | null | undefined;
+  value: number | null | undefined;
+}): EquitySpreadResult | null {
+  if (inp.price == null || inp.value == null || !(inp.value > 0) || !(inp.price > 0)) return null;
+  const dollars = inp.value - inp.price;
+  return { dollars, pct: dollars / inp.value };
+}
+
+export interface EquityCaptureInputs {
+  purchase_price: number;
+  market_value: number;
+  down_payment_rate: number;
+  closing_cost_rate: number;
+  rehab?: number;
+  refi_ltv: number;
+  refi_rate: number;
+  refi_amort_years?: number;
+}
+
+export interface EquityCaptureResult {
+  cash_in: number;
+  purchase_loan: number;
+  refi_loan: number;
+  /** Cash returned after the refi pays off the purchase loan (≥ 0). */
+  cash_out: number;
+  net_cash_left_in: number;
+  equity_after_refi: number;
+  /** Debt service on the ADDED principal — the honest cash-flow cost. */
+  added_monthly_debt_service: number;
+}
+
+export function equityCapture(inp: EquityCaptureInputs): EquityCaptureResult {
+  const rehab = inp.rehab ?? 0;
+  const amort = inp.refi_amort_years ?? 30;
+  const cashIn = inp.purchase_price * (inp.down_payment_rate + inp.closing_cost_rate) + rehab;
+  const purchaseLoan = inp.purchase_price * (1 - inp.down_payment_rate);
+  const refiLoan = inp.refi_ltv * inp.market_value;
+  const cashOut = Math.max(0, refiLoan - purchaseLoan);
+  return {
+    cash_in: cashIn,
+    purchase_loan: purchaseLoan,
+    refi_loan: refiLoan,
+    cash_out: cashOut,
+    net_cash_left_in: cashIn - cashOut,
+    equity_after_refi: inp.market_value - Math.max(refiLoan, purchaseLoan),
+    added_monthly_debt_service: cashOut > 0 ? annualDebtService(cashOut, inp.refi_rate, amort) / 12 : 0,
+  };
 }
 
 export interface GoalProgressInputs {
@@ -129,16 +196,22 @@ export interface GoalScenarioInputs {
   /** Value-add recycle: refi returns this share of invested cash. */
   refi_cash_back_fraction: number;
   refi_months: number;
+  /** Equity capture: purchase price ÷ market value (0.7 = buying at 70%). */
+  purchase_discount?: number;
+  refi_ltv?: number;
+  refi_rate?: number;
   max_months?: number;
 }
 
 export interface GoalScenario {
-  key: 'conventional' | 'seller_finance' | 'value_add_recycle';
+  key: 'conventional' | 'seller_finance' | 'value_add_recycle' | 'equity_capture';
   label: string;
   per_deal_price: number;
   per_deal_cash: number;
   per_deal_monthly_cashflow: number;
   doors_at_goal: number;
+  /** Cash returned at each deal's refi (equity-capture strategy). */
+  refi_cash_back?: number;
   result: SimulateGoalResult;
 }
 
@@ -178,6 +251,30 @@ export function goalScenarios(inp: GoalScenarioInputs): GoalScenario[] {
     };
   };
 
+  // Equity capture: buy at a discount to value, cash-out refi against FULL
+  // value, recycle the equity — with the larger loan's debt service charged
+  // against cash flow at each refi.
+  const discount = inp.purchase_discount ?? 0.7;
+  const refiLtv = inp.refi_ltv ?? 0.7;
+  const refiRate = inp.refi_rate ?? 0.075;
+  const ec = equityCapture({
+    purchase_price: price,
+    market_value: price / discount,
+    down_payment_rate: inp.down_payment_rate,
+    closing_cost_rate: inp.closing_cost_rate,
+    refi_ltv: refiLtv,
+    refi_rate: refiRate,
+  });
+  const ecCf = (ec.cash_in * inp.cash_on_cash) / 12;
+  const ecResult = simulateGoal({
+    ...common,
+    per_deal_cash: ec.cash_in,
+    per_deal_monthly_cashflow: ecCf,
+    refi_cash_back_fraction: ec.cash_in > 0 ? ec.cash_out / ec.cash_in : 0,
+    refi_months: inp.refi_months,
+    refi_monthly_cashflow_delta: -ec.added_monthly_debt_service,
+  });
+
   return [
     mk(
       'conventional',
@@ -200,5 +297,15 @@ export function goalScenarios(inp: GoalScenarioInputs): GoalScenario[] {
       inp.cash_on_cash,
       inp.refi_cash_back_fraction,
     ),
+    {
+      key: 'equity_capture',
+      label: 'Equity capture (buy under value + cash-out refi)',
+      per_deal_price: price,
+      per_deal_cash: ec.cash_in,
+      per_deal_monthly_cashflow: ecCf,
+      doors_at_goal: ecResult.deals_needed * inp.avg_units_per_deal,
+      refi_cash_back: ec.cash_out,
+      result: ecResult,
+    },
   ];
 }

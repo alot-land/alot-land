@@ -351,6 +351,22 @@ export async function deleteNote(id) {
   if (error) throw error;
 }
 
+// Minimal parcel value index (address+zip → county appraisal) for spotting
+// on-market listings priced under county value.
+export async function listParcelValueIndex(orgId) {
+  const { rows } = await fetchPaged(
+    () =>
+      supabase
+        .from('parcels')
+        .select('situs_address, situs_zip, assessed_value')
+        .eq('org_id', orgId)
+        .not('assessed_value', 'is', null)
+        .order('id'),
+    20000,
+  );
+  return rows;
+}
+
 // Every rent band for the org (zip → est. market rent), for parcel screening.
 export async function listAllRentBands(orgId) {
   const { rows } = await fetchPaged(

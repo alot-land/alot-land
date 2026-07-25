@@ -294,8 +294,12 @@ const MANUAL = [
         b: 'A month-by-month simulation, not a guess: your war chest grows from savings plus the cash flow of every deal you\'ve already bought (the snowball effect), and a new deal is bought the month you can afford one. No appreciation or rent growth is counted — real results should beat the projection.',
       },
       {
-        t: 'The three paths',
-        b: 'Conventional: bank loans, 25% down — most cash per deal, simplest. Seller finance: ~10% down with the owner carrying — exactly what your long-hold absentee off-market list makes possible, and why the timeline is usually shortest. Value-add + refi recycle: buy under-rented, improve, refinance your cash back out, repeat (BRRRR) — fast but the most work per building.',
+        t: 'The four paths',
+        b: 'Conventional: bank loans, 25% down — most cash per deal, simplest. Seller finance: ~10% down with the owner carrying — what your long-hold absentee list makes possible. Value-add + refi recycle: improve, refinance your cash out, repeat (BRRRR). Equity capture: buy at a discount to real value (a $1.1M building for $700k), then cash-out refi against FULL value — the refi can return MORE than you put in while you keep the leftover equity. The added debt service is honestly charged against cash flow.',
+      },
+      {
+        t: 'Finding equity-capture candidates (the 💰 pills)',
+        b: 'On-Market: listings that match a county parcel show a 💰 "under value" pill when asking price sits below the county appraisal — sort by "Most equity first." Off-Market: owners whose county value dwarfs what they paid show a 💰 equity pill — they can sell you a discount or carry financing and still win. Both are appraisal-based signals: verify with comps before counting the equity as real.',
       },
       {
         t: 'Make the assumptions yours',

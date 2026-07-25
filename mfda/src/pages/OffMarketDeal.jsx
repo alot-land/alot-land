@@ -13,7 +13,7 @@ import {
   findDealByDedupeKey,
   dedupeKey,
 } from '../lib/queries';
-import { buildZipRents, presetForState, parcelDealInput, streetViewUrl } from '../lib/parcelscreen';
+import { buildZipRents, presetForState, parcelDealInput, streetViewUrl, ownerEquity } from '../lib/parcelscreen';
 import RatingControl from '../components/RatingControl';
 import NotesCard from '../components/NotesCard';
 import { underwrite } from '../lib/underwrite';
@@ -194,6 +194,15 @@ export default function OffMarketDeal() {
               bought {usd(Number(p.last_sale_price))} {p.last_sale_date && `(${p.last_sale_date.slice(0, 4)})`}
             </span>
           )}
+          {(() => {
+            const eq = ownerEquity(p);
+            return eq && eq.dollars > 0 ? (
+              <span className="pill bg-green/15 text-green-deep">
+                💰 ≈{usd(eq.dollars)} equity ({Math.round(eq.pct * 100)}%)
+                <Tip text="County value minus what they paid. Big equity = the owner can sell below market or carry seller financing and STILL profit — this is your discount and creative-terms negotiating room, and the raw material of the equity-capture strategy on the Goals page." />
+              </span>
+            ) : null;
+          })()}
         </div>
         <div className="text-sm text-ink-2 mt-1">
           Mails to: {[p.mailing_address, p.mailing_city, p.mailing_state, p.mailing_zip].filter(Boolean).join(', ') || '—'}

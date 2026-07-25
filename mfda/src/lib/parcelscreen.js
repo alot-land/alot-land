@@ -32,6 +32,48 @@ export function buildZipRents(bands) {
   return out;
 }
 
+// Address join key: lowercase alphanumeric with street-suffix words dropped,
+// plus zip5 — matches Redfin's "1305 Stratford Ave" to the county's
+// "1305 STRATFORD AVE".
+const SUFFIX_RE = /\b(street|st|avenue|ave|road|rd|drive|dr|lane|ln|boulevard|blvd|court|ct|place|pl|way|circle|cir|pike|pk|terrace|ter)\b/g;
+export function addrKey(address, zip) {
+  const a = String(address || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(SUFFIX_RE, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const z = String(zip || '').slice(0, 5);
+  return a && z ? `${a}:${z}` : null;
+}
+
+/** parcels value index rows → Map addrKey → county appraised value. */
+export function buildParcelValueMap(rows) {
+  const map = new Map();
+  for (const r of rows || []) {
+    const k = addrKey(r.situs_address, r.situs_zip);
+    if (k && Number(r.assessed_value) > 0) map.set(k, Number(r.assessed_value));
+  }
+  return map;
+}
+
+/** Equity walked into at asking price, when the listing matches a parcel. */
+export function listingEquity(deal, valueMap) {
+  const k = addrKey(deal.address, deal.zip);
+  if (!k || !valueMap?.size) return null;
+  const value = valueMap.get(k);
+  if (value == null || !(Number(deal.price) > 0)) return null;
+  return mf.equitySpread({ price: Number(deal.price), value });
+}
+
+/** Owner's equity position: county value vs what they paid. */
+export function ownerEquity(parcel) {
+  return mf.equitySpread({
+    price: parcel.last_sale_price != null ? Number(parcel.last_sale_price) : null,
+    value: parcel.assessed_value != null ? Number(parcel.assessed_value) : null,
+  });
+}
+
 /** Google Street View (pano when we have coordinates, address search otherwise). */
 export function streetViewUrl(p) {
   if (p.lat != null && p.lng != null) {

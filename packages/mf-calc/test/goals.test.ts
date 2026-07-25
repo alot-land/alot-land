@@ -8,7 +8,15 @@
  * return part of the invested cash (BRRRR-style recycling).
  */
 import { describe, it, expect } from 'vitest';
-import { CALC_VERSION, simulateGoal, goalScenarios, goalProgress } from '../src/index.js';
+import {
+  CALC_VERSION,
+  simulateGoal,
+  goalScenarios,
+  goalProgress,
+  equitySpread,
+  equityCapture,
+  annualDebtService,
+} from '../src/index.js';
 
 describe('calc version', () => {
   it('is at least 1.5.0 (goals module)', () => {
@@ -83,6 +91,90 @@ describe('simulateGoal', () => {
   });
 });
 
+describe('equitySpread (v1.7.0)', () => {
+  it('reports dollars and percent under value', () => {
+    const s = equitySpread({ price: 700_000, value: 1_100_000 });
+    expect(s.dollars).toBe(400_000);
+    expect(s.pct).toBeCloseTo(400_000 / 1_100_000, 12);
+  });
+  it('null on missing/invalid inputs, negative when overpaying', () => {
+    expect(equitySpread({ price: 700_000, value: null })).toBeNull();
+    expect(equitySpread({ price: null, value: 1 })).toBeNull();
+    expect(equitySpread({ price: 500_000, value: 400_000 })!.dollars).toBe(-100_000);
+  });
+});
+
+describe('equityCapture (v1.7.0) — the buy-under-value + cash-out-refi play', () => {
+  // David's exact example: worth $1.1M, bought at $700k, 25% down, 70% refi.
+  const r = equityCapture({
+    purchase_price: 700_000,
+    market_value: 1_100_000,
+    down_payment_rate: 0.25,
+    closing_cost_rate: 0.03,
+    refi_ltv: 0.7,
+    refi_rate: 0.075,
+  });
+
+  it('cash in, loans, and cash out reconcile exactly', () => {
+    expect(r.cash_in).toBeCloseTo(196_000, 6); // 175k down + 21k closing
+    expect(r.purchase_loan).toBeCloseTo(525_000, 6);
+    expect(r.refi_loan).toBeCloseTo(770_000, 6); // 70% of 1.1M
+    expect(r.cash_out).toBeCloseTo(245_000, 6); // refi pays off purchase loan
+    expect(r.net_cash_left_in).toBeCloseTo(-49_000, 6); // MORE than cash back
+    expect(r.equity_after_refi).toBeCloseTo(330_000, 6);
+  });
+
+  it('charges the added debt service honestly', () => {
+    expect(r.added_monthly_debt_service).toBeCloseTo(annualDebtService(245_000, 0.075, 30) / 12, 6);
+  });
+
+  it('no cash out when the refi cannot clear the purchase loan', () => {
+    const thin = equityCapture({
+      purchase_price: 1_000_000,
+      market_value: 1_050_000,
+      down_payment_rate: 0.25,
+      closing_cost_rate: 0.03,
+      refi_ltv: 0.7,
+      refi_rate: 0.075,
+    });
+    expect(thin.cash_out).toBe(0); // 735k refi < 750k loan
+    expect(thin.added_monthly_debt_service).toBe(0);
+  });
+
+  it('rehab adds to cash in and to the value basis the caller provides', () => {
+    const rr = equityCapture({
+      purchase_price: 700_000,
+      market_value: 1_100_000,
+      down_payment_rate: 0.25,
+      closing_cost_rate: 0.03,
+      rehab: 50_000,
+      refi_ltv: 0.7,
+      refi_rate: 0.075,
+    });
+    expect(rr.cash_in).toBeCloseTo(246_000, 6);
+  });
+});
+
+describe('simulateGoal refi cash-flow delta (v1.7.0)', () => {
+  it('applies the post-refi debt-service hit at each refi event', () => {
+    const r = simulateGoal({
+      target_monthly_cashflow: 1_500,
+      capital_available: 100_000,
+      monthly_savings: 0,
+      per_deal_cash: 100_000,
+      per_deal_monthly_cashflow: 1_000,
+      refi_cash_back_fraction: 0.6,
+      refi_months: 12,
+      refi_monthly_cashflow_delta: -500,
+    });
+    // Deal 1 at m0 (cf 1,000). Refi m12: +60k (72k banked), cf drops to 500.
+    // 28k more at 500/mo → deal 2 at m68 → cf 1,500 = target.
+    expect(r.purchases[1]!.month).toBe(68);
+    expect(r.months_to_goal).toBe(68);
+    expect(r.final_monthly_cashflow).toBe(1_500);
+  });
+});
+
 describe('goalProgress (v1.6.0)', () => {
   it('sums committed deal cash flows against the target', () => {
     const p = goalProgress({ target_monthly: 10_000, deal_monthly_cashflows: [1_200, 800, 2_000] });
@@ -127,8 +219,17 @@ describe('goalScenarios', () => {
   };
   const s = goalScenarios(inputs);
 
-  it('produces the three named strategies', () => {
-    expect(s.map((x) => x.key)).toEqual(['conventional', 'seller_finance', 'value_add_recycle']);
+  it('produces the four named strategies', () => {
+    expect(s.map((x) => x.key)).toEqual(['conventional', 'seller_finance', 'value_add_recycle', 'equity_capture']);
+  });
+
+  it('equity capture: refi cash-back derives from the value spread and cuts cash flow', () => {
+    const ec = s[3]!;
+    // price 600k at 70% of value → value ≈ 857,143; refi 70% → 600k loan;
+    // purchase loan 450k → cash out 150k on 168k in.
+    expect(ec.per_deal_cash).toBeCloseTo(168_000, 6);
+    expect(ec.refi_cash_back).toBeCloseTo(0.7 * (600_000 / 0.7) - 450_000, 0);
+    expect(ec.result.months_to_goal).not.toBeNull();
   });
 
   it('conventional: deal cash = price × (down + closing); cf = cash × CoC ÷ 12', () => {
