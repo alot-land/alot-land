@@ -62,6 +62,25 @@ export function screenRow(parcel, zipRents, preset) {
 }
 
 /**
+ * Fast screen for ON-MARKET listings. Redfin gives price and zip but only a
+ * unit BUCKET ('2-4' / '5+'), so 2-4s screen with a disclosed 3-unit
+ * assumption and 5+ report 'insufficient' until real units are entered in
+ * underwriting. The asking price is the anchor.
+ */
+export function screenListingRow(deal, zipRents, preset) {
+  const unitsEst = deal.unit_bucket === '2-4' ? 3 : null;
+  const rent = deal.zip ? zipRents.get(String(deal.zip).slice(0, 5)) ?? null : null;
+  const screen = mf.screenParcel({
+    units: unitsEst,
+    market_rent_monthly: rent,
+    price_anchor: deal.price != null ? Number(deal.price) : null,
+    property_tax_rate: preset?.property_tax_rate ?? undefined,
+    assessment_ratio: preset?.assessment_ratio ?? undefined,
+  });
+  return { ...screen, rent, units_est: unitsEst };
+}
+
+/**
  * Full underwrite input for one parcel (drives the report page and the
  * "Analyze as deal" handoff). Caller passes the (possibly user-edited)
  * units / rent / anchor.

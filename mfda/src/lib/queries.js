@@ -65,6 +65,50 @@ export async function setDealFavorite(id, favorite) {
   if (error) throw error;
 }
 
+export async function setDealRating(id, rating) {
+  const { error } = await supabase.from('deals').update({ rating }).eq('id', id);
+  if (error) throw error;
+}
+
+// Commit a deal to a goal (or null to unassign) with its per-deal target.
+export async function assignDealGoal(id, goalId, targetMonthly) {
+  const { error } = await supabase
+    .from('deals')
+    .update({ goal_id: goalId, deal_target_monthly: targetMonthly ?? null })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// Stage + actual contract terms.
+export async function updateDealTracking(id, fields) {
+  const allowed = {};
+  for (const k of ['status', 'contract_price', 'contract_date', 'expected_close_date']) {
+    if (fields[k] !== undefined) allowed[k] = fields[k] === '' ? null : fields[k];
+  }
+  const { error } = await supabase.from('deals').update(allowed).eq('id', id);
+  if (error) throw error;
+}
+
+// Deals committed to any goal + the latest scenario per deal (for progress).
+export async function listGoalDeals(orgId) {
+  const { data: deals, error } = await supabase
+    .from('deals')
+    .select('id, address, city, state, status, goal_id, deal_target_monthly')
+    .eq('org_id', orgId)
+    .not('goal_id', 'is', null);
+  if (error) throw error;
+  if (!deals.length) return [];
+  const { data: scens, error: e2 } = await supabase
+    .from('scenarios')
+    .select('deal_id, outputs, created_at')
+    .in('deal_id', deals.map((d) => d.id))
+    .order('created_at', { ascending: false });
+  if (e2) throw e2;
+  const latest = new Map();
+  for (const s of scens) if (!latest.has(s.deal_id)) latest.set(s.deal_id, s);
+  return deals.map((d) => ({ ...d, latest_outputs: latest.get(d.id)?.outputs || null }));
+}
+
 // Sold comps for a state (bucket/radius filtering happens client-side via mf-calc).
 export async function listCompsForState(orgId, state) {
   const { rows } = await fetchPaged(

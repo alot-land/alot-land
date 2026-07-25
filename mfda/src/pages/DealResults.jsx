@@ -5,6 +5,7 @@ import { Suspense, useState } from 'react';
 import { lazyReload } from '../lib/lazyReload';
 import HeartButton from '../components/HeartButton';
 import NotesCard from '../components/NotesCard';
+import DealTrackingCard from '../components/DealTrackingCard';
 import {
   SummaryVerdict, ValuationPanel, FinancingComparator, InverseSolvers,
   StressPanel, TaxPanel, PrescreenFlags, ScoreBreakdown, ProvenanceTable,
@@ -74,6 +75,11 @@ export default function DealResults() {
           <Link to={`/deals/${id}/edit`} className="btn-ghost">Edit / re-run</Link>
         </div>
       </div>
+
+      <DealTrackingCard
+        deal={deal.data}
+        monthlyCashflow={out?.financing?.dscr?.cfbt != null ? out.financing.dscr.cfbt / 12 : null}
+      />
 
       {deal.data.photos && deal.data.photos.length > 0 && (
         <div className="flex gap-2 overflow-x-auto">

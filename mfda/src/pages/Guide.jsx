@@ -47,6 +47,14 @@ const MANUAL = [
         b: 'The Beds column is total bedrooms across the whole building, not per unit. An 8 might be four 2-bedroom units. It\'s useful for $/bed comparisons, not as a unit count.',
       },
       {
+        t: 'The Screen column — every listing pre-scored',
+        b: 'Each listing runs through the deal engine at its asking price: rent from the Zillow zip band, standard expenses, DSCR and cap-rate bars. Pursue/Consider/Pass tells you what to open first; hover the pill for the estimated NOI. Honest caveat: 2–4 unit listings screen with a 3-unit assumption (Redfin never states exact counts) and 5+ shows "needs data" until you underwrite with real units. Sort by "Best screen first" to work the top.',
+      },
+      {
+        t: 'Rating listings: ♥ 👍 👎',
+        b: 'Same three ratings as off-market leads, on every listing row: heart = strong, thumbs up = potential, thumbs down = pass for a reason. Click again to clear; filter by rating with the dropdown; shared across your org.',
+      },
+      {
         t: 'The Analyze button',
         b: 'Analyze moves the property from the queue into your Deals pipeline and opens the underwriting form, pre-filled with everything scraped: address, price, year built, coordinates (which power the auto-comps), and the market preset for its state.',
       },
@@ -143,6 +151,27 @@ const MANUAL = [
     ],
   },
   {
+    section: 'Pipeline: stages, goals, under contract',
+    entries: [
+      {
+        t: 'Deal stages',
+        b: 'Every deal\'s results page has a stage bar: analyzing → pursue → under contract → closed (or passed). The Deals page shows the stage on every row, so the pipeline reads at a glance.',
+      },
+      {
+        t: 'Under contract',
+        b: 'Click "under contract" on the stage bar and fields appear for the ACTUAL terms: contract price, contract date, expected close. Your underwritten scenarios stay frozen for comparison against what you really negotiated — that gap is your negotiation scorecard.',
+      },
+      {
+        t: 'Committing a deal to a goal',
+        b: 'On any deal\'s results page, "Part of goal" assigns it to one of your active goals, and "Want from this deal / mo" sets your personal target for it — the page instantly tells you whether the underwrite makes that number or falls short, and by how much.',
+      },
+      {
+        t: 'Goal progress from real deals',
+        b: 'The Goals page shows a progress bar per active goal: committed monthly cash flow from every assigned deal (underwritten numbers), what remains, and roughly how many more deals like yours it takes. Deals marked under contract or closed are labeled in the list.',
+      },
+    ],
+  },
+  {
     section: 'Versions, compare, and reports',
     entries: [
       {
@@ -180,7 +209,7 @@ const MANUAL = [
       },
       {
         t: 'Add to targets',
-        b: 'Found a pocket you like? Add to targets generates a scan polygon for that county and the droplet starts pulling its Redfin listings and sold comps in the next morning run — photos, agents, comps, and reports all work there automatically. Its tax rate and appreciation defaults seed the underwriting presets too.',
+        b: 'Found a pocket you like? Add to targets generates a scan polygon for that county and the droplet starts pulling its Redfin listings and sold comps in the NEXT MORNING run — they land in On-Market with photos, agents, screens, and reports working automatically. Its tax rate and appreciation defaults seed the underwriting presets too. Off-market parcels are separate: those come from county assessor lanes (Davidson and Maricopa built; other counties importable manually via the assessor tool — ask in the build chat to add a county lane).',
       },
       {
         t: 'Where the data comes from and how fresh it is',

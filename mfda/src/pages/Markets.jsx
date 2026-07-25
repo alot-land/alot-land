@@ -31,6 +31,7 @@ export default function Markets() {
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState(null);
 
   const stats = useQuery({
     queryKey: ['market-stats', org?.id],
@@ -67,8 +68,14 @@ export default function Markets() {
   const retrievedAt = stats.data?.[0]?.retrieved_at;
 
   async function addTarget(m) {
-    if (m.lat == null || m.lng == null || !m.land_sqmi) return;
+    // NB: land area lives on the RAW stats row, not the scored metrics —
+    // an earlier guard checked m.land_sqmi and silently no-opped every click.
+    if (m.lat == null || m.lng == null) {
+      setAddError(`${m.name} has no coordinates in the data yet — can't build a scan area.`);
+      return;
+    }
     setAdding(true);
+    setAddError(null);
     try {
       const raw = stats.data.find((s) => s.geo_id === m.geo_id);
       await addMarketTarget(org.id, {
@@ -76,11 +83,14 @@ export default function Markets() {
         county: m.name,
         name: `${m.name}, ${m.state}`,
         geo_id: m.geo_id,
-        poly: bboxPolygon(m.lat, m.lng, raw?.land_sqmi ?? m.land_sqmi ?? 100),
+        poly: bboxPolygon(m.lat, m.lng, Number(raw?.land_sqmi) || 100),
         property_tax_rate: m.tax_rate ?? undefined,
         appreciation_rate: m.appr_5y != null ? Math.min(Math.max(m.appr_5y, 0), 0.08) : undefined,
       });
       qc.invalidateQueries({ queryKey: ['target-geoids', org.id] });
+    } catch (e) {
+      console.error('addTarget', e);
+      setAddError(`Add to targets failed: ${e.message}`);
     } finally {
       setAdding(false);
     }
@@ -140,6 +150,7 @@ export default function Markets() {
 
       {stats.isLoading && <div className="text-muted">Loading…</div>}
       {stats.error && <div className="text-danger text-sm">{String(stats.error.message)}</div>}
+      {addError && <div className="text-danger text-sm mb-3">{addError}</div>}
 
       {stats.data && stats.data.length === 0 && (
         <div className="card p-10 text-center">

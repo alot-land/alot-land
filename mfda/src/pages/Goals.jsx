@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrg } from '../lib/org';
 import { useAuth } from '../lib/auth';
-import { listGoals, createGoal, setGoalStatus } from '../lib/queries';
+import { Link } from 'react-router-dom';
+import { listGoals, createGoal, setGoalStatus, listGoalDeals } from '../lib/queries';
 import { usd, pct } from '../lib/format';
 import { Tip } from '../components/fields';
-import { goalScenarios, CALC_VERSION } from '@alot/mf-calc';
+import { goalScenarios, goalProgress, CALC_VERSION } from '@alot/mf-calc';
 
 const DEFAULT_INPUTS = {
   capital_available: 100_000,
@@ -44,8 +45,29 @@ export default function Goals() {
   const qc = useQueryClient();
 
   const goals = useQuery({ queryKey: ['goals', org?.id], queryFn: () => listGoals(org.id), enabled: !!org });
+  const goalDeals = useQuery({ queryKey: ['goal-deals', org?.id], queryFn: () => listGoalDeals(org.id), enabled: !!org });
   const active = (goals.data || []).find((g) => g.status === 'active');
   const achieved = (goals.data || []).filter((g) => g.status === 'achieved');
+
+  // Deals committed to the active goal: underwritten monthly CFBT (mf-calc
+  // output), else the operator's pledged per-deal target.
+  const assigned = useMemo(
+    () => (goalDeals.data || []).filter((d) => active && d.goal_id === active.id),
+    [goalDeals.data, active],
+  );
+  const progress = useMemo(() => {
+    if (!active) return null;
+    const cfs = assigned
+      .map((d) =>
+        d.latest_outputs?.financing?.dscr?.cfbt != null
+          ? d.latest_outputs.financing.dscr.cfbt / 12
+          : d.deal_target_monthly != null
+            ? Number(d.deal_target_monthly)
+            : null,
+      )
+      .filter((v) => v != null);
+    return goalProgress({ target_monthly: Number(active.target_monthly), deal_monthly_cashflows: cfs });
+  }, [active, assigned]);
 
   const [name, setName] = useState('');
   const [target, setTarget] = useState(10_000);
@@ -111,15 +133,54 @@ export default function Goals() {
 
       {/* Active goal, or the form to set one */}
       {active ? (
-        <div className="card p-4 mb-6 flex flex-wrap items-center gap-4">
-          <div>
-            <div className="text-xs text-muted">Active goal</div>
-            <div className="font-display text-xl font-semibold">{active.name}</div>
-            <div className="text-sm text-ink-2">{usd(Number(active.target_monthly))}/month target</div>
+        <div className="card p-4 mb-6">
+          <div className="flex flex-wrap items-center gap-4">
+            <div>
+              <div className="text-xs text-muted">Active goal</div>
+              <div className="font-display text-xl font-semibold">{active.name}</div>
+              <div className="text-sm text-ink-2">{usd(Number(active.target_monthly))}/month target</div>
+            </div>
+            <button type="button" onClick={() => markAchieved(active)} className="btn-gold text-sm ml-auto">
+              🎉 Made it — mark achieved
+            </button>
           </div>
-          <button type="button" onClick={() => markAchieved(active)} className="btn-gold text-sm ml-auto">
-            🎉 Made it — mark achieved
-          </button>
+          {progress && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-sm mb-1">
+                <span className="flex items-center">
+                  <span className="font-medium">{usd(progress.committed)}/mo committed</span>
+                  <Tip text="Sum of the underwritten monthly cash flow (or your pledged per-deal target) of every deal assigned to this goal from its results page." />
+                </span>
+                <span className="text-muted">
+                  {progress.met
+                    ? '🎉 target covered by committed deals'
+                    : `${usd(progress.remaining)}/mo to go${progress.est_more_deals != null ? ` · ≈ ${progress.est_more_deals} more deal${progress.est_more_deals === 1 ? '' : 's'} like these` : ''}`}
+                </span>
+              </div>
+              <div className="h-2.5 rounded-full bg-surface-2 overflow-hidden">
+                <div
+                  className="h-full bg-green rounded-full transition-all"
+                  style={{ width: `${Math.round(progress.pct * 100)}%` }}
+                />
+              </div>
+              {assigned.length > 0 && (
+                <div className="mt-2 text-xs text-muted flex flex-wrap gap-x-4 gap-y-1">
+                  {assigned.map((d) => (
+                    <Link key={d.id} to={`/deals/${d.id}`} className="hover:underline">
+                      {d.address || 'deal'}
+                      {d.status === 'contract' && ' (under contract)'}
+                      {d.status === 'closed' && ' (closed ✓)'}
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {assigned.length === 0 && (
+                <p className="text-xs text-muted mt-2">
+                  No deals committed yet — on any deal’s results page, use “Part of goal” to count it here.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <div className="card p-4 mb-6">

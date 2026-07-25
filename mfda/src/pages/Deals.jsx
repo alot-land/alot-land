@@ -10,8 +10,9 @@ const STATUS_STYLES = {
   lead: 'bg-surface-2 text-ink-2',
   analyzing: 'bg-blue/15 text-blue',
   pursue: 'bg-green/15 text-green-deep',
+  contract: 'bg-gold/20 text-warn',
   passed: 'bg-surface-2 text-muted',
-  closed: 'bg-gold/20 text-warn',
+  closed: 'bg-green/15 text-green-deep',
 };
 
 export default function Deals() {

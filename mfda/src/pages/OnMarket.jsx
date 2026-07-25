@@ -2,10 +2,27 @@ import { Suspense, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrg } from '../lib/org';
-import { listOnMarket, setDealStatus, latestScanRun } from '../lib/queries';
-import { usd } from '../lib/format';
+import {
+  listOnMarket,
+  setDealStatus,
+  setDealRating,
+  latestScanRun,
+  listAllRentBands,
+  listMarkets,
+} from '../lib/queries';
+import { buildZipRents, presetForState, screenListingRow } from '../lib/parcelscreen';
+import RatingControl from '../components/RatingControl';
+import { Tip } from '../components/fields';
+import { usd, pct } from '../lib/format';
 
 import { lazyReload } from '../lib/lazyReload';
+
+const VERDICT_STYLES = {
+  pursue: 'bg-green/15 text-green-deep',
+  consider: 'bg-gold/20 text-warn',
+  pass: 'bg-surface-2 text-muted',
+};
+const VERDICT_RANK = { pursue: 0, consider: 1, pass: 2, insufficient: 3 };
 
 // maplibre is heavy — load it only when the map view is opened.
 const ListingsMap = lazyReload(() => import('../components/ListingsMap'));
@@ -26,6 +43,8 @@ export default function OnMarket() {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('newest');
   const [view, setView] = useState('list'); // 'list' | 'map'
+  const [ratingFilter, setRatingFilter] = useState('all');
+  const [verdictFilter, setVerdictFilter] = useState('all');
 
   const leads = useQuery({
     queryKey: ['onmarket', org?.id],
@@ -37,9 +56,28 @@ export default function OnMarket() {
     queryFn: () => latestScanRun(org.id),
     enabled: !!org,
   });
+  const bands = useQuery({
+    queryKey: ['rent-bands-all', org?.id],
+    queryFn: () => listAllRentBands(org.id),
+    enabled: !!org,
+    staleTime: 30 * 60 * 1000,
+  });
+  const markets = useQuery({
+    queryKey: ['markets', org?.id],
+    queryFn: () => listMarkets(org.id),
+    enabled: !!org,
+  });
+  const zipRents = useMemo(() => buildZipRents(bands.data), [bands.data]);
 
   const rows = useMemo(() => {
-    let r = leads.data || [];
+    let r = (leads.data || []).map((d) => ({
+      ...d,
+      screen: screenListingRow(d, zipRents, presetForState(markets.data, d.state)),
+    }));
+    if (ratingFilter !== 'all') {
+      r = ratingFilter === 'none' ? r.filter((d) => !d.rating) : r.filter((d) => d.rating === ratingFilter);
+    }
+    if (verdictFilter !== 'all') r = r.filter((d) => d.screen.verdict === verdictFilter);
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       r = r.filter((d) =>
@@ -51,13 +89,27 @@ export default function OnMarket() {
     if (maxPrice) r = r.filter((d) => Number(d.price) <= Number(maxPrice));
     const by = {
       newest: (a, b) => new Date(b.scanned_at || 0) - new Date(a.scanned_at || 0),
+      screen: (a, b) =>
+        VERDICT_RANK[a.screen.verdict] - VERDICT_RANK[b.screen.verdict] ||
+        (b.screen.cap_rate ?? -1) - (a.screen.cap_rate ?? -1),
       price_asc: (a, b) => Number(a.price) - Number(b.price),
       price_desc: (a, b) => Number(b.price) - Number(a.price),
       dom: (a, b) => (b.days_on_market ?? 0) - (a.days_on_market ?? 0),
       year: (a, b) => (b.year_built ?? 0) - (a.year_built ?? 0),
     };
     return [...r].sort(by[sort] || by.newest);
-  }, [leads.data, search, state, bucket, maxPrice, sort]);
+  }, [leads.data, zipRents, markets.data, search, state, bucket, maxPrice, sort, ratingFilter, verdictFilter]);
+
+  async function rate(deal, rating) {
+    qc.setQueryData(['onmarket', org.id], (old) =>
+      old?.map?.((d) => (d.id === deal.id ? { ...d, rating } : d)),
+    );
+    try {
+      await setDealRating(deal.id, rating);
+    } catch {
+      qc.invalidateQueries({ queryKey: ['onmarket', org.id] });
+    }
+  }
 
   const states = useMemo(
     () => [...new Set((leads.data || []).map((d) => d.state).filter(Boolean))].sort(),
@@ -125,8 +177,23 @@ export default function OnMarket() {
             </button>
           ))}
         </div>
+        <select className="input w-auto" value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)}>
+          <option value="all">Any rating</option>
+          <option value="heart">♥ Hearted</option>
+          <option value="up">👍 Thumbs up</option>
+          <option value="down">👎 Thumbs down</option>
+          <option value="none">Unrated</option>
+        </select>
+        <select className="input w-auto" value={verdictFilter} onChange={(e) => setVerdictFilter(e.target.value)}>
+          <option value="all">Any screen</option>
+          <option value="pursue">Pursue only</option>
+          <option value="consider">Consider only</option>
+          <option value="pass">Pass only</option>
+          <option value="insufficient">Needs data</option>
+        </select>
         <select className="input w-auto" value={sort} onChange={(e) => setSort(e.target.value)}>
           <option value="newest">Newest scan</option>
+          <option value="screen">Best screen first</option>
           <option value="price_asc">Price ↑</option>
           <option value="price_desc">Price ↓</option>
           <option value="dom">Days on market</option>
@@ -159,8 +226,13 @@ export default function OnMarket() {
           <table className="w-full text-sm min-w-[760px]">
             <thead className="bg-surface-2">
               <tr>
+                <th className="th w-20"></th>
                 <th className="th w-16"></th>
                 <th className="th">Property</th>
+                <th className="th">
+                  Screen
+                  <Tip text="Each listing runs through the deal engine at its ASKING price: rent from the Zillow zip band, standard expenses. 2–4 unit listings screen with a 3-unit assumption (Redfin doesn't say exactly); 5+ shows 'needs data' until you underwrite with real units. A compass for what to open first, not an underwrite." />
+                </th>
                 <th className="th">Size</th>
                 <th className="th text-right">Price</th>
                 <th className="th text-right">Beds*</th>
@@ -173,6 +245,9 @@ export default function OnMarket() {
             <tbody>
               {rows.map((d) => (
                 <tr key={d.id} className="hover:bg-surface-2/60">
+                  <td className="td w-20">
+                    <RatingControl value={d.rating} onChange={(r) => rate(d, r)} size="text-sm" />
+                  </td>
                   <td className="td w-16">
                     {d.photo_url ? (
                       <img src={d.photo_url} alt="" loading="lazy" className="w-14 h-11 object-cover rounded-lg border border-border" />
@@ -193,6 +268,20 @@ export default function OnMarket() {
                         </>
                       )}
                     </div>
+                  </td>
+                  <td className="td">
+                    {d.screen.verdict === 'insufficient' ? (
+                      <span className="pill bg-surface-2 text-muted" title={`missing: ${d.screen.missing.join(', ')}`}>
+                        needs data
+                      </span>
+                    ) : (
+                      <span
+                        className={`pill ${VERDICT_STYLES[d.screen.verdict]} capitalize`}
+                        title={`est. NOI ${usd(d.screen.noi)} · cap ${pct(d.screen.cap_rate, 1)} at asking (3-unit assumption)`}
+                      >
+                        {d.screen.verdict}
+                      </span>
+                    )}
                   </td>
                   <td className="td">
                     <span className="pill bg-surface-2 text-ink-2">{d.unit_bucket} units</span>

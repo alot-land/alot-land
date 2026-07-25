@@ -83,6 +83,36 @@ export function simulateGoal(inp: SimulateGoalInputs): SimulateGoalResult {
   return done(false, null);
 }
 
+export interface GoalProgressInputs {
+  target_monthly: number;
+  /** Monthly cash flow of each deal assigned to the goal (underwritten or actual). */
+  deal_monthly_cashflows: number[];
+}
+
+export interface GoalProgressResult {
+  committed: number;
+  remaining: number;
+  pct: number;
+  met: boolean;
+  /** ≈ additional deals like the assigned ones needed; null with no deals yet. */
+  est_more_deals: number | null;
+}
+
+/** Progress of a goal from its assigned deals — added in v1.6.0. */
+export function goalProgress(inp: GoalProgressInputs): GoalProgressResult {
+  const committed = inp.deal_monthly_cashflows.reduce((a, b) => a + b, 0);
+  const remaining = Math.max(0, inp.target_monthly - committed);
+  const pct = inp.target_monthly > 0 ? Math.min(1, committed / inp.target_monthly) : 1;
+  const avg = inp.deal_monthly_cashflows.length ? committed / inp.deal_monthly_cashflows.length : 0;
+  return {
+    committed,
+    remaining,
+    pct,
+    met: remaining === 0,
+    est_more_deals: remaining === 0 ? 0 : avg > 0 ? Math.ceil(remaining / avg) : null,
+  };
+}
+
 export interface GoalScenarioInputs {
   target_monthly_cashflow: number;
   capital_available: number;

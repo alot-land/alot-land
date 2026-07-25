@@ -8,7 +8,7 @@
  * return part of the invested cash (BRRRR-style recycling).
  */
 import { describe, it, expect } from 'vitest';
-import { CALC_VERSION, simulateGoal, goalScenarios } from '../src/index.js';
+import { CALC_VERSION, simulateGoal, goalScenarios, goalProgress } from '../src/index.js';
 
 describe('calc version', () => {
   it('is at least 1.5.0 (goals module)', () => {
@@ -80,6 +80,33 @@ describe('simulateGoal', () => {
     });
     expect(r.reached).toBe(false);
     expect(r.months_to_goal).toBeNull();
+  });
+});
+
+describe('goalProgress (v1.6.0)', () => {
+  it('sums committed deal cash flows against the target', () => {
+    const p = goalProgress({ target_monthly: 10_000, deal_monthly_cashflows: [1_200, 800, 2_000] });
+    expect(p.committed).toBe(4_000);
+    expect(p.remaining).toBe(6_000);
+    expect(p.pct).toBeCloseTo(0.4, 12);
+    expect(p.met).toBe(false);
+    // avg 1,333.33/deal → 6,000 / avg = 4.5 → 5 more deals like these
+    expect(p.est_more_deals).toBe(5);
+  });
+
+  it('met goals report zero remaining and clamp pct at 1', () => {
+    const p = goalProgress({ target_monthly: 3_000, deal_monthly_cashflows: [2_000, 2_000] });
+    expect(p.met).toBe(true);
+    expect(p.remaining).toBe(0);
+    expect(p.pct).toBe(1);
+    expect(p.est_more_deals).toBe(0);
+  });
+
+  it('no deals yet → zero progress, no fabricated deal estimate', () => {
+    const p = goalProgress({ target_monthly: 5_000, deal_monthly_cashflows: [] });
+    expect(p.committed).toBe(0);
+    expect(p.pct).toBe(0);
+    expect(p.est_more_deals).toBeNull(); // unknowable without a per-deal figure
   });
 });
 
