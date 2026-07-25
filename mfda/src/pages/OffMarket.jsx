@@ -185,6 +185,11 @@ export default function OffMarket() {
           </p>
         </div>
         <div className="flex gap-2">
+          {(lists.data || []).length > 0 && (
+            <a href="#saved-lists" className="btn-ghost text-sm">
+              Saved lists ({lists.data.length})
+            </a>
+          )}
           <button
             type="button"
             onClick={saveList}
@@ -454,7 +459,7 @@ export default function OffMarket() {
       )}
 
       {(lists.data || []).length > 0 && (
-        <div className="card mt-6 overflow-hidden">
+        <div id="saved-lists" className="card mt-6 overflow-hidden scroll-mt-20">
           <div className="px-4 py-3 border-b border-border font-medium">
             Saved mail lists
             <Tip text="A frozen snapshot of parcels at save time — re-exporting a saved list gives the same rows even after new imports. Exports are logged for campaign history." />
