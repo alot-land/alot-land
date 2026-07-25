@@ -62,6 +62,66 @@ export function rankParcelServices(services) {
 export const ARCGIS_SEARCH_URL = (q, num = 20) =>
   `https://www.arcgis.com/sharing/rest/search?f=json&num=${num}&q=${encodeURIComponent(q)}`;
 
+// Maricopa County's OWN ArcGIS Online organizations. Searching a portal
+// directly only returns items that org published, which sidesteps the
+// community-copy problem that sank the public www.arcgis.com search (it
+// surfaced a 2021 geometry-only layer with no use codes, field-verified
+// 2026-07-25). Modern county data increasingly lives in hosted feature
+// services here rather than on an on-prem REST server.
+export const MARICOPA_PORTALS = [
+  'https://maricopa.maps.arcgis.com',
+  'https://maricopacounty.maps.arcgis.com',
+  'https://mcgis.maps.arcgis.com',
+];
+
+/** Portal-scoped item search (no org filter needed — the host IS the filter). */
+export const PORTAL_SEARCH_URL = (portal, q, num = 25) =>
+  `${portal}/sharing/rest/search?f=json&num=${num}&q=${encodeURIComponent(q)}`;
+
+export const MARICOPA_PORTAL_QUERIES = [
+  'parcels type:"Feature Service"',
+  'assessor parcel type:"Feature Service"',
+];
+
+/**
+ * Rank portal search results. Everything here already belongs to the county,
+ * so the job is picking the parcel layer rather than proving provenance.
+ */
+export function pickPortalService(searchJson) {
+  const items = searchJson?.results || [];
+  let best = null;
+  for (const it of items) {
+    if (!it?.url || !/(feature|map)\s*service/i.test(it.type || '')) continue;
+    const title = String(it.title || '');
+    const hay = `${title} ${it.snippet || ''} ${(it.tags || []).join(' ')}`.toLowerCase();
+    let score = 0;
+    if (/parcel/i.test(title)) score += 4;
+    if (/assessor|ownership|owner|cadastr/.test(hay)) score += 3;
+    if (/use.?code|puc|land.?use/.test(hay)) score += 2;
+    if (/label|anno|boundar|zip|grid|sample|test|deprecat|archive/.test(hay)) score -= 4;
+    if (!best || score > best.score) {
+      best = { id: it.id, title, owner: it.owner, url: String(it.url).replace(/\/+$/, ''), score };
+    }
+  }
+  return best && best.score >= 4 ? best : null;
+}
+
+/**
+ * WHERE clauses to try for "multifamily" on a discovered class field, in
+ * order. Maricopa PUCs are 03xx but the field may be stored as text OR as a
+ * number, and a LIKE against a numeric column is a hard error on ArcGIS —
+ * so the numeric range is tried too rather than reporting "0 rows".
+ */
+export function multifamilyWhereClauses(classField) {
+  const kw = ['DUPLEX', 'TRIPLEX', 'FOURPLEX', 'APART', 'MULTI'];
+  return [
+    `${classField} LIKE '03%'`,
+    `${classField} >= 300 AND ${classField} < 400`,
+    // Descriptive land-use fields (what Nashville turned out to have).
+    kw.map((k) => `UPPER(${classField}) LIKE '%${k}%'`).join(' OR '),
+  ];
+}
+
 export const MARICOPA_ARCGIS_QUERIES = [
   'maricopa parcels assessor type:"Feature Service"',
   'maricopa county parcels type:"Feature Service"',

@@ -126,6 +126,36 @@ export function screenListingRow(deal, zipRents, preset) {
 }
 
 /**
+ * Monthly net cash flow for a deal row, with its provenance.
+ *
+ *  - 'underwritten': the deal's latest saved scenario — cash flow before
+ *    taxes (NOI − debt service), the same figure the tracking card shows.
+ *  - 'estimated': no scenario yet, so the deal screens like an off-market
+ *    parcel — zip-band rent × real unit count, standard expense rates,
+ *    75% LTV at the screen's rate, anchored on the asking price.
+ *
+ * Returns null when there isn't enough to say anything honest.
+ */
+export function dealMonthlyNet(deal, zipRents, preset) {
+  const cfbt = deal.latest_outputs?.financing?.dscr?.cfbt;
+  if (cfbt != null && Number.isFinite(Number(cfbt))) {
+    return { monthly: Number(cfbt) / 12, basis: 'underwritten', calc_version: deal.latest_calc_version || null };
+  }
+  const rent = deal.zip ? zipRents.get(String(deal.zip).slice(0, 5)) ?? null : null;
+  const screen = mf.screenParcel({
+    units: deal.units_count,
+    market_rent_monthly: rent,
+    price_anchor: deal.price != null ? Number(deal.price) : null,
+    property_tax_rate: preset?.property_tax_rate ?? undefined,
+    assessment_ratio: preset?.assessment_ratio ?? undefined,
+  });
+  if (!screen.ok || screen.cash_flow == null) {
+    return { monthly: null, basis: 'insufficient', missing: screen.missing };
+  }
+  return { monthly: screen.cash_flow / 12, basis: 'estimated', rent };
+}
+
+/**
  * Full underwrite input for one parcel (drives the report page and the
  * "Analyze as deal" handoff). Caller passes the (possibly user-edited)
  * units / rent / anchor.

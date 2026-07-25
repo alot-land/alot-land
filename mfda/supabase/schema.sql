@@ -303,11 +303,15 @@ begin
       returning id into v_org_id;
     insert into public.org_members (org_id, user_id, role) values (v_org_id, new.id, 'admin');
     -- Seed starter markets (AZ Maricopa + TN) for the new org.
+    -- property_tax_rate is the EFFECTIVE annual rate on purchase price, so
+    -- assessment_ratio stays 1 — the statutory ratio is already baked in
+    -- (AZ class 4: 10% × ~$10/$100 AV ≈ 0.66%; TN residential: 25% ×
+    -- ~$3.05/$100 AV ≈ 0.75%). See migration_012_tax_presets.sql.
     insert into public.markets (org_id, state, county, name, str_permit_status, property_tax_rate, assessment_ratio, appreciation_rate, defaults)
       values
-      (v_org_id, 'AZ', 'Maricopa', 'Phoenix / Maricopa County', 'restricted', 0.0066, 0.10, 0.04,
+      (v_org_id, 'AZ', 'Maricopa', 'Phoenix / Maricopa County', 'restricted', 0.0066, 1, 0.04,
         '{"vacancy_rate":0.05,"management_pct":0.09,"capex_per_unit":300}'::jsonb),
-      (v_org_id, 'TN', null, 'Tennessee (statewide)', 'open', 0.0075, 0.25, 0.035,
+      (v_org_id, 'TN', null, 'Tennessee (statewide)', 'open', 0.0075, 1, 0.035,
         '{"vacancy_rate":0.05,"management_pct":0.09,"capex_per_unit":300}'::jsonb);
   end if;
   return new;

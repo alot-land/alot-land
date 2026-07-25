@@ -16,6 +16,10 @@ import {
   arcgisQueryUrl,
   pickClassField,
   pickMaricopaService,
+  pickPortalService,
+  PORTAL_SEARCH_URL,
+  MARICOPA_PORTALS,
+  multifamilyWhereClauses,
   layerFieldNames,
   featuresToRows,
   rowsToCsv,
@@ -174,6 +178,49 @@ describe('pickMaricopaService (runtime ArcGIS search)', () => {
   it('returns null when nothing is maricopa-parcel-shaped', () => {
     expect(pickMaricopaService({ results: [{ id: 'x', title: 'Denver Zoning', owner: 'denver', type: 'Feature Service', url: 'https://x' }] })).toBeNull();
     expect(pickMaricopaService({ results: [] })).toBeNull();
+  });
+});
+
+describe('pickPortalService (county-owned ArcGIS portal search)', () => {
+  it('picks the parcel service and ignores label/archive layers', () => {
+    const search = {
+      results: [
+        { id: 'l1', title: 'Parcel Labels', type: 'Feature Service', snippet: 'annotation', url: 'https://x/1' },
+        { id: 'p1', title: 'Parcels', type: 'Feature Service', snippet: 'Assessor parcels with PUC use codes', tags: ['assessor'], url: 'https://services3.arcgis.com/M/arcgis/rest/services/Parcels/FeatureServer/' },
+        { id: 'w1', title: 'Parcels Viewer', type: 'Web Map', snippet: 'parcels', url: 'https://x/2' },
+      ],
+    };
+    const svc = pickPortalService(search);
+    expect(svc.id).toBe('p1');
+    // Trailing slash trimmed so `${url}/0` addresses the layer cleanly.
+    expect(svc.url).toBe('https://services3.arcgis.com/M/arcgis/rest/services/Parcels/FeatureServer');
+  });
+
+  it('returns null when nothing scores as a parcel layer', () => {
+    expect(pickPortalService({ results: [{ id: 'x', title: 'Trails', type: 'Feature Service', url: 'https://x' }] })).toBeNull();
+    expect(pickPortalService({ results: [] })).toBeNull();
+    // A parcel-named archive is disqualified rather than picked.
+    expect(
+      pickPortalService({ results: [{ id: 'a', title: 'Parcels', type: 'Feature Service', snippet: 'deprecated archive copy', url: 'https://x' }] }),
+    ).toBeNull();
+  });
+
+  it('builds a portal-scoped search URL', () => {
+    const url = PORTAL_SEARCH_URL(MARICOPA_PORTALS[0], 'parcels type:"Feature Service"', 5);
+    expect(url).toContain('maricopa.maps.arcgis.com/sharing/rest/search');
+    expect(url).toContain('num=5');
+    expect(url).toContain(encodeURIComponent('parcels type:"Feature Service"'));
+  });
+});
+
+describe('multifamilyWhereClauses', () => {
+  it('covers text codes, numeric codes, and descriptive land-use values', () => {
+    const [text, numeric, desc] = multifamilyWhereClauses('PUC');
+    expect(text).toBe("PUC LIKE '03%'");
+    // A LIKE against a numeric column errors on ArcGIS, hence the range.
+    expect(numeric).toBe('PUC >= 300 AND PUC < 400');
+    expect(desc).toContain("UPPER(PUC) LIKE '%DUPLEX%'");
+    expect(desc).toContain("UPPER(PUC) LIKE '%APART%'");
   });
 });
 

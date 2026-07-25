@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useOrg } from '../lib/org';
-import { listDeals } from '../lib/queries';
+import { listDeals, listAllRentBands, listMarkets } from '../lib/queries';
+import { buildZipRents, presetForState, dealMonthlyNet } from '../lib/parcelscreen';
 import { usd } from '../lib/format';
+import { Tip } from '../components/fields';
 import HeartButton from '../components/HeartButton';
 
 const STATUS_STYLES = {
@@ -15,13 +17,58 @@ const STATUS_STYLES = {
   closed: 'bg-green/15 text-green-deep',
 };
 
+const MISSING_LABELS = {
+  units: 'unit count',
+  market_rent_monthly: 'a rent band for this ZIP',
+  price_anchor: 'a price',
+};
+
+/** Monthly net cash flow — underwritten when a scenario exists, else screened. */
+function NetCell({ net }) {
+  if (!net || net.monthly == null) {
+    const missing = (net?.missing || []).map((m) => MISSING_LABELS[m] || m);
+    return (
+      <span className="text-muted" title={missing.length ? `Needs ${missing.join(' and ')} to estimate` : 'Not enough data to estimate'}>
+        —
+      </span>
+    );
+  }
+  const tone = net.monthly >= 0 ? 'text-green-deep' : 'text-danger';
+  if (net.basis === 'underwritten') {
+    return (
+      <span className={`font-medium ${tone}`} title={`From the latest saved scenario${net.calc_version ? ` (mf-calc v${net.calc_version})` : ''} — cash flow before taxes ÷ 12`}>
+        {usd(net.monthly)}
+      </span>
+    );
+  }
+  return (
+    <span
+      className={`italic ${tone} opacity-80`}
+      title={`Estimate — no scenario saved yet. Zip-band rent${net.rent ? ` of ${usd(net.rent)}/unit` : ''} × units, standard expenses, 75% LTV at the asking price. Underwrite to replace it.`}
+    >
+      {usd(net.monthly)} <span className="text-muted not-italic text-xs">est</span>
+    </span>
+  );
+}
+
 export default function Deals() {
   const { org } = useOrg();
   const deals = useQuery({ queryKey: ['deals', org?.id], queryFn: () => listDeals(org.id), enabled: !!org });
+  const bands = useQuery({
+    queryKey: ['rent-bands-all', org?.id],
+    queryFn: () => listAllRentBands(org.id),
+    enabled: !!org,
+    staleTime: 30 * 60 * 1000,
+  });
+  const markets = useQuery({ queryKey: ['markets', org?.id], queryFn: () => listMarkets(org.id), enabled: !!org });
+  const zipRents = useMemo(() => buildZipRents(bands.data), [bands.data]);
   const [search, setSearch] = useState('');
   const [heartedOnly, setHeartedOnly] = useState(false);
   const rows = useMemo(() => {
-    let r = deals.data || [];
+    let r = (deals.data || []).map((d) => ({
+      ...d,
+      net: dealMonthlyNet(d, zipRents, presetForState(markets.data, d.state)),
+    }));
     if (heartedOnly) r = r.filter((d) => d.favorite);
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -31,7 +78,7 @@ export default function Deals() {
     }
     // Hearted deals float to the top; recency ordering within each group.
     return [...r].sort((a, b) => Number(b.favorite || 0) - Number(a.favorite || 0));
-  }, [deals.data, search, heartedOnly]);
+  }, [deals.data, search, heartedOnly, zipRents, markets.data]);
   const heartedCount = useMemo(() => (deals.data || []).filter((d) => d.favorite).length, [deals.data]);
 
   return (
@@ -84,6 +131,10 @@ export default function Deals() {
                 <th className="th">Market</th>
                 <th className="th text-right">Units</th>
                 <th className="th text-right">Price</th>
+                <th className="th text-right whitespace-nowrap">
+                  Net / mo
+                  <Tip text="Monthly cash flow after debt service, before income tax (CFBT ÷ 12). Solid figures come from the deal's latest saved scenario — your own rents, expenses and financing. Italic 'est' figures have no scenario yet, so they screen like an off-market parcel: zip-band rent × units, standard expense rates, 75% LTV. Underwrite the deal to replace the estimate." />
+                </th>
                 <th className="th">Status</th>
                 <th className="th">Updated</th>
               </tr>
@@ -102,6 +153,9 @@ export default function Deals() {
                   <td className="td text-ink-2">{[d.city, d.state].filter(Boolean).join(', ') || '—'}</td>
                   <td className="td text-right">{d.units_count ?? '—'}</td>
                   <td className="td text-right">{d.price != null ? usd(Number(d.price)) : '—'}</td>
+                  <td className="td text-right whitespace-nowrap tabular-nums">
+                    <NetCell net={d.net} />
+                  </td>
                   <td className="td">
                     <span className={`pill ${STATUS_STYLES[d.status] || 'bg-surface-2'}`}>{d.status}</span>
                   </td>

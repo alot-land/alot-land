@@ -88,6 +88,10 @@ const MANUAL = [
         b: 'MFDA re-computes property tax at YOUR purchase price using the county\'s rate and assessment ratio. The seller\'s current tax bill reflects their old assessed value — buying triggers reassessment, and copying the seller\'s number understates your biggest expense.',
       },
       {
+        t: 'Tax rate vs assessment ratio — the trap',
+        b: 'The engine charges rate × ratio × price. So the pair has to be consistent: either a MILLAGE rate with the county\'s statutory ratio (Nashville $3.05 per $100 with ratio 0.25), or an EFFECTIVE rate on full value with ratio 1 (0.75% with ratio 1). Mixing them — an effective rate AND a statutory ratio — quietly divides your tax bill by four or ten. Settings now shows a "Tax on price" column with the number the pro forma actually charges, and flags anything under 0.3% as suspicious. The starter AZ and TN presets shipped with exactly that mistake and are corrected by migration 012.',
+      },
+      {
         t: 'Auto-comps ("Sold comps")',
         b: 'Inside Valuation comps: sold multifamily comps from the scanned store — filtered by radius when the deal has coordinates (scraped listings do), falling back to STATEWIDE comps when it doesn\'t (off-market promotions and hand-entered deals), honestly labeled as the rougher guide. Median price, $/bed, and $/sqft show with sample sizes (n=); values with 3+ comps AUTO-FILL the empty valuation inputs on load and stay fully editable. Expand "Show nearest/recent" for the individual comps with Redfin links.',
       },
@@ -254,6 +258,10 @@ const MANUAL = [
         b: 'Nothing to do for the built-in lanes: the droplet auto-discovers, downloads, and imports county data (Nashville/Davidson live; Maricopa in progress) whenever the parcels table is empty or more than ~30 days old — no files to handle. For ANY other county, download its assessor file and run the manual importer with --inspect first (it writes nothing, just shows how the columns mapped), then without it to import; ask in the build chat to promote a county you use often into an automatic lane.',
       },
       {
+        t: 'Which states appear in the Off-Market filter',
+        b: 'The state and county dropdowns are built from the parcels you actually have — nothing is hardcoded. TN appears because Davidson County imported cleanly (8,842 multifamily parcels). AZ appears the moment a Maricopa import lands, and every off-market feature (screening, equity flags, ratings, mail lists, FreedomSoft export) works on it immediately with no further setup. Maricopa is the stubborn one: the assessor firewalls its bulk-file hosts from datacenters, so the importer now tries four routes in order — the county GIS REST directory, the county\'s own ArcGIS Online portals, the public ArcGIS search, then the assessor page scrape — and prints exactly why each failed, so one droplet run diagnoses the whole chain.',
+      },
+      {
         t: 'Absentee',
         b: 'The owner\'s mailing address differs from the property address — they don\'t live there. Absentee owners of aging multifamily are the classic direct-mail audience: they feel management pain and often respond to a credible offer.',
       },
@@ -407,6 +415,10 @@ const MANUAL = [
       {
         t: 'Dark mode',
         b: 'The moon/sun button in the top bar switches between light and dark themes. Your choice is remembered on this browser; first visit follows your device\'s setting. Printed PDF reports always stay light — they\'re built for paper.',
+      },
+      {
+        t: 'The "Net / mo" column on Deals',
+        b: 'Monthly cash flow after the mortgage, before income tax (CFBT ÷ 12) — green when positive, red when it bleeds. A solid figure comes from that deal\'s latest saved scenario: your rents, your expenses, your financing. An italic figure tagged "est" means the deal has no scenario yet, so it is screened like an off-market parcel — zip-band rent × unit count, standard expense rates, 75% LTV against the asking price. Underwrite the deal and the estimate is replaced by the real number. A dash means something essential is missing (hover it to see what: usually units, a price, or a rent band for that ZIP).',
       },
       {
         t: 'Hearting deals',

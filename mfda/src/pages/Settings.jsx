@@ -104,6 +104,8 @@ export default function Settings() {
         <h2 className="font-medium mb-3">Markets</h2>
         <p className="text-xs text-muted mb-3">
           Per-market defaults feed smart values into the deal form (STR permit status, tax rate, appreciation).
+          “Tax on price” is what the pro forma actually charges: rate × ratio × your purchase price. Most US
+          counties land between 0.5% and 2.5% — verify yours against a real tax bill.
         </p>
         <table className="w-full text-sm">
           <thead>
@@ -111,18 +113,33 @@ export default function Settings() {
               <th className="th">Market</th>
               <th className="th">STR permit</th>
               <th className="th">Tax rate</th>
+              <th className="th">Ratio</th>
+              <th className="th">Tax on price</th>
               <th className="th">Apprec.</th>
             </tr>
           </thead>
           <tbody>
-            {(markets.data || []).map((m) => (
-              <tr key={m.id}>
-                <td className="td">{m.name}</td>
-                <td className="td">{m.str_permit_status}</td>
-                <td className="td">{m.property_tax_rate != null ? `${(m.property_tax_rate * 100).toFixed(2)}%` : '—'}</td>
-                <td className="td">{(m.appreciation_rate * 100).toFixed(1)}%</td>
-              </tr>
-            ))}
+            {(markets.data || []).map((m) => {
+              const ratio = m.assessment_ratio != null ? Number(m.assessment_ratio) : 1;
+              const eff = m.property_tax_rate != null ? Number(m.property_tax_rate) * ratio : null;
+              return (
+                <tr key={m.id}>
+                  <td className="td">{m.name}</td>
+                  <td className="td">{m.str_permit_status}</td>
+                  <td className="td">{m.property_tax_rate != null ? `${(m.property_tax_rate * 100).toFixed(2)}%` : '—'}</td>
+                  <td className="td">{ratio === 1 ? '1 (full value)' : ratio.toFixed(2)}</td>
+                  <td className={`td font-medium ${eff != null && eff < 0.003 ? 'text-warn' : ''}`}>
+                    {eff != null ? `${(eff * 100).toFixed(2)}%` : '—'}
+                    {eff != null && eff < 0.003 && (
+                      <span className="text-xs text-muted ml-1" title="Under 0.3% of purchase price is below every US county — the rate and ratio are probably being multiplied twice. Check against a real tax bill.">
+                        ⚠ low
+                      </span>
+                    )}
+                  </td>
+                  <td className="td">{(m.appreciation_rate * 100).toFixed(1)}%</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </section>

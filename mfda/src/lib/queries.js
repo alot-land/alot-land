@@ -39,7 +39,32 @@ export async function listDeals(orgId) {
     .neq('status', 'lead')
     .order('updated_at', { ascending: false });
   if (error) throw error;
-  return data;
+  return attachLatestScenario(data);
+}
+
+/**
+ * Attach each deal's most recent scenario (outputs + calc version) so lists
+ * can show real underwritten cash flow instead of a re-estimate. Paged: a few
+ * deals with many revisions can blow past the 1000-row cap.
+ */
+async function attachLatestScenario(deals) {
+  if (!deals?.length) return deals || [];
+  const ids = deals.map((d) => d.id);
+  const { rows } = await fetchPaged(
+    () =>
+      supabase
+        .from('scenarios')
+        .select('deal_id, outputs, calc_version, created_at')
+        .in('deal_id', ids)
+        .order('created_at', { ascending: false }),
+    20000,
+  );
+  const latest = new Map();
+  for (const s of rows) if (!latest.has(s.deal_id)) latest.set(s.deal_id, s);
+  return deals.map((d) => {
+    const s = latest.get(d.id);
+    return { ...d, latest_outputs: s?.outputs || null, latest_calc_version: s?.calc_version || null };
+  });
 }
 
 // The scraped lead queue (On-Market page).

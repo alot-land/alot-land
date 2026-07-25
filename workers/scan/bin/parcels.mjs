@@ -37,6 +37,11 @@ import {
   rankParcelServices,
   ARCGIS_SEARCH_URL,
   pickMaricopaService,
+  MARICOPA_PORTALS,
+  MARICOPA_PORTAL_QUERIES,
+  PORTAL_SEARCH_URL,
+  pickPortalService,
+  multifamilyWhereClauses,
   layerFieldNames,
   NASHVILLE_CATALOG_URL,
   NASHVILLE_HUB_DATASETS,
@@ -190,11 +195,46 @@ async function tryParcelLayer(layerUrl) {
   console.log(`  fields (${fields.length}): ${fields.join(', ')}`);
   const classField = pickClassField(fields);
   if (!classField) throw new Error('no PUC/land-use field');
-  const where = `${classField} LIKE '03%'`;
-  console.log(`  querying where ${where}`);
-  const rows = await queryArcgisLayer(layerUrl, where);
-  if (!rows.length) throw new Error(`0 rows for "${where}"`);
-  return rows;
+  // The class column may be text or numeric, or hold descriptions rather
+  // than codes — try each shape before declaring the layer unusable.
+  const attempts = [];
+  for (const where of multifamilyWhereClauses(classField)) {
+    try {
+      console.log(`  querying where ${where}`);
+      const rows = await queryArcgisLayer(layerUrl, where);
+      if (rows.length) return rows;
+      attempts.push(`"${where}" → 0 rows`);
+    } catch (e) {
+      attempts.push(`"${where}" → ${e.message}`);
+    }
+  }
+  throw new Error(`no multifamily rows on ${classField}: ${attempts.join(' · ')}`);
+}
+
+/** Maricopa's own ArcGIS Online portals — only county-published items. */
+async function maricopaViaPortal() {
+  let lastErr = null;
+  for (const portal of MARICOPA_PORTALS) {
+    for (const q of MARICOPA_PORTAL_QUERIES) {
+      try {
+        console.log(`  portal search: ${portal} · ${q}`);
+        const search = JSON.parse(await (await fetchOk(PORTAL_SEARCH_URL(portal, q))).text());
+        const svc = pickPortalService(search);
+        if (!svc) {
+          const titles = (search?.results || []).map((r) => `"${r.title}"`).slice(0, 10);
+          throw new Error(`no parcel service matched; top results: ${titles.join(' · ') || 'none'}`);
+        }
+        console.log(`  picked "${svc.title}" by ${svc.owner} (score ${svc.score})`);
+        const rows = await tryParcelLayer(`${svc.url}/0`);
+        if (DISCOVER_ONLY) return { discovered: { portal, service: svc, rows: rows.length } };
+        return { text: rowsToCsv(rows), via: `portal:${portal}:${svc.id}` };
+      } catch (e) {
+        lastErr = e;
+        console.warn(`    ${e.message}`);
+      }
+    }
+  }
+  throw lastErr || new Error('no Maricopa portals configured');
 }
 
 /** Authoritative route: enumerate the county's own GIS services directory. */
@@ -270,15 +310,32 @@ async function maricopaViaArcgis() {
   throw lastErr || new Error('no ArcGIS search queries configured');
 }
 
+// Route order = most authoritative first: the county's on-prem REST server,
+// then its own ArcGIS Online portals, then the open web search, then the
+// assessor site scrape. Each prints why it failed so one run diagnoses the
+// whole chain.
+const MARICOPA_ROUTES = [
+  ['county REST directory', maricopaViaCountyRest],
+  ['county ArcGIS Online portal', maricopaViaPortal],
+  ['public ArcGIS Online search', maricopaViaArcgis],
+];
+
 async function maricopaLane() {
   try {
-    let got;
-    try {
-      got = await maricopaViaCountyRest();
-    } catch (e) {
-      console.warn(`  county REST route failed: ${e.message}`);
-      got = await maricopaViaArcgis();
+    let got = null;
+    const failures = [];
+    for (const [label, route] of MARICOPA_ROUTES) {
+      try {
+        console.log(`  → route: ${label}`);
+        got = await route();
+        console.log(`  ✓ ${label} worked`);
+        break;
+      } catch (e) {
+        console.warn(`  ✗ ${label}: ${e.message}`);
+        failures.push(`${label}: ${e.message}`);
+      }
     }
+    if (!got) throw new Error(`all ArcGIS routes failed — ${failures.join(' | ')}`);
     if (got.discovered) return got;
     const res = assessorToParcels(got.text, PRESETS.maricopa);
     console.log(inspectReport(res, `maricopa ${got.via}`));
