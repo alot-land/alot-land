@@ -1,7 +1,15 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as mf from '@alot/mf-calc';
-import { listAllRentBands, getRentEstimate, saveRentEstimate, fetchRentEstimate } from '../lib/queries';
+import {
+  listAllRentBands,
+  getRentEstimate,
+  saveRentEstimate,
+  fetchRentEstimate,
+  countRentcastCalls,
+  logCost,
+  RENTCAST_MONTHLY_LIMIT,
+} from '../lib/queries';
 import { buildZipRents, buildZipBedroomRatios, zipRentForUnit, addrKey } from '../lib/parcelscreen';
 import { usd } from '../lib/format';
 import { Tip } from './fields';
@@ -20,9 +28,23 @@ import { Tip } from './fields';
  * operator-owned, the way the rent-bands card has always worked.
  */
 export default function RentEstimator({ orgId, userId, zip, address, city, state, units, onApply }) {
+  const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [apiResult, setApiResult] = useState(null);
   const [apiError, setApiError] = useState(null);
+  // Deliberately per-mount and never persisted: going over the free tier
+  // costs money, so consent has to be given each time rather than left on.
+  const [allowOverLimit, setAllowOverLimit] = useState(false);
+
+  const usage = useQuery({
+    queryKey: ['rentcast-usage', orgId],
+    queryFn: () => countRentcastCalls(orgId),
+    enabled: !!orgId,
+  });
+  const used = usage.data ?? 0;
+  const remaining = Math.max(0, RENTCAST_MONTHLY_LIMIT - used);
+  const atLimit = used >= RENTCAST_MONTHLY_LIMIT;
+  const blocked = atLimit && !allowOverLimit;
 
   const bands = useQuery({
     queryKey: ['rent-bands-all', orgId],
@@ -85,11 +107,45 @@ export default function RentEstimator({ orgId, userId, zip, address, city, state
           return;
         }
       }
-      const got = await fetchRentEstimate({
-        address: fullAddress,
-        bedrooms,
-        squareFootage: first.sqft || null,
-      });
+      // Nothing cached, so this WILL leave the building. Re-check the meter
+      // against fresh numbers rather than whatever the page loaded with.
+      const fresh = await countRentcastCalls(orgId);
+      if (fresh >= RENTCAST_MONTHLY_LIMIT && !allowOverLimit) {
+        qc.setQueryData(['rentcast-usage', orgId], fresh);
+        setApiError(
+          `Stopped at the ${RENTCAST_MONTHLY_LIMIT}-request free tier — ${fresh} used this month. ` +
+            'Tick the box below to spend beyond it (that is billed to your card).',
+        );
+        return;
+      }
+
+      let got;
+      let reachedRentcast = true;
+      try {
+        got = await fetchRentEstimate({
+          address: fullAddress,
+          bedrooms,
+          squareFootage: first.sqft || null,
+        });
+      } catch (e) {
+        // A missing key is refused by our own function — nothing was sent, so
+        // it must not consume quota. Everything else did reach RentCast.
+        if (e.code === 'not_configured') reachedRentcast = false;
+        throw e;
+      } finally {
+        if (reachedRentcast) {
+          // Counted whether or not it succeeded: the request went out either
+          // way, and counting only successes would under-report usage in
+          // precisely the direction that costs money.
+          await logCost(orgId, userId, {
+            kind: 'api',
+            provider: 'rentcast',
+            description: `rent estimate · ${fullAddress}`,
+            amount_usd: 0,
+          });
+          qc.invalidateQueries({ queryKey: ['rentcast-usage', orgId] });
+        }
+      }
       setApiResult({ ...got, bedrooms, cached: false });
       if (key) {
         await saveRentEstimate(orgId, userId, {
@@ -147,9 +203,22 @@ export default function RentEstimator({ orgId, userId, zip, address, city, state
             <button type="button" onClick={applyZip} className="btn-ghost text-sm py-1">
               Apply to unit mix
             </button>
-            <button type="button" onClick={fetchApi} disabled={busy || !address} className="btn-ghost text-sm py-1">
+            <button
+              type="button"
+              onClick={fetchApi}
+              disabled={busy || !address || blocked}
+              className="btn-ghost text-sm py-1 disabled:opacity-50"
+              title={
+                blocked
+                  ? `Free tier used up (${used}/${RENTCAST_MONTHLY_LIMIT} this month). Tick the box to spend beyond it.`
+                  : `Uses 1 of your ${RENTCAST_MONTHLY_LIMIT} free requests — ${remaining} left this month. Cached properties are free.`
+              }
+            >
               {busy ? 'Fetching…' : '↻ Address-level (RentCast)'}
             </button>
+            <span className={`text-xs ${atLimit ? 'text-warn' : 'text-muted'}`}>
+              {used}/{RENTCAST_MONTHLY_LIMIT} used this month
+            </span>
             {!anyAdjusted && (
               <span className="text-xs text-muted">
                 blended only — run <code>node bin/hudfmr.mjs</code> for bedroom adjustment
@@ -157,6 +226,22 @@ export default function RentEstimator({ orgId, userId, zip, address, city, state
             )}
           </div>
         </>
+      )}
+
+      {atLimit && (
+        <label className="flex items-start gap-2 mt-2 text-xs text-warn">
+          <input
+            type="checkbox"
+            checked={allowOverLimit}
+            onChange={(e) => setAllowOverLimit(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            Spend beyond the {RENTCAST_MONTHLY_LIMIT} free requests — <strong>these are billed to the card on
+            your RentCast account</strong>. This resets when you leave the page, so it can never stay switched on
+            by accident.
+          </span>
+        </label>
       )}
 
       {apiError && <p className="text-xs text-warn mt-2">{apiError}</p>}

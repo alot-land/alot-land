@@ -478,6 +478,33 @@ export async function saveRentEstimate(orgId, userId, row) {
 }
 
 /**
+ * Metered API usage. RentCast's free tier is 50 requests a month and the
+ * account has a card on file, so request 51 costs real money — the app has to
+ * refuse it rather than discover it on a statement.
+ *
+ * Every outbound call is written to cost_ledger, so the count is of requests
+ * actually SENT, not of rows that happened to succeed. Cache hits never call
+ * and never count.
+ */
+export const RENTCAST_MONTHLY_LIMIT = 50;
+
+/** First instant of the current calendar month, UTC. */
+export function monthStart(now = new Date()) {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
+
+export async function countRentcastCalls(orgId, sinceIso = monthStart()) {
+  const { count, error } = await supabase
+    .from('cost_ledger')
+    .select('id', { count: 'exact', head: true })
+    .eq('org_id', orgId)
+    .eq('provider', 'rentcast')
+    .gte('created_at', sinceIso);
+  if (error) throw error;
+  return count || 0;
+}
+
+/**
  * Ask the serverless proxy for an address-level rent estimate. The API key
  * lives in Netlify's environment, never in this bundle. A 501 means no key is
  * configured, which is a normal state — the caller falls back to ZIP bands.
