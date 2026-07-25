@@ -15,3 +15,8 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Strict-Transport-Security = "max-age=31536000"
+    # Auto-upgrade any http:// subresource (e.g. a Redfin-scraped photo stored
+    # as http) to https so it never downgrades the page to "Not Secure". This
+    # directive only rewrites insecure requests — it restricts nothing, so it
+    # can't block Supabase, fonts, or OSM tiles.
+    Content-Security-Policy = "upgrade-insecure-requests"
