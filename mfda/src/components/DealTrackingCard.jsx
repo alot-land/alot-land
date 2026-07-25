@@ -141,15 +141,20 @@ export default function DealTrackingCard({ deal, monthlyCashflow }) {
             onBlur={() => deal.goal_id && setGoal(deal.goal_id)}
           />
         </label>
-        {gap != null && (
+        {monthlyCashflow == null ? (
+          <div className="text-sm text-muted pb-2">Run an underwrite to see the monthly cash flow.</div>
+        ) : gap == null ? (
+          // Always show the estimate first — no target required.
+          <div className="text-sm pb-2">
+            <span className="font-medium">≈ {usd(monthlyCashflow)}/mo</span>{' '}
+            <span className="text-muted">underwritten cash flow — set a target to compare.</span>
+          </div>
+        ) : (
           <div className={`text-sm pb-2 ${gap >= 0 ? 'text-green-deep' : 'text-danger'}`}>
             {gap >= 0
               ? `✓ Makes it — ${usd(monthlyCashflow)}/mo underwritten, ${usd(gap)} over your target`
               : `✗ Falls short — ${usd(monthlyCashflow)}/mo underwritten, ${usd(-gap)} under your target`}
           </div>
-        )}
-        {targetNum != null && monthlyCashflow == null && (
-          <div className="text-sm text-muted pb-2">Run an underwrite to compare against your target.</div>
         )}
       </div>
 
