@@ -10,7 +10,7 @@
 
 /** Bump this whenever a formula changes. Scenario snapshots record the version
  * they were computed under so historical results stay reproducible. */
-export const CALC_VERSION = '1.3.0';
+export const CALC_VERSION = '1.4.0';
 
 export type Confidence = 'high' | 'med' | 'low';
 

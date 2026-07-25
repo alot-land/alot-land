@@ -212,11 +212,15 @@ export async function listParcels(orgId, f = {}) {
     let q = supabase
       .from('parcels')
       .select(
-        'id, apn, state, county_fips, situs_address, situs_city, situs_zip, owner_name, owner_is_entity, mailing_address, mailing_city, mailing_state, mailing_zip, absentee, property_class, units, year_built, building_sqft, last_sale_date, last_sale_price, assessed_value',
+        'id, apn, state, county_fips, situs_address, situs_city, situs_zip, owner_name, owner_is_entity, mailing_address, mailing_city, mailing_state, mailing_zip, absentee, property_class, units, year_built, building_sqft, last_sale_date, last_sale_price, assessed_value, lat, lng, rating',
         { count: 'exact' },
       )
       .eq('org_id', orgId);
     if (f.state && f.state !== 'all') q = q.eq('state', f.state);
+    if (f.rating && f.rating !== 'all') {
+      if (f.rating === 'none') q = q.is('rating', null);
+      else q = q.eq('rating', f.rating);
+    }
     if (f.countyFips && f.countyFips !== 'all') q = q.eq('county_fips', f.countyFips);
     if (f.absentee) q = q.eq('absentee', true);
     if (f.entity) q = q.eq('owner_is_entity', true);
@@ -243,6 +247,67 @@ export async function listParcelCounties(orgId) {
   const seen = new Map();
   for (const r of rows) seen.set(`${r.state}:${r.county_fips}`, r);
   return [...seen.values()].sort((a, b) => `${a.state}${a.county_fips}`.localeCompare(`${b.state}${b.county_fips}`));
+}
+
+export async function getParcel(id) {
+  const { data, error } = await supabase.from('parcels').select('*').eq('id', id).single();
+  if (error) throw error;
+  return data;
+}
+
+// rating: 'heart' | 'up' | 'down' | null
+export async function setParcelRating(id, rating) {
+  const { error } = await supabase.from('parcels').update({ rating }).eq('id', id);
+  if (error) throw error;
+}
+
+// ---- Notes (timestamped, org-shared; attach to parcels or deals) ----------
+export async function listNotes(orgId, entityType, entityId) {
+  const { data, error } = await supabase
+    .from('notes')
+    .select('id, body, author_email, created_at')
+    .eq('org_id', orgId)
+    .eq('entity_type', entityType)
+    .eq('entity_id', entityId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function addNote(orgId, user, entityType, entityId, body) {
+  const { data, error } = await supabase
+    .from('notes')
+    .insert({
+      org_id: orgId,
+      entity_type: entityType,
+      entity_id: entityId,
+      body,
+      author_email: user?.email || null,
+      created_by: user?.id || null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteNote(id) {
+  const { error } = await supabase.from('notes').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// Every rent band for the org (zip → est. market rent), for parcel screening.
+export async function listAllRentBands(orgId) {
+  const { rows } = await fetchPaged(
+    () =>
+      supabase
+        .from('rent_bands')
+        .select('zip, bedrooms, rent, source, period')
+        .eq('org_id', orgId)
+        .order('zip'),
+    20000,
+  );
+  return rows;
 }
 
 export async function listMailLists(orgId) {

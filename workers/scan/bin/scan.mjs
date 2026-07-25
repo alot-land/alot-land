@@ -147,13 +147,26 @@ if (!dryRun && !blocked) {
     if (r.status !== 0) console.warn(`  ${name} incomplete — retries on the next scan (details above).`);
   };
 
-  // Phase 2 bootstrap: while the parcels table is empty, try the county
-  // assessor auto-import. Disable with MFDA_PARCELS_AUTO=0.
+  // Phase 2: county assessor auto-import — bootstraps when empty, then
+  // refreshes monthly (owners change; assessor files update periodically).
+  // Disable with MFDA_PARCELS_AUTO=0.
   if (process.env.MFDA_PARCELS_AUTO !== '0') {
     try {
       const { parcelCount } = await import('../lib/parcelimport.js');
-      if ((await parcelCount(db, orgId)) === 0) {
-        console.log('\n→ parcels table is empty — bootstrapping county assessor data …');
+      const empty = (await parcelCount(db, orgId)) === 0;
+      let stale = false;
+      if (!empty) {
+        const { data } = await db.supabase
+          .from('parcels')
+          .select('imported_at')
+          .eq('org_id', orgId)
+          .order('imported_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        stale = !data || (Date.now() - new Date(data.imported_at).getTime()) / 86400e3 > 30;
+      }
+      if (empty || stale) {
+        console.log(`\n→ parcels ${empty ? 'table is empty' : 'data is >30d old'} — running county auto-import …`);
         runChild('parcels.mjs', ['--source', 'all']);
       }
     } catch (e) {

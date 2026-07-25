@@ -4,6 +4,7 @@ import { getDeal, listScenarios, getListingContact } from '../lib/queries';
 import { Suspense, useState } from 'react';
 import { lazyReload } from '../lib/lazyReload';
 import HeartButton from '../components/HeartButton';
+import NotesCard from '../components/NotesCard';
 import {
   SummaryVerdict, ValuationPanel, FinancingComparator, InverseSolvers,
   StressPanel, TaxPanel, PrescreenFlags, ScoreBreakdown, ProvenanceTable,
@@ -103,6 +104,7 @@ export default function DealResults() {
           </div>
           <TaxPanel out={out} />
           <ProvenanceTable inputs={scen.inputs} />
+          <NotesCard entityType="deal" entityId={id} />
           <p className="text-xs text-muted pb-8">
             Estimates only — not an offer. Verify tax positions with a CPA and legal/title matters with an attorney.
             Computed by mf-calc v{out.calc_version}. Scenario snapshot is immutable.

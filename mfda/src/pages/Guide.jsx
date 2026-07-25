@@ -212,6 +212,30 @@ const MANUAL = [
         b: 'Filters to owners whose last recorded sale is at least that many years back. Long holds mean big equity and often depreciation that\'s fully used up — both classic reasons to sell, and seller-finance candidates since there\'s no mortgage to pay off.',
       },
       {
+        t: 'The Screen column — every parcel pre-underwritten',
+        b: 'Each parcel in the list runs through the deal engine automatically: estimated rent (Zillow zip band × units), standard expenses, county-appraised value. Pursue means it clears your DSCR and cap-rate bars at full county value; Consider is close; Pass doesn\'t pencil at these estimates. "Needs data" means a required input is missing — usually the unit count on apartment parcels. Sort by "Best screen first" to work the top of the pile.',
+      },
+      {
+        t: 'The parcel report (click any row)',
+        b: 'Opens the full numbers: max allowable offer (the highest price meeting your targets, with taxes re-assessed at every price tested), estimated NOI today, cash flow now and projected over five years with exit equity, seller-finance opener structures, and the owner\'s mailing details. The three assumptions at the top (units, rent, value) are editable — change any and everything recalculates through the same frozen engine. All estimates are provenance-labeled.',
+      },
+      {
+        t: 'Rating leads: ♥ 👍 👎',
+        b: 'Three ratings on every off-market lead, shared across your org: ♥ heart = strong, contact first; 👍 thumbs up = has potential; 👎 thumbs down = something\'s off. Click again to clear. Filter the list by rating (and by screen verdict) to work your shortlist, then export just those to FreedomSoft. When a conversation goes well, "Analyze as deal" promotes the parcel to a full deal.',
+      },
+      {
+        t: 'Notes with timestamps',
+        b: 'Every off-market lead and every analyzed deal has a Notes section — each note saves with a timestamp and who wrote it, visible to your whole org. Call outcomes, drive-by impressions, seller conversations. Notes survive data refreshes. Cmd/Ctrl+Enter saves quickly.',
+      },
+      {
+        t: 'Street View and the off-market map',
+        b: 'Every lead links to Google Street View (exact position once coordinates arrive with a data refresh; address search until then). The List/Map toggle shows all filtered leads as pins colored by screen verdict — click an address in the list to jump to it on the map, click any pin for the summary card and its report.',
+      },
+      {
+        t: 'How fresh is the parcel data?',
+        b: 'The droplet re-imports county data automatically about once a month (and immediately whenever the table is empty). Owner mailing addresses and sale dates update in place — your flags and lists survive refreshes.',
+      },
+      {
         t: 'FreedomSoft export',
         b: 'The Export button downloads a CSV with clean column names (Owner Name, Property Address, Mailing Address, Tags…). FreedomSoft\'s importer lets you map columns on upload, so it accepts this file directly. Tags like absentee/entity-owned/6u come along so you can segment campaigns inside FreedomSoft.',
       },

@@ -8,6 +8,7 @@ import SignIn from './pages/SignIn';
 import Deals from './pages/Deals';
 import OnMarket from './pages/OnMarket';
 import OffMarket from './pages/OffMarket';
+import OffMarketDeal from './pages/OffMarketDeal';
 import Markets from './pages/Markets';
 import DealNew from './pages/DealNew';
 import DealResults from './pages/DealResults';
@@ -152,6 +153,16 @@ export default function App() {
           <Protected>
             <Shell>
               <OffMarket />
+            </Shell>
+          </Protected>
+        }
+      />
+      <Route
+        path="/off-market/:id"
+        element={
+          <Protected>
+            <Shell>
+              <OffMarketDeal />
             </Shell>
           </Protected>
         }

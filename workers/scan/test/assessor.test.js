@@ -177,10 +177,10 @@ describe('assessorToParcels — Maricopa preset', () => {
 describe('assessorToParcels — Nashville ArcGIS Hub export shape', () => {
   // Header names verbatim from the field parse report (2026-07-24).
   const NASH_HUB = [
-    'OBJECTID,ParID,Owner,OwnDate,SalePrice,OwnAddr1,OwnCity,OwnState,OwnZip,PropAddr,PropCity,PropZip,Acres,LUDesc,TotlAppr',
-    '1,001-002.00,"NASHVILLE RENTALS, LP",2018-05-12,750000,100 BROADWAY,NASHVILLE,TN,37201,200 CHURCH ST,NASHVILLE,37219,0.5,DUPLEX,820000',
-    '2,001-003.00,DOE JANE,2021-01-02,410000,300 PINE ST,NASHVILLE,TN,37203,300 PINE ST,NASHVILLE,37203,0.25,SINGLE FAMILY,395000',
-    '3,001-004.00,MUSIC CITY LLC,2015-06-30,2100000,PO BOX 5,FRANKLIN,TN,37064,400 OAK AVE,NASHVILLE,37210,1.2,APARTMENT: LOW RISE,2400000',
+    'OBJECTID,ParID,Owner,OwnDate,SalePrice,OwnAddr1,OwnCity,OwnState,OwnZip,PropAddr,PropCity,PropZip,Acres,LUDesc,TotlAppr,Lat,Lon',
+    '1,001-002.00,"NASHVILLE RENTALS, LP",2018-05-12,750000,100 BROADWAY,NASHVILLE,TN,37201,200 CHURCH ST,NASHVILLE,37219,0.5,DUPLEX,820000,36.16781,-86.77775',
+    '2,001-003.00,DOE JANE,2021-01-02,410000,300 PINE ST,NASHVILLE,TN,37203,300 PINE ST,NASHVILLE,37203,0.25,SINGLE FAMILY,395000,36.15,-86.79',
+    '3,001-004.00,MUSIC CITY LLC,2015-06-30,2100000,PO BOX 5,FRANKLIN,TN,37064,400 OAK AVE,NASHVILLE,37210,1.2,APARTMENT: LOW RISE,2400000,36.14,-86.72',
   ].join('\n');
   const res = assessorToParcels(NASH_HUB, PRESETS.tn, { countyFips: '47037' });
 
@@ -216,6 +216,11 @@ describe('assessorToParcels — Nashville ArcGIS Hub export shape', () => {
   it('infers unit counts from the class text when no units column exists', () => {
     expect(res.parcels[0].units).toBe(2); // DUPLEX
     expect(res.parcels[1].units).toBeNull(); // APARTMENT: LOW RISE — count unknown
+  });
+
+  it('captures coordinates for Street View links', () => {
+    expect(res.parcels[0].lat).toBeCloseTo(36.16781);
+    expect(res.parcels[0].lng).toBeCloseTo(-86.77775);
   });
 });
 

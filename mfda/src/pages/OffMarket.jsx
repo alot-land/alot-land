@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { lazyReload } from '../lib/lazyReload';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrg } from '../lib/org';
 import { useAuth } from '../lib/auth';
@@ -9,10 +11,24 @@ import {
   createMailList,
   listParcelsForMailList,
   logMailExport,
+  listAllRentBands,
+  listMarkets,
+  setParcelRating,
 } from '../lib/queries';
+import { buildZipRents, presetForState, screenRow, streetViewUrl } from '../lib/parcelscreen';
+import RatingControl from '../components/RatingControl';
+
+const OffMarketMap = lazyReload(() => import('../components/OffMarketMap'));
 import { freedomsoftCSV, downloadCSV } from '../lib/freedomsoft';
-import { usd } from '../lib/format';
+import { usd, pct } from '../lib/format';
 import { Tip } from '../components/fields';
+
+const VERDICT_STYLES = {
+  pursue: 'bg-green/15 text-green-deep',
+  consider: 'bg-gold/20 text-warn',
+  pass: 'bg-surface-2 text-muted',
+};
+const VERDICT_RANK = { pursue: 0, consider: 1, pass: 2, insufficient: 3 };
 
 // Friendly names for the counties we actually target; anything else shows FIPS.
 const COUNTY_NAMES = {
@@ -41,6 +57,12 @@ export default function OffMarket() {
   const [heldYears, setHeldYears] = useState('');
   const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
+  const [ratingFilter, setRatingFilter] = useState('all'); // all | heart | up | down | none
+  const [verdictFilter, setVerdictFilter] = useState('all'); // all | pursue | consider | pass | insufficient
+  const [sort, setSort] = useState('screen'); // screen | units | value
+  const [view, setView] = useState('list'); // list | map
+  const [mapSelectedId, setMapSelectedId] = useState(null);
+  const nav = useNavigate();
 
   // "Held ≥ N years" → a last-sale-date cutoff computed at query time.
   const soldBefore = useMemo(() => {
@@ -51,7 +73,7 @@ export default function OffMarket() {
     return d.toISOString().slice(0, 10);
   }, [heldYears]);
 
-  const filters = { state, countyFips: county, minUnits, maxUnits, absentee, entity, soldBefore, search };
+  const filters = { state, countyFips: county, minUnits, maxUnits, absentee, entity, soldBefore, search, rating: ratingFilter };
   const parcels = useQuery({
     queryKey: ['parcels', org?.id, filters],
     queryFn: () => listParcels(org.id, filters),
@@ -69,8 +91,47 @@ export default function OffMarket() {
     enabled: !!org,
   });
 
-  const rows = parcels.data?.rows || [];
+  const bands = useQuery({
+    queryKey: ['rent-bands-all', org?.id],
+    queryFn: () => listAllRentBands(org.id),
+    enabled: !!org,
+    staleTime: 30 * 60 * 1000,
+  });
+  const markets = useQuery({
+    queryKey: ['markets', org?.id],
+    queryFn: () => listMarkets(org.id),
+    enabled: !!org,
+  });
+  const zipRents = useMemo(() => buildZipRents(bands.data), [bands.data]);
+
+  // Every filtered parcel runs through the calc engine's fast screen —
+  // estimated NOI, cap on county value, DSCR, verdict. Pure arithmetic,
+  // microseconds per row.
+  const rows = useMemo(() => {
+    const raw = parcels.data?.rows || [];
+    let scored = raw.map((p) => ({ ...p, screen: screenRow(p, zipRents, presetForState(markets.data, p.state)) }));
+    if (verdictFilter !== 'all') scored = scored.filter((p) => p.screen.verdict === verdictFilter);
+    const by = {
+      screen: (a, b) =>
+        VERDICT_RANK[a.screen.verdict] - VERDICT_RANK[b.screen.verdict] ||
+        (b.screen.cap_rate ?? -1) - (a.screen.cap_rate ?? -1),
+      units: (a, b) => (b.units ?? 0) - (a.units ?? 0),
+      value: (a, b) => (b.assessed_value ?? 0) - (a.assessed_value ?? 0),
+    };
+    return [...scored].sort(by[sort] || by.screen);
+  }, [parcels.data, zipRents, markets.data, sort, verdictFilter]);
   const total = parcels.data?.count ?? 0;
+
+  async function rate(p, rating) {
+    qc.setQueryData(['parcels', org.id, filters], (old) =>
+      old ? { ...old, rows: old.rows.map((r) => (r.id === p.id ? { ...r, rating } : r)) } : old,
+    );
+    try {
+      await setParcelRating(p.id, rating);
+    } catch {
+      qc.invalidateQueries({ queryKey: ['parcels'] });
+    }
+  }
   const states = useMemo(
     () => [...new Set((counties.data || []).map((c) => c.state))].sort(),
     [counties.data],
@@ -180,6 +241,37 @@ export default function OffMarket() {
           Entity-owned
           <Tip text="Owner name looks like an LLC / corp / trust. These are investors, not homeowners — different mail copy, and principals can be looked up via the Secretary of State." />
         </label>
+        <select className="input w-auto" value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)}>
+          <option value="all">Any rating</option>
+          <option value="heart">♥ Hearted</option>
+          <option value="up">👍 Thumbs up</option>
+          <option value="down">👎 Thumbs down</option>
+          <option value="none">Unrated</option>
+        </select>
+        <select className="input w-auto" value={verdictFilter} onChange={(e) => setVerdictFilter(e.target.value)}>
+          <option value="all">Any screen</option>
+          <option value="pursue">Pursue only</option>
+          <option value="consider">Consider only</option>
+          <option value="pass">Pass only</option>
+          <option value="insufficient">Needs data</option>
+        </select>
+        <div className="ml-auto flex rounded-lg border border-border overflow-hidden">
+          {['list', 'map'].map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={`px-3 py-2 text-sm capitalize ${view === v ? 'bg-ink text-bg' : 'bg-surface text-ink-2 hover:bg-surface-2'}`}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+        <select className="input w-auto" value={sort} onChange={(e) => setSort(e.target.value)}>
+          <option value="screen">Best screen first</option>
+          <option value="units">Most units first</option>
+          <option value="value">Highest value first</option>
+        </select>
       </div>
 
       {/* Live feedback — there's no Search button; results follow the filters. */}
@@ -217,20 +309,36 @@ export default function OffMarket() {
         </div>
       )}
 
-      {rows.length > 0 && (
+      {rows.length > 0 && view === 'map' && (
+        <Suspense fallback={<div className="card p-10 text-center text-muted">Loading map…</div>}>
+          <OffMarketMap
+            rows={rows}
+            selected={rows.find((p) => p.id === mapSelectedId) || null}
+            onSelect={(p) => setMapSelectedId(p?.id ?? null)}
+            onOpen={(p) => nav(`/off-market/${p.id}`)}
+          />
+        </Suspense>
+      )}
+
+      {rows.length > 0 && view === 'list' && (
         <div className="card overflow-x-auto">
           <div className="px-3 py-2 text-xs text-muted border-b border-border">
             {total.toLocaleString()} parcels match
             {total > rows.length && ` (showing first ${rows.length.toLocaleString()} — tighten filters to export the rest)`}
           </div>
-          <table className="w-full text-sm min-w-[860px]">
+          <table className="w-full text-sm min-w-[980px]">
             <thead className="bg-surface-2">
               <tr>
+                <th className="th w-8"></th>
                 <th className="th">Owner</th>
                 <th className="th">Property</th>
-                <th className="th">Mails to</th>
+                <th className="th">
+                  Screen
+                  <Tip text="Every parcel runs through the deal engine on the fly: rent from the Zillow zip band × units, expenses at standard rates, value from the county appraisal. Pursue = clears your DSCR and cap-rate bars at county value. Click the row for the full report." />
+                </th>
+                <th className="th text-right">Est. NOI</th>
+                <th className="th text-right">Cap</th>
                 <th className="th text-right">Units</th>
-                <th className="th text-right">Year</th>
                 <th className="th text-right">Last sale</th>
                 <th className="th text-right">Assessed</th>
                 <th className="th">Flags</th>
@@ -238,25 +346,61 @@ export default function OffMarket() {
             </thead>
             <tbody>
               {rows.slice(0, 200).map((p) => (
-                <tr key={p.id} className="hover:bg-surface-2/60">
+                <tr
+                  key={p.id}
+                  onClick={() => nav(`/off-market/${p.id}`)}
+                  className="hover:bg-surface-2/60 cursor-pointer"
+                >
+                  <td className="td">
+                    <RatingControl value={p.rating} onChange={(r) => rate(p, r)} size="text-sm" />
+                  </td>
                   <td className="td">
                     <div className="font-medium">{p.owner_name || '—'}</div>
                     <div className="text-xs text-muted">APN {p.apn}</div>
                   </td>
                   <td className="td">
-                    <div>{p.situs_address || '—'}</div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMapSelectedId(p.id);
+                        setView('map');
+                      }}
+                      className="text-left hover:underline"
+                      title="Show on map"
+                    >
+                      {p.situs_address || '—'}
+                    </button>
                     <div className="text-xs text-muted">
                       {[p.situs_city, p.state, p.situs_zip].filter(Boolean).join(', ')}
+                      {streetViewUrl(p) && (
+                        <>
+                          {' · '}
+                          <a
+                            href={streetViewUrl(p)}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="underline hover:text-ink"
+                          >
+                            Street View ↗
+                          </a>
+                        </>
+                      )}
                     </div>
                   </td>
-                  <td className="td text-xs text-ink-2">
-                    <div>{p.mailing_address || '—'}</div>
-                    <div className="text-muted">
-                      {[p.mailing_city, p.mailing_state, p.mailing_zip].filter(Boolean).join(', ')}
-                    </div>
+                  <td className="td">
+                    {p.screen.verdict === 'insufficient' ? (
+                      <span className="pill bg-surface-2 text-muted" title={`missing: ${p.screen.missing.join(', ')}`}>
+                        needs data
+                      </span>
+                    ) : (
+                      <span className={`pill ${VERDICT_STYLES[p.screen.verdict]} capitalize`}>{p.screen.verdict}</span>
+                    )}
                   </td>
+                  <td className="td text-right tabular-nums">{p.screen.noi != null ? usd(p.screen.noi) : '—'}</td>
+                  <td className="td text-right tabular-nums">{p.screen.cap_rate != null ? pct(p.screen.cap_rate, 1) : '—'}</td>
                   <td className="td text-right">{p.units ?? '—'}</td>
-                  <td className="td text-right">{p.year_built ?? '—'}</td>
                   <td className="td text-right">
                     {p.last_sale_date ? (
                       <>

@@ -54,6 +54,8 @@ const GENERIC = {
   assessed_value: ['assessed_value', 'total_assessed', 'assessed_total', 'full_cash_value', 'fcv', 'total_value', 'appraised_value', 'total_appraisal', 'totlappr', 'totlassd'],
   building_sqft: ['building_sqft', 'improvement_sqft', 'living_area', 'bldg_sqft', 'sqft', 'finished_area', 'total_living_area'],
   lot_sqft: ['lot_sqft', 'land_sqft', 'lot_size', 'land_area', 'lot_area', 'acreage', 'acres'],
+  lat: ['lat', 'latitude', 'intptlat', 'point_y', 'centroid_lat'],
+  lng: ['lon', 'lng', 'longitude', 'intptlon', 'intptlong', 'point_x', 'centroid_lon'],
 };
 
 export const PRESETS = {
@@ -231,6 +233,8 @@ export function assessorToParcels(text, preset, opts = {}) {
       last_sale_date: parseDate(get(r, 'last_sale_date')),
       last_sale_price: num(get(r, 'last_sale_price')),
       assessed_value: num(get(r, 'assessed_value')),
+      lat: num(get(r, 'lat')),
+      lng: num(get(r, 'lng')),
     });
   }
   return { parcels, total: rows.length - 1, kept: parcels.length, dropped, unresolved, delimiter: delim, headers };
