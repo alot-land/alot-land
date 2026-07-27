@@ -435,11 +435,13 @@ export async function listParcelValueIndex(orgId) {
     () =>
       supabase
         .from('parcels')
-        .select('situs_address, situs_zip, assessed_value')
+        // units + class come along so a matched listing can screen on the
+        // county's REAL unit count instead of Redfin's size bucket.
+        .select('situs_address, situs_zip, assessed_value, units, property_class')
         .eq('org_id', orgId)
-        .not('assessed_value', 'is', null)
+        .or('assessed_value.not.is.null,units.not.is.null')
         .order('id'),
-    20000,
+    60000,
   );
   return rows;
 }

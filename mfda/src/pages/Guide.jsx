@@ -48,7 +48,7 @@ const MANUAL = [
       },
       {
         t: 'The Screen column — every listing pre-scored',
-        b: 'Each listing runs through the deal engine at its asking price: rent from the Zillow zip band, standard expenses, DSCR and cap-rate bars. Pursue/Consider/Pass tells you what to open first; hover the pill for the estimated NOI. Honest caveat: 2–4 unit listings screen with a 3-unit assumption (Redfin never states exact counts) and 5+ shows "needs data" until you underwrite with real units. Sort by "Best screen first" to work the top.',
+        b: 'Each listing runs through the deal engine at its asking price: rent from the Zillow zip band, standard expenses, DSCR and cap-rate bars. Pursue/Consider/Pass tells you what to open first; hover the pill for the estimated NOI. Sort by "Best screen first" to work the top. Why so many say NEEDS DATA: Redfin publishes a size BUCKET, never an exact unit count, and unit count is the denominator under every figure in the screen — guessing it would produce a confident wrong cap rate, so it is left blank instead. Three things fill it in. A 2–4 unit listing screens on a disclosed 3-unit assumption. A listing whose address matches a parcel we have imported uses the county assessor\'s REAL count, and the size pill turns green to say so — which is the main reason to import a county\'s parcels even if you only ever buy on-market there. Otherwise hit Analyze and enter the count yourself.',
       },
       {
         t: 'Rating listings: ♥ 👍 👎',

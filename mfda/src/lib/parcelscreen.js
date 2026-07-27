@@ -115,18 +115,28 @@ export function buildParcelValueMap(rows) {
   const map = new Map();
   for (const r of rows || []) {
     const k = addrKey(r.situs_address, r.situs_zip);
-    if (k && Number(r.assessed_value) > 0) map.set(k, Number(r.assessed_value));
+    if (!k) continue;
+    const value = Number(r.assessed_value) > 0 ? Number(r.assessed_value) : null;
+    const units = Number(r.units) > 0 ? Number(r.units) : null;
+    if (value == null && units == null) continue;
+    map.set(k, { value, units, property_class: r.property_class ?? null });
   }
   return map;
 }
 
 /** Equity walked into at asking price, when the listing matches a parcel. */
-export function listingEquity(deal, valueMap) {
+export function listingEquity(deal, facts) {
   const k = addrKey(deal.address, deal.zip);
-  if (!k || !valueMap?.size) return null;
-  const value = valueMap.get(k);
+  if (!k || !facts?.size) return null;
+  const value = facts.get(k)?.value;
   if (value == null || !(Number(deal.price) > 0)) return null;
   return mf.equitySpread({ price: Number(deal.price), value });
+}
+
+/** Assessor facts for a listing's address, when we hold that county. */
+export function parcelFactsFor(deal, facts) {
+  const k = addrKey(deal.address, deal.zip);
+  return (k && facts?.get(k)) || null;
 }
 
 /** Owner's equity position: county value vs what they paid. */
@@ -187,8 +197,14 @@ export function screenRow(parcel, zipRents, preset) {
  * assumption and 5+ report 'insufficient' until real units are entered in
  * underwriting. The asking price is the anchor.
  */
-export function screenListingRow(deal, zipRents, preset) {
-  const unitsEst = deal.unit_bucket === '2-4' ? 3 : null;
+export function screenListingRow(deal, zipRents, preset, facts = null) {
+  // Prefer the county's REAL unit count when this listing matches a parcel we
+  // hold — that is data, not an assumption, and it is the only way a 5+
+  // listing can be screened at all. Otherwise fall back to the disclosed
+  // 3-unit assumption for 2-4s, and refuse to guess for 5+.
+  const matched = parcelFactsFor(deal, facts);
+  const unitsFromParcel = matched?.units ?? null;
+  const unitsEst = unitsFromParcel ?? (deal.unit_bucket === '2-4' ? 3 : null);
   const rent = deal.zip ? zipRents.get(String(deal.zip).slice(0, 5)) ?? null : null;
   const screen = mf.screenParcel({
     units: unitsEst,
@@ -197,7 +213,14 @@ export function screenListingRow(deal, zipRents, preset) {
     property_tax_rate: preset?.property_tax_rate ?? undefined,
     assessment_ratio: preset?.assessment_ratio ?? undefined,
   });
-  return { ...screen, rent, units_est: unitsEst };
+  return {
+    ...screen,
+    rent,
+    units_est: unitsEst,
+    // 'assessor' = real count from a matched parcel; 'bucket' = the 3-unit
+    // assumption; null = we refused to guess.
+    units_basis: unitsFromParcel != null ? 'assessor' : unitsEst != null ? 'bucket' : null,
+  };
 }
 
 /**

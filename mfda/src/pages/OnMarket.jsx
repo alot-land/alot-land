@@ -90,7 +90,7 @@ export default function OnMarket() {
   const rows = useMemo(() => {
     let r = (leads.data || []).map((d) => ({
       ...d,
-      screen: screenListingRow(d, zipRents, presetForState(markets.data, d.state)),
+      screen: screenListingRow(d, zipRents, presetForState(markets.data, d.state), valueMap),
       equity: listingEquity(d, valueMap),
     }));
     if (ratingFilter !== 'all') {
@@ -311,7 +311,14 @@ export default function OnMarket() {
                   </td>
                   <td className="td">
                     {d.screen.verdict === 'insufficient' ? (
-                      <span className="pill bg-surface-2 text-muted" title={`missing: ${d.screen.missing.join(', ')}`}>
+                      <span
+                        className="pill bg-surface-2 text-muted"
+                        title={
+                          d.screen.missing.includes('units')
+                            ? `Redfin publishes a size BUCKET ("${d.unit_bucket}"), never an exact unit count, and unit count is the denominator under every figure here — so this is left blank rather than guessed. It fills in automatically if we hold assessor parcels for this county; otherwise hit Analyze and enter the real count.`
+                            : `Missing: ${d.screen.missing.join(', ')}`
+                        }
+                      >
                         needs data
                       </span>
                     ) : d.screen.verdict === 'implausible' ? (
@@ -331,7 +338,16 @@ export default function OnMarket() {
                     )}
                   </td>
                   <td className="td">
-                    <span className="pill bg-surface-2 text-ink-2">{d.unit_bucket} units</span>
+                    {d.screen.units_basis === 'assessor' ? (
+                      <span
+                        className="pill bg-green/15 text-green-deep"
+                        title={`County assessor records ${d.screen.units_est} units at this address — a real count, not Redfin's "${d.unit_bucket}" bucket.`}
+                      >
+                        {d.screen.units_est} units
+                      </span>
+                    ) : (
+                      <span className="pill bg-surface-2 text-ink-2">{d.unit_bucket} units</span>
+                    )}
                   </td>
                   <td className="td text-right font-medium">{d.price != null ? usd(Number(d.price)) : '—'}</td>
                   <td className="td text-right">{d.beds_total ?? '—'}</td>
