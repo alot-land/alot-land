@@ -130,12 +130,71 @@ export const COUNTY_SOURCES = {
  * config line".
  */
 export const STATEWIDE_PARCEL_ROOTS = {
-  // TN was tried and does NOT publish statewide parcels: tnmap.tn.gov serves
-  // 90 services, none of them parcels, and tngis.org answers with HTML
-  // (field-verified 2026-07-26). Leaving the roots in place only produced
-  // five identical parse errors per county, so the entry is empty until a
-  // real service is found — an empty list fails fast with a clear reason.
+  // Deliberately empty for MFDA. See STATEWIDE_PARCEL_FINDINGS: the statewide
+  // layers that exist carry no mailing address and no unit/land-use field, so
+  // they cannot drive either half of off-market multifamily. An empty list
+  // fails fast with a clear reason instead of retrying dead hosts.
   TN: [],
+};
+
+/**
+ * Statewide parcel layers, field-verified by curl on 2026-07-26. Recorded so
+ * the same dead ends are not rediscovered — every one of these cost a round.
+ *
+ * THE HEADLINE: none of the three carries a MAILING ADDRESS. Owner name plus
+ * an out-of-county mailing address is what identifies an absentee owner, so
+ * no free statewide source in these states can drive a mail campaign. This is
+ * a property of the data, not a gap in the search.
+ */
+export const STATEWIDE_PARCEL_FINDINGS = {
+  TN: {
+    url: 'https://services1.arcgis.com/YuVBSS7Y1of2Qud1/arcgis/rest/services/Tennessee_Property_Boundaries_Public_Use/FeatureServer/0',
+    org: 'YuVBSS7Y1of2Qud1 (State of Tennessee STS GIS, publisher: Comptroller — Division of Property Assessments)',
+    parcels: 2138531,
+    counties: '86 of 95',
+    owner: true,
+    mailing_address: false,
+    // No land-use class, no unit count, no assessed value — nothing to select
+    // multifamily with, which is why this fails MFDA's essentials gate. For
+    // LAND it is a different story: owner + DEEDAC acreage + geometry.
+    land_use_or_units: false,
+    fields: ['OBJECTID', 'COUNTY_ID', 'PARCEL_TYPE', 'GISLINK', 'PARCELID', 'CMAP', 'GP', 'PARCEL',
+      'ADDRESS', 'DEEDAC', 'OWNER', 'OWNER2', 'SUBDIV', 'LOT', 'LINK_TPAD', 'LINK_TPV', 'COUNTY_NAME'],
+    // These run their own assessment systems and are STRUCTURALLY absent —
+    // they will never appear in the state layer, so they need county sources.
+    excluded_counties: ['Chester', 'Davidson', 'Hamilton', 'Hickman', 'Knox',
+      'Montgomery', 'Rutherford', 'Shelby', 'Williamson'],
+    dead_ends: ['tnmap.tn.gov/arcgis (15 folders, no parcel services)', 'gis.tn.gov (301s to tnmap)',
+      'tngis.org (Hub site, no data)', 'data.tn.gov catalog API (no JSON)',
+      'assessment.cot.tn.gov/TPAD (403 to curl — bot-protected, holds the fuller record)'],
+  },
+  VA: {
+    url: 'https://vginmaps.vdem.virginia.gov/arcgis/rest/services/VA_Base_Layers/VA_Parcels/FeatureServer/0',
+    parcels: 4170691,
+    counties: '136 localities (all)',
+    owner: false,
+    mailing_address: false,
+    land_use_or_units: false,
+    fields: ['OBJECTID', 'VGIN_QPID', 'FIPS', 'LOCALITY', 'PARCELID', 'PTM_ID', 'LASTUPDATE'],
+    // Geometry and IDs only, by VGIN's own description. A companion 363MB
+    // File Geodatabase ("Virginia Parcels: Local Schema Tables", item
+    // 523d89ebf23d4d84957f9fe5b9158bd9) joins on VGIN_QPID and MAY carry
+    // owner — but its schema differs per locality, so it is a per-locality
+    // question, not a statewide answer. Unverified: not downloaded.
+    note: 'attributes limited to locality + parcel id',
+  },
+  IN: {
+    url: 'https://gisdata.in.gov/server/rest/services/Hosted/Parcel_Boundaries_of_Indiana_Current/FeatureServer/0',
+    parcels: 3682675,
+    counties: '92 of 92',
+    owner: false,
+    mailing_address: false,
+    // dlgf_prop_class_code IS a usable land-use filter, and lat/lng are
+    // included — so this is a good geometry/classification source and a
+    // useless mail source.
+    land_use_or_units: true,
+    note: 'situs address + class code + lat/lng, no owner name',
+  },
 };
 
 /** Field names a statewide layer might use for the county, best first. */
