@@ -80,6 +80,10 @@ export const COUNTY_SOURCES = {
     fips: '47093',
     state: 'TN',
     label: 'Knox County / Knoxville TN',
+    // Approximate county bounds. Used only to REJECT a layer whose extent is
+    // nowhere near the county — a Massachusetts street layer scored well on
+    // title alone and was picked for a Knox query (field-verified 2026-07-26).
+    bbox: [-84.29, 35.78, -83.65, 36.18],
     // KGIS is the long-running Knoxville/Knox County GIS partnership.
     rest_roots: [
       'https://www.kgis.org/arcgis/rest/services',
@@ -94,6 +98,7 @@ export const COUNTY_SOURCES = {
     fips: '47001',
     state: 'TN',
     label: 'Anderson County / Oak Ridge TN',
+    bbox: [-84.45, 35.94, -83.99, 36.29],
     rest_roots: [
       'https://gis.andersoncountytn.gov/arcgis/rest/services',
       'https://maps.andersoncountytn.gov/arcgis/rest/services',
@@ -106,6 +111,7 @@ export const COUNTY_SOURCES = {
     fips: '47065',
     state: 'TN',
     label: 'Hamilton County / Chattanooga TN',
+    bbox: [-85.52, 34.97, -84.93, 35.43],
     rest_roots: [
       'https://www.gis.hamiltontn.gov/arcgis/rest/services',
       'https://gis.hamiltontn.gov/arcgis/rest/services',
@@ -124,10 +130,12 @@ export const COUNTY_SOURCES = {
  * config line".
  */
 export const STATEWIDE_PARCEL_ROOTS = {
-  TN: [
-    'https://tnmap.tn.gov/arcgis/rest/services',
-    'https://www.tngis.org/arcgis/rest/services',
-  ],
+  // TN was tried and does NOT publish statewide parcels: tnmap.tn.gov serves
+  // 90 services, none of them parcels, and tngis.org answers with HTML
+  // (field-verified 2026-07-26). Leaving the roots in place only produced
+  // five identical parse errors per county, so the entry is empty until a
+  // real service is found — an empty list fails fast with a clear reason.
+  TN: [],
 };
 
 /** Field names a statewide layer might use for the county, best first. */
@@ -158,6 +166,83 @@ export function countySearchQueries(cfg) {
     `${county} county parcels assessor type:"Feature Service"`,
     'parcels type:"Feature Service"',
   ];
+}
+
+
+/**
+ * ArcGIS layer/service JSON → [west, south, east, north] in WGS84, or null.
+ *
+ * Only extents already in 4326 are trusted. A Web Mercator extent could be
+ * converted, but a wrong conversion would silently pass a bad layer, and the
+ * whole point of this check is to be certain — so an unconvertible extent
+ * returns null and the caller treats it as "unknown", not "fine".
+ */
+export function layerExtent4326(json) {
+  const e = json?.extent || json?.fullExtent || json?.initialExtent;
+  if (!e || ![e.xmin, e.ymin, e.xmax, e.ymax].every((v) => Number.isFinite(v))) return null;
+  const wkid = e.spatialReference?.latestWkid ?? e.spatialReference?.wkid ?? null;
+  if (wkid !== 4326) return null;
+  return [e.xmin, e.ymin, e.xmax, e.ymax];
+}
+
+/** Do two [w,s,e,n] boxes overlap at all? */
+export function bboxesOverlap(a, b) {
+  if (!a || !b) return true; // unknown extent is not evidence of wrongness
+  return !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
+}
+
+/**
+ * Reject a candidate layer that is demonstrably somewhere else.
+ *
+ * Returns a reason string when the layer should be rejected, or null to keep
+ * it. Deliberately one-sided: an unknown or missing extent never rejects,
+ * because absence of evidence is not evidence of a wrong county.
+ */
+export function extentMismatchReason(layerJson, countyBbox) {
+  if (!countyBbox) return null;
+  const ext = layerExtent4326(layerJson);
+  if (!ext) return null;
+  if (bboxesOverlap(ext, countyBbox)) return null;
+  const fmt = (b) => `[${b.map((n) => n.toFixed(2)).join(', ')}]`;
+  return `layer extent ${fmt(ext)} does not overlap the county ${fmt(countyBbox)}`;
+}
+
+// ArcGIS Hub indexes the open-data portals counties actually publish on
+// today, which is how to reach a county whose own REST server is gone or
+// token-walled (Knox's KGIS hosts now answer 401 — field-verified
+// 2026-07-26).
+export const hubSearchUrl = (q, size = 20) =>
+  `https://hub.arcgis.com/api/v3/datasets?q=${encodeURIComponent(q)}&page[size]=${size}`;
+
+/**
+ * Hub search JSON → the best parcel dataset, or null.
+ *
+ * `must` is a hard filter on the title/owner/org text, never a score: a
+ * well-titled parcel layer from the wrong county otherwise wins on merit.
+ */
+export function pickHubDataset(json, { must = [], bbox = null } = {}) {
+  const items = json?.data || [];
+  let best = null;
+  for (const it of items) {
+    const a = it?.attributes || {};
+    const url = a.url || a.layer?.url || null;
+    if (!url) continue;
+    const hay = `${a.name || ''} ${a.owner || ''} ${a.orgName || ''} ${(a.tags || []).join(' ')}`.toLowerCase();
+    if (must.length && !must.some((m) => hay.includes(String(m).toLowerCase()))) continue;
+    if (bbox && Array.isArray(a.extent?.coordinates)) {
+      const [[w, s2], [e2, n]] = a.extent.coordinates;
+      if (!bboxesOverlap([w, s2, e2, n], bbox)) continue;
+    }
+    let score = 0;
+    if (/parcel/i.test(a.name || '')) score += 4;
+    if (/assessor|ownership|owner|cadastr/.test(hay)) score += 3;
+    if (/land.?use|use.?code|zoning/.test(hay)) score += 2;
+    if (/label|anno|road|boundary|archive|deprecat/.test(hay)) score -= 4;
+    if (!best || score > best.score) {
+      best = { id: it.id, title: a.name, owner: a.owner || a.orgName, url: String(url).replace(/\/+$/, ''), score };
+    }
+  }
+  return best && best.score >= 4 ? best : null;
 }
 
 export const ARCGIS_SEARCH_URL = (q, num = 20) =>
@@ -211,8 +296,12 @@ export function pickPortalService(searchJson, { must = [] } = {}) {
   for (const it of items) {
     if (!it?.url || !/(feature|map)\s*service/i.test(it.type || '')) continue;
     const title = String(it.title || '');
-    const hay = `${title} ${it.owner || ''} ${it.snippet || ''} ${(it.tags || []).join(' ')}`.toLowerCase();
-    if (must.length && !must.every((m) => hay.includes(String(m).toLowerCase()))) continue;
+    // The guard reads TITLE and OWNER only. Tags and snippets mention every
+    // place a dataset was ever compared to, so guarding on them let a
+    // Massachusetts layer satisfy a "knox" requirement.
+    const identity = `${title} ${it.owner || ''}`.toLowerCase();
+    const hay = `${identity} ${it.snippet || ''} ${(it.tags || []).join(' ')}`.toLowerCase();
+    if (must.length && !must.some((m) => identity.includes(String(m).toLowerCase()))) continue;
     let score = 0;
     if (/parcel/i.test(title)) score += 4;
     if (/assessor|ownership|owner|cadastr/.test(hay)) score += 3;

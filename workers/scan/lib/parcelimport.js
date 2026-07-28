@@ -7,7 +7,14 @@
 export const ESSENTIAL_FIELDS = ['apn', 'owner_name', 'mailing_address'];
 
 export function essentialsOk(res) {
-  return ESSENTIAL_FIELDS.every((f) => !res.unresolved.includes(f));
+  if (!ESSENTIAL_FIELDS.every((f) => !res.unresolved.includes(f))) return false;
+  // The multifamily filter reads units OR the land-use class. With neither
+  // resolved it cannot distinguish an apartment building from a car park, so
+  // whatever survives the filter is arbitrary. A Knox run reported both
+  // unresolved, called them "not essential", and proceeded to keep 0 rows
+  // from an out-of-state layer (field-verified 2026-07-26).
+  if (res.unresolved.includes('units') && res.unresolved.includes('property_class')) return false;
+  return true;
 }
 
 /** Human/pasteable report of how a file parsed — the iterate-loop payload. */
@@ -17,7 +24,11 @@ export function inspectReport(res, label = '') {
   lines.push(`delimiter=${JSON.stringify(res.delimiter)} rows=${res.total} kept=${res.kept} dropped=${res.dropped}`);
   lines.push(`headers: ${(res.headers || []).join(' | ')}`);
   if (res.unresolved?.length) {
-    const blocking = res.unresolved.filter((f) => ESSENTIAL_FIELDS.includes(f));
+    const noFilterField = res.unresolved.includes('units') && res.unresolved.includes('property_class');
+    const blocking = [
+      ...res.unresolved.filter((f) => ESSENTIAL_FIELDS.includes(f)),
+      ...(noFilterField ? ['units + property_class (nothing to filter multifamily on)'] : []),
+    ];
     lines.push(`UNRESOLVED fields: ${res.unresolved.join(', ')}`);
     lines.push(
       blocking.length

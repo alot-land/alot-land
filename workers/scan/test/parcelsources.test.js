@@ -26,6 +26,10 @@ import {
   COUNTY_SOURCES,
   countyFilterClauses,
   countySearchQueries,
+  extentMismatchReason,
+  bboxesOverlap,
+  pickHubDataset,
+  hubSearchUrl,
   layerFieldNames,
   featuresToRows,
   rowsToCsv,
@@ -281,6 +285,56 @@ describe('county filter + search terms', () => {
     expect(countySearchQueries(COUNTY_SOURCES.anderson)[0]).toContain('Anderson parcels');
     // Falls back to an unqualified search once the specific ones are spent.
     expect(countySearchQueries(COUNTY_SOURCES.hamilton).at(-1)).toBe('parcels type:"Feature Service"');
+  });
+});
+
+describe('extent guard (the false-positive killer)', () => {
+  const knox = COUNTY_SOURCES.knox.bbox;
+  const wkid = { spatialReference: { wkid: 4326 } };
+
+  it('rejects a layer that is demonstrably in another state', () => {
+    // The real 2026-07-26 pick: a Massachusetts street layer, chosen for Knox
+    // on title keywords alone and reported as a success.
+    const mass = { extent: { xmin: -71.1, ymin: 42.3, xmax: -71.0, ymax: 42.4, ...wkid } };
+    expect(extentMismatchReason(mass, knox)).toMatch(/does not overlap/);
+  });
+
+  it('keeps a layer that covers the county', () => {
+    const tn = { extent: { xmin: -84.1, ymin: 35.9, xmax: -83.8, ymax: 36.1, ...wkid } };
+    expect(extentMismatchReason(tn, knox)).toBeNull();
+  });
+
+  it('never rejects on an unknown extent — absence of evidence is not evidence', () => {
+    expect(extentMismatchReason({}, knox)).toBeNull();
+    // Web Mercator is not converted; an unconvertible extent must not reject.
+    const merc = { extent: { xmin: -9400000, ymin: 4300000, xmax: -9300000, ymax: 4400000, spatialReference: { wkid: 102100 } } };
+    expect(extentMismatchReason(merc, knox)).toBeNull();
+    expect(extentMismatchReason({ extent: { xmin: 1, ymin: 1, xmax: 2, ymax: 2, ...wkid } }, null)).toBeNull();
+  });
+
+  it('bboxesOverlap treats a missing box as no objection', () => {
+    expect(bboxesOverlap(null, knox)).toBe(true);
+    expect(bboxesOverlap([-84.1, 35.9, -83.8, 36.1], knox)).toBe(true);
+    expect(bboxesOverlap([-71.1, 42.3, -71.0, 42.4], knox)).toBe(false);
+  });
+});
+
+describe('pickHubDataset', () => {
+  it('requires the county name in the title or owner', () => {
+    const json = {
+      data: [
+        { id: 'a', attributes: { name: 'Parcels', owner: 'cityofsomewhere', tags: ['parcels'] } },
+        { id: 'b', attributes: { name: 'Knox County Parcels', owner: 'KGIS', url: 'https://x/FeatureServer/0', tags: ['assessor', 'ownership'] } },
+      ],
+    };
+    const ds = pickHubDataset(json, { must: ['knox'] });
+    expect(ds.id).toBe('b');
+    // A dataset with no URL is unusable however well it scores.
+    expect(pickHubDataset({ data: [json.data[0]] }, { must: ['knox'] })).toBeNull();
+  });
+
+  it('builds a hub search URL', () => {
+    expect(hubSearchUrl('knox parcels', 5)).toContain('hub.arcgis.com/api/v3/datasets?q=knox%20parcels');
   });
 });
 

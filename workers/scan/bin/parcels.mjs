@@ -56,6 +56,9 @@ import {
   STATEWIDE_PARCEL_ROOTS,
   countyFilterClauses,
   countySearchQueries,
+  extentMismatchReason,
+  hubSearchUrl,
+  pickHubDataset,
   layerFieldNames,
   NASHVILLE_CATALOG_URL,
   NASHVILLE_HUB_DATASETS,
@@ -88,6 +91,24 @@ async function fetchOk(url) {
   const res = await politeFetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} on ${url}`);
   return res;
+}
+
+/**
+ * Fetch JSON, or fail with a description of what actually came back.
+ *
+ * A dead ArcGIS root typically answers with a landing page, and feeding that
+ * to JSON.parse produced `Unexpected token '<'` five times per county —
+ * an error about our parser rather than about their server.
+ */
+async function fetchJson(url) {
+  const text = await (await fetchOk(url)).text();
+  const head = text.trimStart().slice(0, 1);
+  if (head === '<') throw new Error(`not an API — ${url} returned an HTML page`);
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`invalid JSON from ${url}: ${text.trim().slice(0, 80)}`);
+  }
 }
 
 /**
@@ -202,8 +223,11 @@ async function queryArcgisLayer(layerUrl, where) {
 }
 
 /** Try a candidate parcel layer: read fields, find the class field, query MF. */
-async function tryParcelLayer(layerUrl, extraWhere = null) {
-  const layerJson = JSON.parse(await (await fetchOk(`${layerUrl}?f=json`)).text());
+async function tryParcelLayer(layerUrl, extraWhere = null, bbox = null) {
+  const layerJson = await fetchJson(`${layerUrl}?f=json`);
+  // Geography is the one check a title cannot fake.
+  const mismatch = extentMismatchReason(layerJson, bbox);
+  if (mismatch) throw new Error(mismatch);
   const fields = layerFieldNames(layerJson);
   if (!fields.length) throw new Error('no fields');
   console.log(`  fields (${fields.length}): ${fields.join(', ')}`);
@@ -243,7 +267,7 @@ async function maricopaViaPortal() {
     // returns items from every county on ArcGIS Online.
     let orgId = null;
     try {
-      orgId = portalOrgId(JSON.parse(await (await fetchOk(PORTAL_SELF_URL(portal))).text()));
+      orgId = portalOrgId(await fetchJson(PORTAL_SELF_URL(portal)));
       console.log(`  ${portal} org id: ${orgId || 'unknown'}`);
     } catch (e) {
       console.warn(`  ${portal} portals/self: ${e.message}`);
@@ -283,7 +307,7 @@ async function maricopaViaCountyRest() {
       let services = [...cat.services];
       for (const folder of cat.folders.slice(0, 12)) {
         try {
-          const fj = JSON.parse(await (await fetchOk(`${root}/${folder}?f=json`)).text());
+          const fj = await fetchJson(`${root}/${folder}?f=json`);
           services.push(...restCatalogServices(fj, `${root}/${folder}`).services);
         } catch (e) {
           console.warn(`    folder ${folder}: ${e.message}`);
@@ -296,7 +320,7 @@ async function maricopaViaCountyRest() {
       for (const svc of ranked.slice(0, 4)) {
         try {
           console.log(`  service ${svc.url}`);
-          const svcJson = JSON.parse(await (await fetchOk(`${svc.url}?f=json`)).text());
+          const svcJson = await fetchJson(`${svc.url}?f=json`);
           const layers = (svcJson?.layers || [{ id: 0, name: 'layer 0' }]).slice(0, 5);
           for (const layer of layers) {
             try {
@@ -535,12 +559,12 @@ async function nashvilleLane() {
 // entry, not a new lane.
 
 /** Walk a REST services directory and return the first layer that yields rows. */
-async function viaRestDirectory(roots, label, extraWhere = null) {
+async function viaRestDirectory(roots, label, extraWhere = null, bbox = null) {
   let lastErr = null;
   for (const root of roots) {
     try {
       console.log(`  ${label} directory: ${root}`);
-      const rootJson = JSON.parse(await (await fetchOk(`${root}?f=json`)).text());
+      const rootJson = await fetchJson(`${root}?f=json`);
       const cat = restCatalogServices(rootJson, root);
       const services = [...cat.services];
       for (const folder of cat.folders.slice(0, 12)) {
@@ -562,7 +586,7 @@ async function viaRestDirectory(roots, label, extraWhere = null) {
           for (const layer of layers) {
             try {
               console.log(`  layer ${layer.id}: ${layer.name}`);
-              const rows = await tryParcelLayer(`${svc.url}/${layer.id}`, extraWhere);
+              const rows = await tryParcelLayer(`${svc.url}/${layer.id}`, extraWhere, bbox);
               return { rows, via: `${label}:${svc.name}/${layer.id}` };
             } catch (e) {
               console.warn(`    layer ${layer.id}: ${e.message}`);
@@ -595,13 +619,14 @@ async function viaPortals(cfg) {
     for (const q of countySearchQueries(cfg)) {
       try {
         console.log(`  portal search: ${portal} · ${q}`);
-        const search = JSON.parse(await (await fetchOk(PORTAL_SEARCH_URL(portal, q, 25, orgId))).text());
-        // Without the org filter we are searching all of ArcGIS Online, so the
-        // county-name guard is the only thing stopping another county winning.
-        const svc = pickPortalService(search, { must: orgId ? [] : cfg.must || [] });
+        const search = await fetchJson(PORTAL_SEARCH_URL(portal, q, 25, orgId));
+        // The name guard applies even when an org id was found: a portal that
+        // does not exist still answers portals/self, so the org filter can be
+        // meaningless while looking successful.
+        const svc = pickPortalService(search, { must: cfg.must || [] });
         if (!svc) throw new Error('no parcel service matched');
         console.log(`  picked "${svc.title}" by ${svc.owner}`);
-        return { rows: await tryParcelLayer(`${svc.url}/0`), via: `portal:${svc.id}` };
+        return { rows: await tryParcelLayer(`${svc.url}/0`, null, cfg.bbox), via: `portal:${svc.id}` };
       } catch (e) {
         lastErr = e;
         console.warn(`    ${e.message}`);
@@ -617,11 +642,11 @@ async function viaPublicSearch(cfg) {
   for (const q of countySearchQueries(cfg)) {
     try {
       console.log(`  public ArcGIS search: ${q}`);
-      const search = JSON.parse(await (await fetchOk(ARCGIS_SEARCH_URL(q))).text());
+      const search = await fetchJson(ARCGIS_SEARCH_URL(q));
       const svc = pickPortalService(search, { must: cfg.must || [] });
       if (!svc) throw new Error('no parcel service matched');
       console.log(`  picked "${svc.title}" by ${svc.owner}`);
-      return { rows: await tryParcelLayer(`${svc.url}/0`), via: `arcgis:${svc.id}` };
+      return { rows: await tryParcelLayer(`${svc.url}/0`, null, cfg.bbox), via: `arcgis:${svc.id}` };
     } catch (e) {
       lastErr = e;
       console.warn(`    ${e.message}`);
@@ -638,7 +663,7 @@ async function viaStatewide(cfg) {
   for (const clause of countyFilterClauses(cfg)) {
     try {
       console.log(`  statewide, county filter: ${clause}`);
-      return await viaRestDirectory(roots, `statewide-${cfg.state}`, clause);
+      return await viaRestDirectory(roots, `statewide-${cfg.state}`, clause, cfg.bbox);
     } catch (e) {
       lastErr = e;
       console.warn(`    ${e.message}`);
@@ -647,12 +672,33 @@ async function viaStatewide(cfg) {
   throw lastErr || new Error('statewide routes exhausted');
 }
 
+
+/** ArcGIS Hub — the open-data index counties actually publish to today. */
+async function viaHubSearch(cfg) {
+  let lastErr = null;
+  for (const q of countySearchQueries(cfg).map((x) => x.replace(/ type:"[^"]+"/, ''))) {
+    try {
+      console.log(`  hub search: ${q}`);
+      const json = await fetchJson(hubSearchUrl(`${q} ${cfg.state}`));
+      const ds = pickHubDataset(json, { must: cfg.must || [], bbox: cfg.bbox });
+      if (!ds) throw new Error('no parcel dataset matched');
+      console.log(`  picked "${ds.title}" by ${ds.owner}`);
+      return { rows: await tryParcelLayer(ds.url, null, cfg.bbox), via: `hub:${ds.id}` };
+    } catch (e) {
+      lastErr = e;
+      console.warn(`    ${e.message}`);
+    }
+  }
+  throw lastErr || new Error('no hub queries configured');
+}
+
 function countyLane(key) {
   const cfg = COUNTY_SOURCES[key];
   return async function lane() {
     const routes = [
       ['county REST directory', () => viaRestDirectory(cfg.rest_roots || [], 'county')],
       ['county ArcGIS Online portal', () => viaPortals(cfg)],
+      ['ArcGIS Hub open data', () => viaHubSearch(cfg)],
       ['public ArcGIS Online search', () => viaPublicSearch(cfg)],
       [`statewide ${cfg.state} service`, () => viaStatewide(cfg)],
     ];

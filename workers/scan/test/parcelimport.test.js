@@ -82,8 +82,13 @@ describe('inspectReport', () => {
     expect(blocking).toContain('BLOCKING (import aborts): mailing_address');
     const fine = inspectReport({ ...base, unresolved: ['units', 'lot_sqft'] });
     expect(fine).toContain('none of these are essential');
+    const noFilter = inspectReport({ ...base, unresolved: ['units', 'property_class'] });
+    expect(noFilter).toContain('nothing to filter multifamily on');
     expect(essentialsOk({ unresolved: ['units', 'lot_sqft'] })).toBe(true);
     expect(essentialsOk({ unresolved: ['mailing_address'] })).toBe(false);
+    // Units OR class is enough to filter multifamily; neither is not.
+    expect(essentialsOk({ unresolved: ['property_class'] })).toBe(true);
+    expect(essentialsOk({ unresolved: ['units', 'property_class'] })).toBe(false);
   });
 
   it('names the class descriptions it could not read a unit count from', () => {
