@@ -236,12 +236,30 @@ export function countySearchQueries(cfg) {
  * whole point of this check is to be certain — so an unconvertible extent
  * returns null and the caller treats it as "unknown", not "fine".
  */
+const MERC_R = 20037508.342789244;
+
+/** Web Mercator metres → WGS84 degrees. Exact, standard, no approximation. */
+export function mercatorToLngLat(x, y) {
+  const lng = (x / MERC_R) * 180;
+  const lat = (Math.atan(Math.exp((y / MERC_R) * Math.PI)) * 360) / Math.PI - 90;
+  return [lng, lat];
+}
+
 export function layerExtent4326(json) {
   const e = json?.extent || json?.fullExtent || json?.initialExtent;
   if (!e || ![e.xmin, e.ymin, e.xmax, e.ymax].every((v) => Number.isFinite(v))) return null;
   const wkid = e.spatialReference?.latestWkid ?? e.spatialReference?.wkid ?? null;
-  if (wkid !== 4326) return null;
-  return [e.xmin, e.ymin, e.xmax, e.ymax];
+  if (wkid === 4326) return [e.xmin, e.ymin, e.xmax, e.ymax];
+  // Most ArcGIS services report Web Mercator. Declining to convert it meant
+  // the geography guard silently did nothing on the majority of layers — a
+  // Nebraska layer passed a Tennessee check that way (field-verified
+  // 2026-07-26). The transform is exact, so there is no reason to abstain.
+  if (wkid === 102100 || wkid === 3857 || wkid === 900913) {
+    const [w, s2] = mercatorToLngLat(e.xmin, e.ymin);
+    const [e2, n] = mercatorToLngLat(e.xmax, e.ymax);
+    return [w, s2, e2, n];
+  }
+  return null; // genuinely unknown projection — not evidence of wrongness
 }
 
 /** Do two [w,s,e,n] boxes overlap at all? */
@@ -372,6 +390,64 @@ export function countyConfigFromMarket(row) {
     preset: 'custom',
     ...hosts,
   };
+}
+
+
+/** ArcGIS distinct-values query for one field — how a county names things. */
+export function distinctValuesUrl(layerUrl, field) {
+  const p = new URLSearchParams({
+    where: '1=1',
+    outFields: field,
+    returnDistinctValues: 'true',
+    returnGeometry: 'false',
+    f: 'json',
+  });
+  return `${layerUrl}/query?${p.toString()}`;
+}
+
+/**
+ * Given a county's actual land-use values, pick the multifamily ones.
+ *
+ * Guessing WHERE clauses failed on every county with its own vocabulary:
+ * Maricopa uses zero-padded '03xx', Knox uses '302: 2-4-FAMILY' on a STRING
+ * column (so a numeric range is an HTTP 400), and neither contains the words
+ * DUPLEX or MULTI. Reading the distinct values first and classifying them
+ * here turns an unbounded guess into a decision over ~40 known strings.
+ *
+ * Conservative by construction: a value must look POSITIVELY multifamily.
+ * "LIKE '3%'" swept 11,012 industrial parcels in Knox and "%FAMILY%" swept
+ * 48,235 including single-family — both wrong nets, and both avoided by
+ * requiring an explicit signal.
+ */
+export function classifyMultifamilyValues(values) {
+  const out = [];
+  for (const raw of values || []) {
+    if (raw == null) continue;
+    const v = String(raw);
+    const s = v.toUpperCase();
+
+    // Never multifamily, whatever else the string says.
+    if (/\bSINGLE[- ]?FAMILY\b|\bSFR\b|\bONE[- ]?FAMILY\b|\b1[- ]?FAMILY\b/.test(s)) continue;
+    if (/\bVACANT\b|\bMOBILE\b|\bCONDO\b/.test(s)) continue;
+
+    // Explicit plex words.
+    if (/\bDUPLEX|TRIPLEX|FOURPLEX|QUADPLEX|QUADRUPLEX|\bPLEX\b/.test(s)) { out.push(v); continue; }
+    // Apartment / multi-family phrasing.
+    if (/APART|MULTI[- ]?FAM|MULTIFAMILY|\bMFR\b/.test(s)) { out.push(v); continue; }
+    // "2-4-FAMILY", "5-10 FAMILY", "20+-FAMILY" — a family count of 2 or more.
+    const fam = /(\d{1,3})\s*(?:[-–+]\s*\d{0,3})?\s*[-– ]?\s*FAMILY/.exec(s);
+    if (fam && Number(fam[1]) >= 2) { out.push(v); continue; }
+    // Zero-padded assessor codes: 03xx (Maricopa) and 02xx duplex ranges.
+    if (/^0?3\d{2}\b/.test(s.trim()) && !/\bLAND\b|\bVAC/.test(s)) { out.push(v); continue; }
+  }
+  return out;
+}
+
+/** Values → a safe IN predicate. Quotes are escaped, not stripped. */
+export function inClause(field, values) {
+  if (!values?.length) return null;
+  const quoted = values.map((v) => `'${String(v).replace(/'/g, "''")}'`);
+  return `${field} IN (${quoted.join(', ')})`;
 }
 
 export const ARCGIS_SEARCH_URL = (q, num = 20) =>

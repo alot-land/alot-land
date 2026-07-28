@@ -31,6 +31,10 @@ import {
   countyConfigFromMarket,
   extentMismatchReason,
   bboxesOverlap,
+  mercatorToLngLat,
+  classifyMultifamilyValues,
+  inClause,
+  distinctValuesUrl,
   pickHubDataset,
   hubSearchUrl,
   layerFieldNames,
@@ -358,6 +362,74 @@ describe('extent guard (the false-positive killer)', () => {
     expect(bboxesOverlap(null, knox)).toBe(true);
     expect(bboxesOverlap([-84.1, 35.9, -83.8, 36.1], knox)).toBe(true);
     expect(bboxesOverlap([-71.1, 42.3, -71.0, 42.4], knox)).toBe(false);
+  });
+});
+
+describe('classifyMultifamilyValues — read the county\'s own vocabulary', () => {
+  it('handles Knox\'s prefixed labels, which defeated every guessed clause', () => {
+    // LAND_USE_C holds '302: 2-4-FAMILY' as a STRING: LIKE '03%' matched
+    // nothing, a numeric range was an HTTP 400, and DUPLEX/MULTI never
+    // appear. Field-verified 2026-07-26.
+    const knox = ['101: 1-FAMILY', '302: 2-4-FAMILY', '303: 5-10-FAMILY', '304: 20+-FAMILY',
+      '401: INDUSTRIAL', '000: VACANT LAND'];
+    expect(classifyMultifamilyValues(knox)).toEqual(['302: 2-4-FAMILY', '303: 5-10-FAMILY', '304: 20+-FAMILY']);
+  });
+
+  it('does not sweep in single-family or unrelated classes', () => {
+    // The two wrong nets found in Knox: LIKE '3%' pulled 11,012 industrial
+    // rows, and %FAMILY% pulled 48,235 including 1-FAMILY.
+    expect(classifyMultifamilyValues(['101: 1-FAMILY'])).toEqual([]);
+    expect(classifyMultifamilyValues(['SINGLE FAMILY', 'ONE FAMILY', 'SFR'])).toEqual([]);
+    expect(classifyMultifamilyValues(['401: INDUSTRIAL', '350: WAREHOUSE LAND', 'VACANT'])).toEqual([]);
+    expect(classifyMultifamilyValues(['CONDOMINIUM', 'MOBILE HOME'])).toEqual([]);
+  });
+
+  it('still handles the vocabularies that already worked', () => {
+    expect(classifyMultifamilyValues(['0301', '0302', '0131', '1101'])).toEqual(['0301', '0302']);
+    expect(classifyMultifamilyValues(['DUPLEX', 'TRIPLEX', 'APARTMENT 5-20 UNITS', 'SINGLE FAMILY']))
+      .toEqual(['DUPLEX', 'TRIPLEX', 'APARTMENT 5-20 UNITS']);
+  });
+
+  it('copes with junk input', () => {
+    expect(classifyMultifamilyValues([null, undefined, ''])).toEqual([]);
+    expect(classifyMultifamilyValues(null)).toEqual([]);
+  });
+
+  it('builds an IN predicate that escapes quotes rather than dropping them', () => {
+    expect(inClause('PUC', ['0301', "O'BRIEN"])).toBe("PUC IN ('0301', 'O''BRIEN')");
+    expect(inClause('PUC', [])).toBeNull();
+  });
+
+  it('asks ArcGIS for distinct values', () => {
+    const url = distinctValuesUrl('https://x/FeatureServer/0', 'LAND_USE_C');
+    expect(url).toContain('returnDistinctValues=true');
+    expect(url).toContain('outFields=LAND_USE_C');
+  });
+});
+
+describe('Web Mercator extents', () => {
+  it('converts, rather than abstaining — abstaining disabled the guard', () => {
+    // Most ArcGIS services report 102100. Returning null for those meant the
+    // geography check silently passed a Nebraska layer for a Tennessee query.
+    // Cross-checked against the standard inverse:
+    //   lat = degrees(2*atan(exp(y/6378137)) - pi/2)
+    const [lng, lat] = mercatorToLngLat(-9370000, 4300000);
+    expect(lng).toBeCloseTo(-84.1721, 3);
+    expect(lat).toBeCloseTo(35.9955, 3);
+  });
+
+  it('rejects a Mercator layer that is in the wrong state', () => {
+    const nebraska = {
+      extent: { xmin: -10700000, ymin: 4900000, xmax: -10600000, ymax: 5000000, spatialReference: { wkid: 102100 } },
+    };
+    expect(extentMismatchReason(nebraska, COUNTY_SOURCES.knox.bbox)).toMatch(/does not overlap/);
+  });
+
+  it('keeps a Mercator layer that covers the county', () => {
+    const knoxMerc = {
+      extent: { xmin: -9385000, ymin: 4275000, xmax: -9310000, ymax: 4330000, spatialReference: { wkid: 3857 } },
+    };
+    expect(extentMismatchReason(knoxMerc, COUNTY_SOURCES.knox.bbox)).toBeNull();
   });
 });
 

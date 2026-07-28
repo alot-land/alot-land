@@ -26,6 +26,9 @@ import {
   countyFilterClauses,
   countySearchQueries,
   extentMismatchReason,
+  distinctValuesUrl,
+  classifyMultifamilyValues,
+  inClause,
   hubSearchUrl,
   pickHubDataset,
   layerFieldNames,
@@ -72,25 +75,58 @@ async function queryArcgisLayer(layerUrl, where) {
   return rows;
 }
 export /** Try a candidate parcel layer: read fields, find the class field, query MF. */
-async function tryParcelLayer(layerUrl, extraWhere = null, bbox = null) {
+async function tryParcelLayer(layerUrl, extraWhere = null, bbox = null, seen = null) {
+  // Routes converge on the same services, so without this the identical
+  // dead-end query sequence ran four times for one county — wasted requests
+  // against a public endpoint we are meant to be polite to.
+  if (seen) {
+    if (seen.has(layerUrl)) throw new Error('already tried this layer in this run');
+    seen.add(layerUrl);
+  }
   const layerJson = await fetchJson(`${layerUrl}?f=json`);
   // Geography is the one check a title cannot fake.
   const mismatch = extentMismatchReason(layerJson, bbox);
   if (mismatch) throw new Error(mismatch);
   const fields = layerFieldNames(layerJson);
   if (!fields.length) throw new Error('no fields');
-  console.log(`  fields (${fields.length}): ${fields.join(', ')}`);
-  // A layer usually carries several use/class columns and only one holds the
-  // multifamily codes, so sweep them best-first. Each column may be text or
-  // numeric, or hold descriptions rather than codes — try every shape.
   const candidates = rankClassFields(fields);
   if (!candidates.length) throw new Error('no PUC/land-use field');
   console.log(`  class-field candidates: ${candidates.join(' · ')}`);
+
   const attempts = [];
   for (const classField of candidates) {
+    // Ask the county what its own vocabulary IS rather than guessing a WHERE
+    // clause. Knox stores '302: 2-4-FAMILY' in a STRING column, so a numeric
+    // range is an HTTP 400, LIKE '03%' matches nothing, and the words DUPLEX
+    // and MULTI never appear. Reading the distinct values turns an unbounded
+    // guess into a choice over a few dozen known strings.
+    try {
+      const dv = await fetchJson(distinctValuesUrl(layerUrl, classField));
+      const values = featuresToRows(dv).map((r) => r[classField]).filter((v) => v != null);
+      if (values.length) {
+        const mf = classifyMultifamilyValues(values);
+        console.log(`  ${classField}: ${values.length} distinct values, ${mf.length} multifamily`);
+        if (mf.length) {
+          const base = inClause(classField, mf);
+          const where = extraWhere ? `(${base}) AND (${extraWhere})` : base;
+          console.log(`  matched: ${mf.slice(0, 6).join(' | ')}${mf.length > 6 ? ' …' : ''}`);
+          const rows = await queryArcgisLayer(layerUrl, where);
+          if (rows.length) {
+            console.log(`  ✓ ${rows.length} rows via ${classField}`);
+            return rows;
+          }
+          attempts.push(`${classField} IN (${mf.length} values) → 0 rows`);
+        } else {
+          attempts.push(`${classField}: nothing multifamily among ${values.slice(0, 8).join(' | ')}`);
+        }
+        continue;
+      }
+    } catch (e) {
+      attempts.push(`${classField} distinct-values: ${e.message}`);
+    }
+
+    // Blind patterns, for layers that refuse a distinct-values query.
     for (const mfWhere of multifamilyWhereClauses(classField)) {
-      // A statewide layer needs the county filter ANDed on, or we would pull
-      // every multifamily parcel in the state.
       const where = extraWhere ? `(${mfWhere}) AND (${extraWhere})` : mfWhere;
       try {
         console.log(`  querying where ${where}`);
@@ -108,7 +144,7 @@ async function tryParcelLayer(layerUrl, extraWhere = null, bbox = null) {
   throw new Error(`no multifamily rows on any of ${candidates.join(', ')}: ${attempts.join(' · ')}`);
 }
 export /** Walk a REST services directory and return the first layer that yields rows. */
-async function viaRestDirectory(roots, label, extraWhere = null, bbox = null) {
+async function viaRestDirectory(roots, label, extraWhere = null, bbox = null, seen = null) {
   let lastErr = null;
   for (const root of roots) {
     try {
@@ -135,7 +171,7 @@ async function viaRestDirectory(roots, label, extraWhere = null, bbox = null) {
           for (const layer of layers) {
             try {
               console.log(`  layer ${layer.id}: ${layer.name}`);
-              const rows = await tryParcelLayer(`${svc.url}/${layer.id}`, extraWhere, bbox);
+              const rows = await tryParcelLayer(`${svc.url}/${layer.id}`, extraWhere, bbox, seen);
               return { rows, via: `${label}:${svc.name}/${layer.id}` };
             } catch (e) {
               console.warn(`    layer ${layer.id}: ${e.message}`);
@@ -154,7 +190,7 @@ async function viaRestDirectory(roots, label, extraWhere = null, bbox = null) {
   throw lastErr || new Error('no roots configured');
 }
 export /** The county's own ArcGIS Online portals, org-scoped. */
-async function viaPortals(cfg) {
+async function viaPortals(cfg, seen = null) {
   let lastErr = null;
   for (const portal of cfg.portals || []) {
     let orgId = null;
@@ -174,7 +210,7 @@ async function viaPortals(cfg) {
         const svc = pickPortalService(search, { must: cfg.must || [] });
         if (!svc) throw new Error('no parcel service matched');
         console.log(`  picked "${svc.title}" by ${svc.owner}`);
-        return { rows: await tryParcelLayer(`${svc.url}/0`, null, cfg.bbox), via: `portal:${svc.id}` };
+        return { rows: await tryParcelLayer(`${svc.url}/0`, null, cfg.bbox, seen), via: `portal:${svc.id}` };
       } catch (e) {
         lastErr = e;
         console.warn(`    ${e.message}`);
@@ -184,7 +220,7 @@ async function viaPortals(cfg) {
   throw lastErr || new Error('no portals configured');
 }
 export /** ArcGIS Hub — the open-data index counties actually publish to today. */
-async function viaHubSearch(cfg) {
+async function viaHubSearch(cfg, seen = null) {
   let lastErr = null;
   for (const q of countySearchQueries(cfg).map((x) => x.replace(/ type:"[^"]+"/, ''))) {
     try {
@@ -193,7 +229,7 @@ async function viaHubSearch(cfg) {
       const ds = pickHubDataset(json, { must: cfg.must || [], bbox: cfg.bbox });
       if (!ds) throw new Error('no parcel dataset matched');
       console.log(`  picked "${ds.title}" by ${ds.owner}`);
-      return { rows: await tryParcelLayer(ds.url, null, cfg.bbox), via: `hub:${ds.id}` };
+      return { rows: await tryParcelLayer(ds.url, null, cfg.bbox, seen), via: `hub:${ds.id}` };
     } catch (e) {
       lastErr = e;
       console.warn(`    ${e.message}`);
@@ -202,7 +238,7 @@ async function viaHubSearch(cfg) {
   throw lastErr || new Error('no hub queries configured');
 }
 export /** Public ArcGIS Online search — last resort, name-guarded. */
-async function viaPublicSearch(cfg) {
+async function viaPublicSearch(cfg, seen = null) {
   let lastErr = null;
   for (const q of countySearchQueries(cfg)) {
     try {
@@ -211,7 +247,7 @@ async function viaPublicSearch(cfg) {
       const svc = pickPortalService(search, { must: cfg.must || [] });
       if (!svc) throw new Error('no parcel service matched');
       console.log(`  picked "${svc.title}" by ${svc.owner}`);
-      return { rows: await tryParcelLayer(`${svc.url}/0`, null, cfg.bbox), via: `arcgis:${svc.id}` };
+      return { rows: await tryParcelLayer(`${svc.url}/0`, null, cfg.bbox, seen), via: `arcgis:${svc.id}` };
     } catch (e) {
       lastErr = e;
       console.warn(`    ${e.message}`);
@@ -220,14 +256,14 @@ async function viaPublicSearch(cfg) {
   throw lastErr || new Error('no queries configured');
 }
 export /** A statewide parcel layer, restricted to this county. */
-async function viaStatewide(cfg) {
+async function viaStatewide(cfg, seen = null) {
   const roots = STATEWIDE_PARCEL_ROOTS[cfg.state] || [];
   if (!roots.length) throw new Error(`no statewide roots for ${cfg.state}`);
   let lastErr = null;
   for (const clause of countyFilterClauses(cfg)) {
     try {
       console.log(`  statewide, county filter: ${clause}`);
-      return await viaRestDirectory(roots, `statewide-${cfg.state}`, clause, cfg.bbox);
+      return await viaRestDirectory(roots, `statewide-${cfg.state}`, clause, cfg.bbox, seen);
     } catch (e) {
       lastErr = e;
       console.warn(`    ${e.message}`);
@@ -244,12 +280,15 @@ async function viaStatewide(cfg) {
  * tells you whether a county is worth another attempt or needs buying.
  */
 export async function runCountyLane(cfg, { discoverOnly = false, log = console } = {}) {
+  // Shared across routes: they converge on the same services, and re-probing
+  // one is pure waste against an endpoint we are trying to be polite to.
+  const seen = new Set();
   const routes = [
-    ['county REST directory', () => viaRestDirectory(cfg.rest_roots || [], 'county', null, cfg.bbox)],
-    ['county ArcGIS Online portal', () => viaPortals(cfg)],
-    ['ArcGIS Hub open data', () => viaHubSearch(cfg)],
-    ['public ArcGIS Online search', () => viaPublicSearch(cfg)],
-    [`statewide ${cfg.state} service`, () => viaStatewide(cfg)],
+    ['county REST directory', () => viaRestDirectory(cfg.rest_roots || [], 'county', null, cfg.bbox, seen)],
+    ['county ArcGIS Online portal', () => viaPortals(cfg, seen)],
+    ['ArcGIS Hub open data', () => viaHubSearch(cfg, seen)],
+    ['public ArcGIS Online search', () => viaPublicSearch(cfg, seen)],
+    [`statewide ${cfg.state} service`, () => viaStatewide(cfg, seen)],
   ];
   let got = null;
   const failures = [];
