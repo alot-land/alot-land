@@ -26,6 +26,9 @@ import {
   COUNTY_SOURCES,
   countyFilterClauses,
   countySearchQueries,
+  polyToBbox,
+  candidateHosts,
+  countyConfigFromMarket,
   extentMismatchReason,
   bboxesOverlap,
   pickHubDataset,
@@ -285,6 +288,45 @@ describe('county filter + search terms', () => {
     expect(countySearchQueries(COUNTY_SOURCES.anderson)[0]).toContain('Anderson parcels');
     // Falls back to an unqualified search once the specific ones are spent.
     expect(countySearchQueries(COUNTY_SOURCES.hamilton).at(-1)).toBe('parcels type:"Feature Service"');
+  });
+});
+
+describe('auto-config from a targeted county', () => {
+  const market = {
+    geo_id: '47093',
+    state: 'TN',
+    county: 'Knox County',
+    name: 'Knox County, TN',
+    poly: '-84.29 35.78,-83.65 35.78,-83.65 36.18,-84.29 36.18,-84.29 35.78',
+  };
+
+  it('reads the bounding box back out of the scan polygon', () => {
+    // A county added on the Markets page already carries its bbox, so the
+    // geography guard costs nothing extra for auto-discovered counties.
+    expect(polyToBbox(market.poly)).toEqual([-84.29, 35.78, -83.65, 36.18]);
+    expect(polyToBbox('')).toBeNull();
+    expect(polyToBbox('garbage')).toBeNull();
+  });
+
+  it('builds a complete lane config with no hand configuration', () => {
+    const cfg = countyConfigFromMarket(market);
+    expect(cfg.fips).toBe('47093');
+    expect(cfg.state).toBe('TN');
+    expect(cfg.bbox).toEqual([-84.29, 35.78, -83.65, 36.18]);
+    // The name guard drops the word "County" so it matches how layers are named.
+    expect(cfg.must).toEqual(['knox']);
+    expect(cfg.rest_roots.length).toBeGreaterThan(0);
+    expect(cfg.portals.length).toBeGreaterThan(0);
+  });
+
+  it('generates plausible hosts from the county name alone', () => {
+    const h = candidateHosts('Knox County', 'TN');
+    expect(h.rest_roots).toContain('https://gis.knoxcountytn.gov/arcgis/rest/services');
+    expect(h.portals).toContain('https://knoxcounty.maps.arcgis.com');
+    // Two-word counties and punctuation collapse to a single slug.
+    expect(candidateHosts("St. Joseph County", 'IN').portals[0]).toBe('https://stjosephcounty.maps.arcgis.com');
+    // Nothing to guess from is an empty list, not a broken URL.
+    expect(candidateHosts('', 'TN').rest_roots).toEqual([]);
   });
 });
 

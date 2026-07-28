@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOrg } from '../lib/org';
-import { listMarketStats, listTargetGeoIds, addMarketTarget } from '../lib/queries';
+import { listMarketStats, listTargetGeoIds, addMarketTarget, listParcelCoverage } from '../lib/queries';
 import { usd, pct, num } from '../lib/format';
 import { Tip } from '../components/fields';
 import { lazyReload } from '../lib/lazyReload';
@@ -22,6 +22,43 @@ const PROFILES = [
 
 const fmtPct = (v, dp = 1) => (v == null ? '—' : pct(v, dp));
 
+/**
+ * A target's off-market data status. "target" alone said nothing about
+ * whether the county's parcels were reachable — which is the thing that
+ * decides whether you can mail there.
+ */
+function CoveragePill({ cov }) {
+  if (!cov) {
+    return (
+      <span
+        className="pill bg-blue/15 text-blue ml-2"
+        title="Targeted. Listings are already being scanned; the nightly job will try to pull this county's parcels for off-market leads."
+      >
+        target · queued
+      </span>
+    );
+  }
+  if (cov.status === 'ok') {
+    return (
+      <span
+        className="pill bg-green/15 text-green-deep ml-2"
+        title={`${cov.parcels.toLocaleString()} parcels imported${cov.attempted_at ? ` on ${new Date(cov.attempted_at).toLocaleDateString()}` : ''}. Off-market leads are available for this county.`}
+      >
+        target · {cov.parcels.toLocaleString()} parcels
+      </span>
+    );
+  }
+  const label = cov.status === 'unsupported' ? 'no public data' : 'no parcels yet';
+  return (
+    <span
+      className="pill bg-gold/20 text-warn ml-2"
+      title={`Listings still scan normally — only OFF-MARKET needs county parcels, and this county has not given them up.\n\nAttempt ${cov.attempts}: ${cov.reason || 'no reason recorded'}\n\nOptions: email the assessor for a bulk file, or buy this county.`}
+    >
+      target · {label}
+    </span>
+  );
+}
+
 export default function Markets() {
   const { org } = useOrg();
   const qc = useQueryClient();
@@ -39,6 +76,14 @@ export default function Markets() {
     enabled: !!org,
     staleTime: 10 * 60 * 1000,
   });
+  // Which targets actually have off-market parcel data behind them. Written
+  // by the droplet's queue job; the failure reasons are the useful part.
+  const coverage = useQuery({
+    queryKey: ['parcel-coverage', org?.id],
+    queryFn: () => listParcelCoverage(org.id),
+    enabled: !!org,
+  });
+
   const targets = useQuery({
     queryKey: ['target-geoids', org?.id],
     queryFn: () => listTargetGeoIds(org.id),
@@ -262,7 +307,9 @@ export default function Markets() {
                     <td className="td text-right text-muted">{i + 1}</td>
                     <td className="td font-medium">
                       {m.name}, {m.state}
-                      {targets.data?.has(m.geo_id) && <span className="pill bg-green/15 text-green-deep ml-2">target</span>}
+                      {targets.data?.has(m.geo_id) && (
+                        <CoveragePill cov={coverage.data?.get(m.geo_id)} />
+                      )}
                     </td>
                     <td className="td text-right font-semibold tabular-nums">{Math.round(m.score)}</td>
                     <td className="td text-right tabular-nums">{fmtPct(m.gross_yield)}</td>

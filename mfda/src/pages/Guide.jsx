@@ -262,6 +262,10 @@ const MANUAL = [
         b: 'County assessor records for multifamily parcels — every duplex-to-apartment building the county knows about, with the owner\'s real name and mailing address. Unlike Redfin data, these have REAL unit counts. Filter down to a target list and export it for a direct-mail campaign.',
       },
       {
+        t: 'Targeting a county gets you its off-market data',
+        b: 'Clicking "+ Target" on the Markets page is the only step. From then on the county does two things: its listings are scanned nightly (which always works — that is Redfin, not the county), and a nightly job tries to pull its assessor parcels for off-market leads. The pill next to a target says which state it is in: "queued" means not attempted yet, "12,278 parcels" means off-market leads are live for that county, and "no parcels yet" in amber means every route failed — hover it for the reason and the attempt count. Expect some of those. Counties differ enormously in what they publish: some have a clean ArcGIS service, some sit behind a vendor portal, some publish nothing machine-readable at all. The recorded reason is what turns a failure into a decision — retry later, email the assessor for a bulk file (usually free, and they have a process for it), or buy that one county. Nothing about a failed county affects its on-market scanning.',
+      },
+      {
         t: 'Getting parcels in — it\'s automatic',
         b: 'Nothing to do for the built-in lanes: the droplet auto-discovers, downloads, and imports county data (Nashville/Davidson live; Maricopa in progress) whenever the parcels table is empty or more than ~30 days old — no files to handle. For ANY other county, download its assessor file and run the manual importer with --inspect first (it writes nothing, just shows how the columns mapped), then without it to import; ask in the build chat to promote a county you use often into an automatic lane.',
       },

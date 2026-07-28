@@ -44,6 +44,29 @@ npm run scan -- --market phoenix --status sold --days 730
 npm run scan -- --market phoenix --status active --dry-run   # no DB writes
 ```
 
+### Off-market parcels
+
+```bash
+node bin/parcelqueue.mjs --dry-run       # what it would attempt, no writes
+node bin/parcelqueue.mjs                 # work 3 targeted counties
+node bin/parcelqueue.mjs --limit 10
+node bin/parcelqueue.mjs --county 47093  # force one
+node bin/parcelqueue.mjs --retry-failed  # re-attempt past failures
+```
+
+Adding a county on the **Markets** page is the only action needed. This job
+finds targeted counties with no parcels, tries every discovery route (county
+REST directory → county ArcGIS portal → ArcGIS Hub → public ArcGIS search →
+statewide), and records the outcome in `parcel_coverage`, which the Markets
+page shows against each target.
+
+Deliberately incremental — a few counties per night behind the same 1.5s
+throttle as every other lane. Counties differ wildly in what they publish, so
+**expect failures**: the recorded reason is what tells you whether to retry,
+email the assessor for a bulk file, or buy that one county.
+
+Nightly cron: `node bin/parcelqueue.mjs --limit 3`
+
 ### Rent data
 
 ```bash

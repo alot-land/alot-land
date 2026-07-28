@@ -615,6 +615,24 @@ export async function listMarketStats(orgId) {
   return rows;
 }
 
+
+/**
+ * Parcel data status for every targeted county.
+ *
+ * Written by the droplet's queue job, read here so the Markets page can show
+ * which targets actually have off-market data behind them — and, when one
+ * does not, why. The reason is the useful part: it says whether to retry,
+ * email the assessor, or give up on that county.
+ */
+export async function listParcelCoverage(orgId) {
+  const { data, error } = await supabase
+    .from('parcel_coverage')
+    .select('county_fips, state, county_name, status, parcels, reason, attempts, attempted_at')
+    .eq('org_id', orgId);
+  if (error) throw error;
+  return new Map((data || []).map((r) => [r.county_fips, r]));
+}
+
 // Counties already added as scan targets (marks rows in the finder).
 export async function listTargetGeoIds(orgId) {
   const { data, error } = await supabase

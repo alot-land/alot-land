@@ -304,6 +304,76 @@ export function pickHubDataset(json, { must = [], bbox = null } = {}) {
   return best && best.score >= 4 ? best : null;
 }
 
+
+/**
+ * markets.poly ("lng lat,lng lat,…" ring) → [west, south, east, north].
+ *
+ * A county added from the Markets page already carries a bounding box — the
+ * scan polygon — so every auto-discovered county gets the same geography
+ * guard as a hand-configured one, for free.
+ */
+export function polyToBbox(poly) {
+  const pts = String(poly || '')
+    .split(',')
+    .map((p) => p.trim().split(/\s+/).map(Number))
+    .filter((p) => p.length === 2 && p.every(Number.isFinite));
+  if (pts.length < 3) return null;
+  const xs = pts.map((p) => p[0]);
+  const ys = pts.map((p) => p[1]);
+  return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+}
+
+/**
+ * Guess where a county keeps its GIS from its name alone.
+ *
+ * These are patterns, not knowledge — the point is that a county the operator
+ * just clicked needs NO hand configuration to be attempted. A wrong host
+ * costs one failed request and a printed line; the discovery routes that
+ * follow (Hub, public search) do not depend on guessing right at all.
+ */
+export function candidateHosts(countyName, state) {
+  const slug = String(countyName || '').toLowerCase().replace(/\s*county\s*$/, '').replace(/[^a-z]/g, '');
+  const st = String(state || '').toLowerCase();
+  if (!slug) return { rest_roots: [], portals: [] };
+  const rest = [
+    `gis.${slug}county${st}.gov`,
+    `gis.${slug}county.gov`,
+    `gis.${slug}county.org`,
+    `maps.${slug}county${st}.gov`,
+    `gis.${slug}.gov`,
+  ];
+  return {
+    rest_roots: rest.map((h) => `https://${h}/arcgis/rest/services`),
+    portals: [
+      `https://${slug}county.maps.arcgis.com`,
+      `https://${slug}.maps.arcgis.com`,
+      `https://${slug}county${st}.maps.arcgis.com`,
+    ],
+  };
+}
+
+/**
+ * A markets row (as added from the Markets page) → a county lane config.
+ *
+ * This is what makes "click a county, get its data" possible: everything the
+ * lane needs — fips, state, name, bounding box, name guard — is already in
+ * the row the operator created by clicking Add to targets.
+ */
+export function countyConfigFromMarket(row) {
+  const county = String(row.county || row.name || '').replace(/,.*$/, '').trim();
+  const bare = county.replace(/\s*county\s*$/i, '').trim();
+  const hosts = candidateHosts(bare, row.state);
+  return {
+    fips: row.geo_id,
+    state: row.state,
+    label: `${county || row.name} ${row.state}`.trim(),
+    bbox: polyToBbox(row.poly),
+    must: [bare.toLowerCase()].filter(Boolean),
+    preset: 'custom',
+    ...hosts,
+  };
+}
+
 export const ARCGIS_SEARCH_URL = (q, num = 20) =>
   `https://www.arcgis.com/sharing/rest/search?f=json&num=${num}&q=${encodeURIComponent(q)}`;
 
