@@ -23,6 +23,9 @@ import {
   MARICOPA_PORTALS,
   multifamilyWhereClauses,
   rankClassFields,
+  COUNTY_SOURCES,
+  countyFilterClauses,
+  countySearchQueries,
   layerFieldNames,
   featuresToRows,
   rowsToCsv,
@@ -241,6 +244,43 @@ describe('pickPortalService (county-owned ArcGIS portal search)', () => {
     );
     expect(portalOrgId({ id: 'ABC123', name: 'Maricopa County' })).toBe('ABC123');
     expect(portalOrgId({})).toBeNull();
+  });
+});
+
+describe('COUNTY_SOURCES config', () => {
+  it('carries a valid fips, state and preset for every county', () => {
+    for (const [key, cfg] of Object.entries(COUNTY_SOURCES)) {
+      expect(cfg.fips, `${key} fips`).toMatch(/^\d{5}$/);
+      expect(cfg.state, `${key} state`).toMatch(/^[A-Z]{2}$/);
+      expect(cfg.preset, `${key} preset`).toBeTruthy();
+      // Every route needs somewhere to look and a name guard for the public
+      // search, or another county's parcels can win it.
+      expect((cfg.rest_roots || []).length + (cfg.portals || []).length).toBeGreaterThan(0);
+      expect((cfg.must || []).length, `${key} must`).toBeGreaterThan(0);
+    }
+  });
+
+  it('has the three TN counties with the right fips', () => {
+    expect(COUNTY_SOURCES.knox.fips).toBe('47093');
+    expect(COUNTY_SOURCES.anderson.fips).toBe('47001');
+    expect(COUNTY_SOURCES.hamilton.fips).toBe('47065');
+  });
+});
+
+describe('county filter + search terms', () => {
+  it('filters a statewide layer by fips and by name', () => {
+    const clauses = countyFilterClauses(COUNTY_SOURCES.hamilton);
+    expect(clauses).toContain("COUNTY_FIPS = '47065'");
+    // Some state layers store the 3-digit county code, not the full fips.
+    expect(clauses).toContain("CNTYFIPS = '065'");
+    expect(clauses.some((c) => c.includes("'HAMILTON'"))).toBe(true);
+  });
+
+  it('derives the county name from the label for search terms', () => {
+    expect(countySearchQueries(COUNTY_SOURCES.knox)[0]).toBe('Knox parcels type:"Feature Service"');
+    expect(countySearchQueries(COUNTY_SOURCES.anderson)[0]).toContain('Anderson parcels');
+    // Falls back to an unqualified search once the specific ones are spent.
+    expect(countySearchQueries(COUNTY_SOURCES.hamilton).at(-1)).toBe('parcels type:"Feature Service"');
   });
 });
 

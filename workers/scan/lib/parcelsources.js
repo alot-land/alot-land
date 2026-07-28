@@ -59,6 +59,107 @@ export function rankParcelServices(services) {
     .sort((a, b) => b.score - a.score);
 }
 
+/**
+ * County parcel sources, county-agnostic.
+ *
+ * Every county publishes the same thing behind a different door, so rather
+ * than a bespoke lane each, a config drives the SAME discovery chain that was
+ * hardened against Maricopa: the county's own ArcGIS REST directory, then its
+ * ArcGIS Online portal, then the public ArcGIS search, then a statewide
+ * fallback service filtered to the county.
+ *
+ * `rest_roots` and `portals` are CANDIDATES, not facts — they are guesses at
+ * where a county keeps its GIS, and the runner reports which one answered.
+ * Add more freely; a dead root costs one failed request and a printed line.
+ *
+ * `statewide` is the strongest card for small counties that run no GIS of
+ * their own: one state service holding every parcel, filtered by county.
+ */
+export const COUNTY_SOURCES = {
+  knox: {
+    fips: '47093',
+    state: 'TN',
+    label: 'Knox County / Knoxville TN',
+    // KGIS is the long-running Knoxville/Knox County GIS partnership.
+    rest_roots: [
+      'https://www.kgis.org/arcgis/rest/services',
+      'https://arcgis.kgis.org/arcgis/rest/services',
+      'https://gis.knoxcounty.org/arcgis/rest/services',
+    ],
+    portals: ['https://kgis.maps.arcgis.com', 'https://knoxcounty.maps.arcgis.com'],
+    must: ['knox'],
+    preset: 'tn',
+  },
+  anderson: {
+    fips: '47001',
+    state: 'TN',
+    label: 'Anderson County / Oak Ridge TN',
+    rest_roots: [
+      'https://gis.andersoncountytn.gov/arcgis/rest/services',
+      'https://maps.andersoncountytn.gov/arcgis/rest/services',
+    ],
+    portals: ['https://andersoncountytn.maps.arcgis.com'],
+    must: ['anderson'],
+    preset: 'tn',
+  },
+  hamilton: {
+    fips: '47065',
+    state: 'TN',
+    label: 'Hamilton County / Chattanooga TN',
+    rest_roots: [
+      'https://www.gis.hamiltontn.gov/arcgis/rest/services',
+      'https://gis.hamiltontn.gov/arcgis/rest/services',
+      'https://maps.chattanooga.gov/arcgis/rest/services',
+    ],
+    portals: ['https://hamiltontn.maps.arcgis.com', 'https://chattanooga.maps.arcgis.com'],
+    must: ['hamilton', 'chattanooga'],
+    preset: 'tn',
+  },
+};
+
+/**
+ * Statewide parcel services, tried when no county-run service answers. A
+ * small county often has no GIS of its own but every parcel still sits in the
+ * state layer, so this is the difference between "no lane possible" and "one
+ * config line".
+ */
+export const STATEWIDE_PARCEL_ROOTS = {
+  TN: [
+    'https://tnmap.tn.gov/arcgis/rest/services',
+    'https://www.tngis.org/arcgis/rest/services',
+  ],
+};
+
+/** Field names a statewide layer might use for the county, best first. */
+export const COUNTY_FILTER_FIELDS = ['COUNTY_FIPS', 'CNTYFIPS', 'FIPS', 'CO_FIPS', 'COUNTY', 'CNTY_NAME', 'COUNTYNAME'];
+
+/**
+ * WHERE clauses that restrict a statewide layer to one county — by fips
+ * (5-digit and 3-digit forms) and by name, since which one a state uses is
+ * not knowable in advance.
+ */
+export function countyFilterClauses(cfg) {
+  const county = cfg.label.split(/ County| \//)[0].trim();
+  const fips3 = String(cfg.fips).slice(-3);
+  return [
+    `COUNTY_FIPS = '${cfg.fips}'`,
+    `FIPS = '${cfg.fips}'`,
+    `CNTYFIPS = '${fips3}'`,
+    `UPPER(COUNTY) = '${county.toUpperCase()}'`,
+    `UPPER(CNTY_NAME) = '${county.toUpperCase()}'`,
+  ];
+}
+
+/** Portal/AGO search terms for a county, most specific first. */
+export function countySearchQueries(cfg) {
+  const county = cfg.label.split(/ County| \//)[0].trim();
+  return [
+    `${county} parcels type:"Feature Service"`,
+    `${county} county parcels assessor type:"Feature Service"`,
+    'parcels type:"Feature Service"',
+  ];
+}
+
 export const ARCGIS_SEARCH_URL = (q, num = 20) =>
   `https://www.arcgis.com/sharing/rest/search?f=json&num=${num}&q=${encodeURIComponent(q)}`;
 

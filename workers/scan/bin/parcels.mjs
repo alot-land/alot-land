@@ -8,6 +8,8 @@
  *   node bin/parcels.mjs                         # all lanes
  *   node bin/parcels.mjs --source maricopa
  *   node bin/parcels.mjs --source nashville
+ *   node bin/parcels.mjs --source knox           # any COUNTY_SOURCES key
+ *   node bin/parcels.mjs --source knox,hamilton  # several at once
  *   node bin/parcels.mjs --discover-only         # print found links, no writes
  *
  * Lanes:
@@ -15,6 +17,11 @@
  *              backfill), links discovered from the Data Downloads page.
  *   nashville  Davidson Co TN via data.nashville.gov (Socrata), dataset
  *              chosen from the catalog API at runtime.
+ *   knox / anderson / hamilton (and any COUNTY_SOURCES key)
+ *              Config-driven: the county's own ArcGIS REST directory, then
+ *              its ArcGIS Online portal, then the public ArcGIS search, then
+ *              a statewide service filtered to the county. Adding a county is
+ *              a config entry, not a new lane.
  *
  * Design: same citizenship rules as the Redfin lane (real UA, 1.5s global
  * throttle via politeFetch, stop on challenge). Every lane writes a
@@ -45,6 +52,10 @@ import {
   pickPortalService,
   multifamilyWhereClauses,
   rankClassFields,
+  COUNTY_SOURCES,
+  STATEWIDE_PARCEL_ROOTS,
+  countyFilterClauses,
+  countySearchQueries,
   layerFieldNames,
   NASHVILLE_CATALOG_URL,
   NASHVILLE_HUB_DATASETS,
@@ -191,7 +202,7 @@ async function queryArcgisLayer(layerUrl, where) {
 }
 
 /** Try a candidate parcel layer: read fields, find the class field, query MF. */
-async function tryParcelLayer(layerUrl) {
+async function tryParcelLayer(layerUrl, extraWhere = null) {
   const layerJson = JSON.parse(await (await fetchOk(`${layerUrl}?f=json`)).text());
   const fields = layerFieldNames(layerJson);
   if (!fields.length) throw new Error('no fields');
@@ -204,7 +215,10 @@ async function tryParcelLayer(layerUrl) {
   console.log(`  class-field candidates: ${candidates.join(' · ')}`);
   const attempts = [];
   for (const classField of candidates) {
-    for (const where of multifamilyWhereClauses(classField)) {
+    for (const mfWhere of multifamilyWhereClauses(classField)) {
+      // A statewide layer needs the county filter ANDed on, or we would pull
+      // every multifamily parcel in the state.
+      const where = extraWhere ? `(${mfWhere}) AND (${extraWhere})` : mfWhere;
       try {
         console.log(`  querying where ${where}`);
         const rows = await queryArcgisLayer(layerUrl, where);
@@ -514,8 +528,170 @@ async function nashvilleLane() {
 }
 
 // ---- Orchestration --------------------------------------------------------
-const LANES = { maricopa: maricopaLane, nashville: nashvilleLane };
-const toRun = source === 'all' ? Object.keys(LANES) : [source];
+
+// ---- Generic county lane --------------------------------------------------
+// One implementation for every county in COUNTY_SOURCES, running the same
+// route chain that was hardened against Maricopa. Adding a county is a config
+// entry, not a new lane.
+
+/** Walk a REST services directory and return the first layer that yields rows. */
+async function viaRestDirectory(roots, label, extraWhere = null) {
+  let lastErr = null;
+  for (const root of roots) {
+    try {
+      console.log(`  ${label} directory: ${root}`);
+      const rootJson = JSON.parse(await (await fetchOk(`${root}?f=json`)).text());
+      const cat = restCatalogServices(rootJson, root);
+      const services = [...cat.services];
+      for (const folder of cat.folders.slice(0, 12)) {
+        try {
+          const fj = JSON.parse(await (await fetchOk(`${root}/${folder}?f=json`)).text());
+          services.push(...restCatalogServices(fj, `${root}/${folder}`).services);
+        } catch (e) {
+          console.warn(`    folder ${folder}: ${e.message}`);
+        }
+      }
+      const ranked = rankParcelServices(services);
+      console.log(`  ${services.length} services · parcel candidates: ${ranked.map((x) => x.name).join(' · ') || 'none'}`);
+      if (!ranked.length) throw new Error(`no parcel-named services; all: ${services.map((x) => x.name).slice(0, 40).join(', ')}`);
+
+      for (const svc of ranked.slice(0, 4)) {
+        try {
+          const svcJson = JSON.parse(await (await fetchOk(`${svc.url}?f=json`)).text());
+          const layers = (svcJson?.layers || [{ id: 0, name: 'layer 0' }]).slice(0, 5);
+          for (const layer of layers) {
+            try {
+              console.log(`  layer ${layer.id}: ${layer.name}`);
+              const rows = await tryParcelLayer(`${svc.url}/${layer.id}`, extraWhere);
+              return { rows, via: `${label}:${svc.name}/${layer.id}` };
+            } catch (e) {
+              console.warn(`    layer ${layer.id}: ${e.message}`);
+            }
+          }
+        } catch (e) {
+          console.warn(`    ${svc.name}: ${e.message}`);
+        }
+      }
+      throw new Error('no candidate layer had a usable class field');
+    } catch (e) {
+      lastErr = e;
+      console.warn(`  ${root}: ${e.message}`);
+    }
+  }
+  throw lastErr || new Error('no roots configured');
+}
+
+/** The county's own ArcGIS Online portals, org-scoped. */
+async function viaPortals(cfg) {
+  let lastErr = null;
+  for (const portal of cfg.portals || []) {
+    let orgId = null;
+    try {
+      orgId = portalOrgId(JSON.parse(await (await fetchOk(PORTAL_SELF_URL(portal))).text()));
+      console.log(`  ${portal} org id: ${orgId || 'unknown'}`);
+    } catch (e) {
+      console.warn(`  ${portal} portals/self: ${e.message}`);
+    }
+    for (const q of countySearchQueries(cfg)) {
+      try {
+        console.log(`  portal search: ${portal} · ${q}`);
+        const search = JSON.parse(await (await fetchOk(PORTAL_SEARCH_URL(portal, q, 25, orgId))).text());
+        // Without the org filter we are searching all of ArcGIS Online, so the
+        // county-name guard is the only thing stopping another county winning.
+        const svc = pickPortalService(search, { must: orgId ? [] : cfg.must || [] });
+        if (!svc) throw new Error('no parcel service matched');
+        console.log(`  picked "${svc.title}" by ${svc.owner}`);
+        return { rows: await tryParcelLayer(`${svc.url}/0`), via: `portal:${svc.id}` };
+      } catch (e) {
+        lastErr = e;
+        console.warn(`    ${e.message}`);
+      }
+    }
+  }
+  throw lastErr || new Error('no portals configured');
+}
+
+/** Public ArcGIS Online search — last resort, name-guarded. */
+async function viaPublicSearch(cfg) {
+  let lastErr = null;
+  for (const q of countySearchQueries(cfg)) {
+    try {
+      console.log(`  public ArcGIS search: ${q}`);
+      const search = JSON.parse(await (await fetchOk(ARCGIS_SEARCH_URL(q))).text());
+      const svc = pickPortalService(search, { must: cfg.must || [] });
+      if (!svc) throw new Error('no parcel service matched');
+      console.log(`  picked "${svc.title}" by ${svc.owner}`);
+      return { rows: await tryParcelLayer(`${svc.url}/0`), via: `arcgis:${svc.id}` };
+    } catch (e) {
+      lastErr = e;
+      console.warn(`    ${e.message}`);
+    }
+  }
+  throw lastErr || new Error('no queries configured');
+}
+
+/** A statewide parcel layer, restricted to this county. */
+async function viaStatewide(cfg) {
+  const roots = STATEWIDE_PARCEL_ROOTS[cfg.state] || [];
+  if (!roots.length) throw new Error(`no statewide roots for ${cfg.state}`);
+  let lastErr = null;
+  for (const clause of countyFilterClauses(cfg)) {
+    try {
+      console.log(`  statewide, county filter: ${clause}`);
+      return await viaRestDirectory(roots, `statewide-${cfg.state}`, clause);
+    } catch (e) {
+      lastErr = e;
+      console.warn(`    ${e.message}`);
+    }
+  }
+  throw lastErr || new Error('statewide routes exhausted');
+}
+
+function countyLane(key) {
+  const cfg = COUNTY_SOURCES[key];
+  return async function lane() {
+    const routes = [
+      ['county REST directory', () => viaRestDirectory(cfg.rest_roots || [], 'county')],
+      ['county ArcGIS Online portal', () => viaPortals(cfg)],
+      ['public ArcGIS Online search', () => viaPublicSearch(cfg)],
+      [`statewide ${cfg.state} service`, () => viaStatewide(cfg)],
+    ];
+    let got = null;
+    const failures = [];
+    for (const [label, route] of routes) {
+      try {
+        console.log(`  → route: ${label}`);
+        got = await route();
+        console.log(`  ✓ ${label} worked`);
+        break;
+      } catch (e) {
+        console.warn(`  ✗ ${label}: ${e.message}`);
+        failures.push(`${label}: ${e.message}`);
+      }
+    }
+    if (!got) throw new Error(`all routes failed for ${cfg.label} — ${failures.join(' | ')}`);
+    if (DISCOVER_ONLY) return { discovered: { county: cfg.label, via: got.via, rows: got.rows.length } };
+
+    const res = assessorToParcels(rowsToCsv(got.rows), PRESETS[cfg.preset], {
+      countyFips: cfg.fips,
+      state: cfg.state,
+    });
+    console.log(inspectReport(res, `${cfg.label} ${got.via}`));
+    if (!essentialsOk(res)) {
+      throw new Error(`essential fields unresolved (${res.unresolved.join(', ')}) — imported nothing; paste the parse report into the build chat`);
+    }
+    if (!res.kept) throw new Error('0 rows passed the multifamily filter — paste the report above into the build chat');
+    return { res };
+  };
+}
+
+const LANES = {
+  maricopa: maricopaLane,
+  nashville: nashvilleLane,
+  // Config-driven, one per COUNTY_SOURCES entry.
+  ...Object.fromEntries(Object.keys(COUNTY_SOURCES).map((k) => [k, countyLane(k)])),
+};
+const toRun = source === 'all' ? Object.keys(LANES) : source.split(',').map((x) => x.trim()).filter(Boolean);
 if (toRun.some((k) => !LANES[k])) {
   console.error(`--source must be one of: ${Object.keys(LANES).join(', ')}, all`);
   process.exit(1);
