@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  body {
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection {
+    background: #f5b80033;
+  }
+}
+
+@layer components {
+  .field {
+    @apply w-full rounded-xl border border-border bg-panel px-4 py-3 text-text
+           placeholder:text-muted outline-none transition
+           focus:border-gold/60 focus:ring-1 focus:ring-gold/30;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3
+           text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-gold text-bg hover:bg-gold/90;
+  }
+  .btn-ghost {
+    @apply btn border border-border bg-panel text-text hover:border-border-hi hover:bg-panel-2;
+  }
+  .card {
+    @apply rounded-2xl border border-border bg-panel;
+  }
+}
+
+/* Thin scrollbar for the transcript column. */
+.scroll-slim::-webkit-scrollbar {
+  width: 10px;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: #262626;
+  border: 3px solid #111111;
+  border-radius: 999px;
+}
+.scroll-slim::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
