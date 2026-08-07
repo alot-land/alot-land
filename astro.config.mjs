@@ -13,11 +13,15 @@ export default defineConfig({
   integrations: [
     tailwind(),
     sitemap({
-      // Utility/private pages excluded from sitemap.
+      // Utility/private/thin pages excluded from sitemap.
+      // favorites = per-visitor localStorage page (nothing to index);
+      // media = no press/podcast/book content yet, so it reads as thin content.
       filter: (page) =>
         !page.includes('/admin') &&
         !page.includes('/invest') &&
-        !page.includes('/land-payment-calculator'),
+        !page.includes('/land-payment-calculator') &&
+        !page.includes('/listings/favorites') &&
+        !page.includes('/media'),
     }),
   ],
 });

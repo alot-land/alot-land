@@ -14,11 +14,11 @@ power: Power being run to the road
 gps: 35.802493, -88.030716
 showSellerFinance: false
 photos:
-  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783715067/_IMG_1025_kemiid.heic
-  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783715069/_IMG_1028_uiiiuu.heic
-  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783715074/_IMG_9142_lgoygi.jpg
-  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783715073/_IMG_9133_sb5zd9.jpg
-  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783715077/_IMG_9135_us9rim.jpg
+  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783715067/_IMG_1025_kemiid.heic
+  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783715069/_IMG_1028_uiiiuu.heic
+  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783715074/_IMG_9142_lgoygi.jpg
+  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783715073/_IMG_9133_sb5zd9.jpg
+  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783715077/_IMG_9135_us9rim.jpg
 date: 2026-06-20T09:53:00.000-05:00
 community: sugar-tree-vista
 ---

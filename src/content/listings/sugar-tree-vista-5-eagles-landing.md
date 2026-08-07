@@ -14,10 +14,10 @@ power: Power being run to the road
 gps: 35.806107, -88.029144
 showSellerFinance: false
 photos:
-  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783714882/_IMG_9120_2_muzy5e.jpg
-  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783714880/_IMG_1216_aawpcz.jpg
-  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783714878/_IMG_1215_q0xiyh.jpg
-  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783714882/_IMG_9124_sgluwi.jpg
+  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783714882/_IMG_9120_2_muzy5e.jpg
+  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783714880/_IMG_1216_aawpcz.jpg
+  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783714878/_IMG_1215_q0xiyh.jpg
+  - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783714882/_IMG_9124_sgluwi.jpg
 date: 2026-06-20T09:56:00.000-05:00
 community: sugar-tree-vista
 ---

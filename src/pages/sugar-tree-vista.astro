@@ -3,8 +3,9 @@
     Lot cards pull from the listings collection (community: sugar-tree-vista).
     Things-to-do map = free Leaflet/OSM + Google deep-links (no Maps billing).
     Countdown + hero video read from CMS settings/sugar-tree.json.
-    PLACEHOLDERS still to wire (search "TODO"): photos, hero video, GHL
-    showing/consult calendars, gated area-guide form, VERIFIED drive times. */
+    Photos, GHL calendars, gated area-guide form and drive times are all wired.
+    Still open: hero video URL (optional), and self-hosting the 4 hotlinked
+    things-to-do photos. */
 import { getCollection, getEntry } from 'astro:content';
 import { siteConfig } from '../config/site.js';
 import { getChannelVideos } from '../lib/youtube.js';
@@ -94,7 +95,7 @@ const drives = [
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Sugar Tree Vista — Ridgeline View Acreage near Kentucky Lake, TN | Alot Of Land LLC</title>
+<title>Sugar Tree Vista — Ridgeline Acreage near Kentucky Lake, TN</title>
 <meta name="description" content="Ten unrestricted ridgeline homesites, 5.4–11.4 acres, near Kentucky Lake in Decatur County, TN. Driveways in, septic soil maps included. Owner financing. From $59,000." />
 <link rel="canonical" href="https://alot.land/sugar-tree-vista" />
 <meta property="og:type" content="website" />
@@ -584,7 +585,7 @@ const drives = [
     <span class="eyebrow">The Location</span>
     <h2>Tennessee's <em>big backyard</em> &mdash; in the path of growth.</h2>
     <p>Sugar Tree Vista sits in the highlands of Decatur County &mdash; off Ray Miller Rd &amp; Low Gap Rd, Sugar Tree, TN 38380 &mdash; on the ridgelines above the Tennessee River where it widens into Kentucky Lake, one of the largest lakes east of the Mississippi. This is small-town Tennessee at its best: quiet roads, real neighbors, and natural beauty in every direction.</p>
-    <!-- TODO: drive times are PLACEHOLDERS pending David's verified numbers -->
+    <!-- Drive times below are David-verified (Ponderosa 8, Natchez Trace 20, Parsons 22, Jackson 45, Nashville 90). -->
     <div class="drives">
       {drives.map(d => (<div class="drive"><div class="t">{d.t}</div><div class="p">{d.p}</div></div>))}
     </div>
@@ -828,7 +829,7 @@ const drives = [
     var COL={water:'#3b55a3',park:'#2e6b34',golf:'#8f6e00',town:'#0a1628',day:'#c47f17',prop:'#f5b800'};
     var CATL={water:'Water & marinas',park:'State park',golf:'Golf',town:'Town',day:'Kentucky Lake day-trip',prop:'The property'};
     var PROP={n:'Sugar Tree Vista',c:'prop',lat:35.8067,lng:-88.0273,img:(document.body.dataset.propImage||''),d:'The property — ten ridgeline view lots off Ray Miller Rd & Low Gap Rd, 5.4 to 11.4 acres, unrestricted, from $59,000.'};
-    // n=name c=category lat/lng mins=est. drive (PLACEHOLDER, David verifying) w=website img=photo (TODO: confirm rights / self-host)
+    // n=name c=category lat/lng mins=drive time w=website img=photo (4 entries hotlink third-party photos — self-host when rights are confirmed)
     var PTS=[
       {n:'The Ponderosa',c:'water',mins:8,lat:35.7841,lng:-87.9910,w:'https://decaturcountytn.gov/attractions/',img:'',d:"A private-club boat launch on the Tennessee River near Sugar Tree — your closest water access for fishing, boating, and sunset cruising on Kentucky Lake."},
       {n:'Cherokee Marina & Grill',c:'water',mins:20,lat:35.7310,lng:-88.0314,w:'https://www.facebook.com/cherokeeboatdock/',img:'https://cdn.elebase.io/f73a5e12-7a94-4da0-96b6-40fd97435fd2/0b6abaa1-0287-4f5c-ac18-a623b03be939-ten2ca79618f066341e5.jpg?q=90',d:"Full-service Tennessee River marina just east of Parsons with a floating grill, easy-access boat ramp, gas dock, and riverside RV spots."},

@@ -1,15 +1,15 @@
 {
-  "heroImage": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783715067/_IMG_1025_kemiid.heic",
-  "ogImage": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783715072/_IMG_9131_2_k82iy4.jpg",
+  "heroImage": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783715067/_IMG_1025_kemiid.heic",
+  "ogImage": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783715072/_IMG_9131_2_k82iy4.jpg",
   "showHeroVideo": true,
   "consultCalendarUrl": "https://brand.alot.land/widget/booking/5Za8uXuhrvp3ZrqCeVFt",
-  "developerPhoto": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783803846/Headshot2_i78gw2.png",
+  "developerPhoto": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783803846/Headshot2_i78gw2.png",
   "showingCalendarUrl": "https://brand.alot.land/widget/bookings/sugar-tree-vista-saturday-sale",
   "heroVideoUrl": "",
   "showFlyBuy": false,
   "galleryPhotos": [],
   "saleDate": "2026-09-05T07:00:00.000-07:00",
-  "guidePhoto": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto/v1783804800/DASFamilyHeadshot1_rtx7kx.png",
+  "guidePhoto": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783804800/DASFamilyHeadshot1_rtx7kx.png",
   "showFinancing": false,
   "areaGuideFormUrl": "https://brand.alot.land/widget/form/8m1H0Bh6KIb50OD1Jzjm"
 }

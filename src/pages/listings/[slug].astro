@@ -22,6 +22,10 @@ const { title, status, acreage, county, state, price, address, showAddress, zoni
 
 const loc = `${county} County, ${state}`;
 const pricePart = price ? ` — ${price}` : '';
+// Short form for the <title> only — BaseLayout appends " | alot.land", and
+// Google truncates around 60 chars. Full state name stays in the description.
+const stateAbbr: Record<string, string> = { Tennessee: 'TN', Arizona: 'AZ' };
+const locShort = `${county} County, ${stateAbbr[state] ?? state}`;
 
 // If this lot belongs to a community that has a sales page (Button Link set),
 // show a banner linking back to it — so QR visitors can reach the full pitch.
@@ -32,12 +36,13 @@ const communityBackUrl = community?.data.ctaUrl ?? '';
 const communityName = community?.data.title ?? '';
 
 // Status-aware title (matches the share-image stamp). "for Sale" only when truly
-// available (best for SEO); sold drops the price.
+// available (best for SEO). Price is omitted here — it's already in the meta
+// description — so titles stay under Google's ~60-char truncation point.
 const pageTitle =
-  status === 'available'      ? `${acreage} Acres for Sale${pricePart} | ${loc}` :
-  status === 'coming-soon'    ? `${acreage} Acres — Coming Soon${pricePart} | ${loc}` :
-  status === 'under-contract' ? `${acreage} Acres — Under Contract${pricePart} | ${loc}` :
-                                `${acreage} Acres — SOLD | ${loc}`;
+  status === 'available'      ? `${acreage} Acres for Sale | ${locShort}` :
+  status === 'coming-soon'    ? `${acreage} Acres — Coming Soon | ${locShort}` :
+  status === 'under-contract' ? `${acreage} Acres — Under Contract | ${locShort}` :
+                                `${acreage} Acres — SOLD | ${locShort}`;
 
 const bodyText = listing.body.replace(/[#*_`[\]()>~]/g, '').replace(/\s+/g, ' ').trim();
 

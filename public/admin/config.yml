@@ -16,8 +16,13 @@ media_library:
     cloud_name: doex0egtl
     api_key: "782436327598791"
     default_transformations:
+      # width+crop matter as much as format/quality: without them Cloudinary
+      # serves the full-resolution original (~2.4MB per phone photo). w_1600
+      # with c_limit scales down only when larger and never upscales.
       - - fetch_format: auto
           quality: auto
+          width: 1600
+          crop: limit
 
 collections:
   - name: "listings"
