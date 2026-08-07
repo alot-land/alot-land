@@ -11,7 +11,7 @@
 **Time Audit** is a private dark-themed web app for tracking time against value tiers ($10K / $1K / $10–$99 / $0 per hour). The goal is to maximize the share of your week spent on $10K/hour activities. It runs at **`https://time.alot.land`** and stores data in Supabase.
 
 - **Origin**: Built for David Stone (`david@alot.land`) starting 2026-05-14; live since 2026-05-15.
-- **Source repo**: `AlotOfLand/alot-land` on GitHub, in the `time-audit/` subfolder.
+- **Source repo**: `alot-land/alot-land` on GitHub, in the `time-audit/` subfolder.
 - **Multi-user**: Yes. Access is gated by a database-managed allow-list (`allowed_emails`). Each user's data is fully isolated by Postgres Row-Level Security; users never see each other's data.
 - **Mobile**: Fully responsive (sidebar on desktop, bottom-tab nav on phone). Designed to be added to the iOS home screen as a PWA-style icon.
 
@@ -604,4 +604,4 @@ There's no automated migration runner; these are pasted into the Supabase SQL Ed
 
 ---
 
-*Last updated 2026-05-21 (added `day_journal.sleep_at` for sleep-duration; see migration 005). The canonical version of this doc lives at `time-audit/docs/AGENT_SCOPE.md` in the `AlotOfLand/alot-land` repo. If you need details that aren't here, the source of truth is the SQL in `time-audit/supabase/` and the query library in `time-audit/src/lib/queries.js`.*
+*Last updated 2026-05-21 (added `day_journal.sleep_at` for sleep-duration; see migration 005). The canonical version of this doc lives at `time-audit/docs/AGENT_SCOPE.md` in the `alot-land/alot-land` repo. If you need details that aren't here, the source of truth is the SQL in `time-audit/supabase/` and the query library in `time-audit/src/lib/queries.js`.*
