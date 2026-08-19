@@ -379,6 +379,40 @@ collections:
                     - { label: "Area guide PDF", value: "/guides/sugar-tree-vista-area-guide.pdf" }
                     - { label: "Custom link - type it in the box below", value: "CUSTOM" }
                   - { label: "Main button link (custom)", name: "ctaPrimaryUrlCustom", widget: "string", required: false, hint: 'Only used when the dropdown above is set to the custom option. A full https:// link, a page like /videos, or tel:6155386878.' }
+                  - { label: "Second button", name: "ctaSecondary", widget: "string", required: false, hint: "Use {phone} anywhere in the text and it is replaced with your phone number. Clear this to remove the button." }
+                  - label: "Second button link"
+                    name: "ctaSecondaryUrl"
+                    widget: "select"
+                    required: false
+                    hint: 'Pick where this button goes. Section names jump down the page; the last option lets you type your own link.'
+                    options:
+                    - { label: "Nowhere yet - pick a destination", value: "" }
+                    - { label: "Hero (top of page)", value: "#top" }
+                    - { label: "Two Easy Ways to Start", value: "#contact" }
+                    - { label: "Fly & Buy Credit", value: "#flybuy" }
+                    - { label: "Ridgeline Living", value: "#ridgeline" }
+                    - { label: "Pick Your View (the lots)", value: "#lots" }
+                    - { label: "Every Purchase Includes", value: "#highlights" }
+                    - { label: "The Location", value: "#location" }
+                    - { label: "Explore the Area (map)", value: "#explore" }
+                    - { label: "See Every Lot on the Map", value: "#map" }
+                    - { label: "How to Purchase", value: "#purchase" }
+                    - { label: "Financing", value: "#financing" }
+                    - { label: "The Developer", value: "#developer" }
+                    - { label: "Area Guide Download", value: "#area-guide" }
+                    - { label: "Property Photos", value: "#gallery" }
+                    - { label: "Sugar Tree Vista on Video", value: "#watch" }
+                    - { label: "Closing Call-to-Action", value: "#visit" }
+                    - { label: "Your Land Guide", value: "#meet-david" }
+                    - { label: "Book a showing - your GHL calendar", value: "BOOKING" }
+                    - { label: "Land consult - your GHL calendar", value: "CONSULT" }
+                    - { label: "Call or text me", value: "PHONE" }
+                    - { label: "Browse all listings", value: "/listings" }
+                    - { label: "Videos page", value: "/videos" }
+                    - { label: "Payment calculator", value: "/land-payment-calculator?community=sugar-tree-vista" }
+                    - { label: "Area guide PDF", value: "/guides/sugar-tree-vista-area-guide.pdf" }
+                    - { label: "Custom link - type it in the box below", value: "CUSTOM" }
+                  - { label: "Second button link (custom)", name: "ctaSecondaryUrlCustom", widget: "string", required: false, hint: 'Only used when the dropdown above is set to the custom option. A full https:// link, a page like /videos, or tel:6155386878.' }
                   - { label: "Fly & Buy pill text", name: "promoPill", widget: "text", required: false, hint: "Only shows when the Fly & Buy section below is on." }
               - label: "Two Easy Ways to Start"
                 name: "options"
@@ -753,6 +787,40 @@ collections:
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
+                  - { label: "First button", name: "ctaPrimary", widget: "string", required: false, hint: "Use {phone} anywhere in the text and it is replaced with your phone number. Clear this to remove the button." }
+                  - label: "First button link"
+                    name: "ctaPrimaryUrl"
+                    widget: "select"
+                    required: false
+                    hint: 'Pick where this button goes. Section names jump down the page; the last option lets you type your own link.'
+                    options:
+                    - { label: "Nowhere yet - pick a destination", value: "" }
+                    - { label: "Hero (top of page)", value: "#top" }
+                    - { label: "Two Easy Ways to Start", value: "#contact" }
+                    - { label: "Fly & Buy Credit", value: "#flybuy" }
+                    - { label: "Ridgeline Living", value: "#ridgeline" }
+                    - { label: "Pick Your View (the lots)", value: "#lots" }
+                    - { label: "Every Purchase Includes", value: "#highlights" }
+                    - { label: "The Location", value: "#location" }
+                    - { label: "Explore the Area (map)", value: "#explore" }
+                    - { label: "See Every Lot on the Map", value: "#map" }
+                    - { label: "How to Purchase", value: "#purchase" }
+                    - { label: "Financing", value: "#financing" }
+                    - { label: "The Developer", value: "#developer" }
+                    - { label: "Area Guide Download", value: "#area-guide" }
+                    - { label: "Property Photos", value: "#gallery" }
+                    - { label: "Sugar Tree Vista on Video", value: "#watch" }
+                    - { label: "Closing Call-to-Action", value: "#visit" }
+                    - { label: "Your Land Guide", value: "#meet-david" }
+                    - { label: "Book a showing - your GHL calendar", value: "BOOKING" }
+                    - { label: "Land consult - your GHL calendar", value: "CONSULT" }
+                    - { label: "Call or text me", value: "PHONE" }
+                    - { label: "Browse all listings", value: "/listings" }
+                    - { label: "Videos page", value: "/videos" }
+                    - { label: "Payment calculator", value: "/land-payment-calculator?community=sugar-tree-vista" }
+                    - { label: "Area guide PDF", value: "/guides/sugar-tree-vista-area-guide.pdf" }
+                    - { label: "Custom link - type it in the box below", value: "CUSTOM" }
+                  - { label: "First button link (custom)", name: "ctaPrimaryUrlCustom", widget: "string", required: false, hint: 'Only used when the dropdown above is set to the custom option. A full https:// link, a page like /videos, or tel:6155386878.' }
                   - { label: "Second button", name: "ctaSecondary", widget: "string", required: false }
                   - label: "Second button link"
                     name: "ctaSecondaryUrl"
@@ -796,3 +864,37 @@ collections:
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Name", name: "name", widget: "string", required: false }
                   - { label: "Bio", name: "body", widget: "text", required: false, hint: "Leave a blank line between paragraphs." }
+                  - { label: "Button", name: "button", widget: "string", required: false, hint: "Use {phone} anywhere in the text and it is replaced with your phone number. Clear this to remove the button." }
+                  - label: "Button link"
+                    name: "buttonUrl"
+                    widget: "select"
+                    required: false
+                    hint: 'Pick where this button goes. Section names jump down the page; the last option lets you type your own link.'
+                    options:
+                    - { label: "Nowhere yet - pick a destination", value: "" }
+                    - { label: "Hero (top of page)", value: "#top" }
+                    - { label: "Two Easy Ways to Start", value: "#contact" }
+                    - { label: "Fly & Buy Credit", value: "#flybuy" }
+                    - { label: "Ridgeline Living", value: "#ridgeline" }
+                    - { label: "Pick Your View (the lots)", value: "#lots" }
+                    - { label: "Every Purchase Includes", value: "#highlights" }
+                    - { label: "The Location", value: "#location" }
+                    - { label: "Explore the Area (map)", value: "#explore" }
+                    - { label: "See Every Lot on the Map", value: "#map" }
+                    - { label: "How to Purchase", value: "#purchase" }
+                    - { label: "Financing", value: "#financing" }
+                    - { label: "The Developer", value: "#developer" }
+                    - { label: "Area Guide Download", value: "#area-guide" }
+                    - { label: "Property Photos", value: "#gallery" }
+                    - { label: "Sugar Tree Vista on Video", value: "#watch" }
+                    - { label: "Closing Call-to-Action", value: "#visit" }
+                    - { label: "Your Land Guide", value: "#meet-david" }
+                    - { label: "Book a showing - your GHL calendar", value: "BOOKING" }
+                    - { label: "Land consult - your GHL calendar", value: "CONSULT" }
+                    - { label: "Call or text me", value: "PHONE" }
+                    - { label: "Browse all listings", value: "/listings" }
+                    - { label: "Videos page", value: "/videos" }
+                    - { label: "Payment calculator", value: "/land-payment-calculator?community=sugar-tree-vista" }
+                    - { label: "Area guide PDF", value: "/guides/sugar-tree-vista-area-guide.pdf" }
+                    - { label: "Custom link - type it in the box below", value: "CUSTOM" }
+                  - { label: "Button link (custom)", name: "buttonUrlCustom", widget: "string", required: false, hint: 'Only used when the dropdown above is set to the custom option. A full https:// link, a page like /videos, or tel:6155386878.' }

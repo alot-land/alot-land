@@ -91,6 +91,10 @@ const link = (k: string, f: string, d: string) => {
 };
 // External links open in a new tab; anchors and tel: stay in place.
 const ext = (u: string) => /^https?:\/\//i.test(u);
+// Button labels may contain {phone}; it is swapped for the real number so the
+// text stays editable without hardcoding the digits.
+const btnP = (k: string, f: string, d: string) =>
+  btn(k, f, d).replace(/\{phone\}/g, phoneDisp);
 
 // ── Section order ──────────────────────────────────────────────────────────
 // Order comes from the CMS "Section Order" drag list. Sections left out of the
@@ -575,7 +579,12 @@ const drives = [
       {btn('hero','ctaPrimary','Book a Private Showing') && (
         <a class="btn btn-primary" href={link('hero','ctaPrimaryUrl','#contact')} target={ext(link('hero','ctaPrimaryUrl','#contact')) ? '_blank' : undefined} rel={ext(link('hero','ctaPrimaryUrl','#contact')) ? 'noopener' : undefined} set:html={btn('hero','ctaPrimary','Book a Private Showing')}></a>
       )}
-      <a class="btn btn-ghost" href={`tel:+1${phoneRaw}`}>Call or Text {phoneDisp}</a>
+      {btnP('hero','ctaSecondary','Call or Text {phone}') && (
+        <a class="btn btn-ghost" href={link('hero','ctaSecondaryUrl',`tel:+1${phoneRaw}`)}
+           target={ext(link('hero','ctaSecondaryUrl',`tel:+1${phoneRaw}`)) ? '_blank' : undefined}
+           rel={ext(link('hero','ctaSecondaryUrl',`tel:+1${phoneRaw}`)) ? 'noopener' : undefined}
+           set:html={btnP('hero','ctaSecondary','Call or Text {phone}')}></a>
+      )}
     </div>
     {showFlyBuy && <div class="promo-pill">✈&nbsp; <span set:html={txt('hero','promoPill','<b>$1,500 Fly &amp; Buy Credit</b> &mdash; we cover your flight and hotel, up to $1,500 off the price of the lot you buy.')}></span></div>}
 
@@ -880,7 +889,12 @@ const drives = [
     <h2 set:html={txt('final','heading','Come see it before someone else does.')}></h2>
     <p set:html={txt('final','body','Only ten lots, reserved first come, first served by private showing. The earliest appointments get the pick of the views.')}></p>
     <div class="cta-row">
-      <a class="btn btn-primary" href={`tel:+1${phoneRaw}`}>Call or Text {phoneDisp}</a>
+      {btnP('final','ctaPrimary','Call or Text {phone}') && (
+        <a class="btn btn-primary" href={link('final','ctaPrimaryUrl',`tel:+1${phoneRaw}`)}
+           target={ext(link('final','ctaPrimaryUrl',`tel:+1${phoneRaw}`)) ? '_blank' : undefined}
+           rel={ext(link('final','ctaPrimaryUrl',`tel:+1${phoneRaw}`)) ? 'noopener' : undefined}
+           set:html={btnP('final','ctaPrimary','Call or Text {phone}')}></a>
+      )}
       {btn('final','ctaSecondary','Book a Showing Online') && (
         <a class="btn btn-ghost" href={link('final','ctaSecondaryUrl','#contact')} target={ext(link('final','ctaSecondaryUrl','#contact')) ? '_blank' : undefined} rel={ext(link('final','ctaSecondaryUrl','#contact')) ? 'noopener' : undefined} set:html={btn('final','ctaSecondary','Book a Showing Online')}></a>
       )}
@@ -898,7 +912,12 @@ const drives = [
       <div>
         <h3 set:html={txt('guide','name','David A. Stone')}></h3>
         {paras('guide','body',"I've spent my whole career around land.").map((t: string) => (<p set:html={t}></p>))}
-        <a class="btn btn-dark" href={`tel:+1${phoneRaw}`} style="margin-top:8px">Call or Text Me &mdash; {phoneDisp}</a>
+        {btnP('guide','button','Call or Text Me &mdash; {phone}') && (
+          <a class="btn btn-dark" href={link('guide','buttonUrl',`tel:+1${phoneRaw}`)} style="margin-top:8px"
+             target={ext(link('guide','buttonUrl',`tel:+1${phoneRaw}`)) ? '_blank' : undefined}
+             rel={ext(link('guide','buttonUrl',`tel:+1${phoneRaw}`)) ? 'noopener' : undefined}
+             set:html={btnP('guide','button','Call or Text Me &mdash; {phone}')}></a>
+        )}
       </div>
     </div>
   </div>
