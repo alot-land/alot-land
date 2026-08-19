@@ -217,8 +217,9 @@
           "label": "To the Marina"
         }
       ],
-      "ctaPrimary": "Book a Private Showing",
-      "promoPill": "<b>$1,500 Fly &amp; Buy Credit</b> &mdash; we cover your flight and hotel, up to $1,500 off the price of the lot you buy."
+      "ctaPrimary": "Find Your View-Lot",
+      "promoPill": "<b>$1,500 Fly &amp; Buy Credit</b> &mdash; we cover your flight and hotel, up to $1,500 off the price of the lot you buy.",
+      "ctaPrimaryUrl": "#lots"
     },
     "guide": {
       "show": true,
