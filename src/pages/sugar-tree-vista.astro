@@ -220,7 +220,10 @@ const drives = [
   .utility a:hover{color:#fff}
   .utility .right{display:flex;gap:18px;align-items:center}
 
-  header.nav{position:sticky;top:0;z-index:50;background:rgba(242,244,248,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  /* Contact strip + nav pin together as one unit so the phone number and
+     Book a Showing link stay reachable while scrolling. */
+  .topbar{position:sticky;top:0;z-index:60}
+  header.nav{background:rgba(242,244,248,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
   .nav .wrap{display:flex;align-items:center;justify-content:space-between;padding-top:14px;padding-bottom:14px}
   .brand{font-family:"Fraunces";font-weight:600;font-size:1.18rem;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
   .brand .mark{width:36px;height:36px;flex:none;border-radius:50%;background:url("/sugar-tree-logo.png") center/cover;box-shadow:0 1px 3px rgba(10,22,40,.18)}
@@ -462,6 +465,7 @@ const drives = [
 </head>
 <body data-sale-date={saleDate} data-prop-image={propImage}>
 
+<div class="topbar">
 <div class="utility">
   <div class="wrap">
     <div class="left"><a href="mailto:David@alot.land">David@alot.land</a></div>
@@ -490,6 +494,7 @@ const drives = [
     </nav>
   </div>
 </header>
+</div>
 
 {on('eventBar') && (
 <div class="event-bar">
