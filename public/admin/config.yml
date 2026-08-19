@@ -269,6 +269,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 10, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Eyebrow (small text above title)", name: "eyebrow", widget: "string", required: false }
                   - { label: "Headline", name: "heading", widget: "string", required: false }
                   - { label: "Sub-headline", name: "sub", widget: "text", required: false }
@@ -287,6 +288,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 20, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -301,6 +303,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 30, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true, hint: "Also controls the hero pill and the perk line." }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
@@ -313,6 +316,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 40, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -324,6 +328,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 50, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -334,6 +339,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 60, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -343,6 +349,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 70, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -359,6 +366,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 80, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -369,6 +377,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 90, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -379,6 +388,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 100, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -397,6 +407,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 110, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true, hint: "Also controls the Financing nav link and its perk line." }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -418,6 +429,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 120, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -431,6 +443,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 130, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
@@ -440,6 +453,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 140, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
@@ -448,6 +462,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 150, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true, hint: "Auto-hides anyway if no YouTube videos mention Sugar Tree." }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -459,6 +474,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 160, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -470,6 +486,7 @@ collections:
                 widget: "object"
                 collapsed: true
                 fields:
+                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 170, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Name", name: "name", widget: "string", required: false }

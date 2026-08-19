@@ -162,6 +162,7 @@ const settings = defineCollection({
     // and a missing/partial CMS entry can never break the build.
     sections: z.record(z.string(), z.object({
       show: z.boolean().optional(),
+      order: z.number().optional(),
       showCountdown: z.boolean().optional(),
       eyebrow: z.string().optional(),
       heading: z.string().optional(),
