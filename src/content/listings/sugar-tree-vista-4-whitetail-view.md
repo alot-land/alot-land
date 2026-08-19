@@ -17,6 +17,7 @@ photos:
   - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783714803/_IMG_1123_vjjw23.jpg
   - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783714803/_IMG_1126_xeqnoi.jpg
   - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783714811/_IMG_9115_2_hd47qq.jpg
+  - https://res.cloudinary.com/doex0egtl/image/upload/c_limit,f_auto,q_auto,w_1600/v1787173468/DECATUR_017-004.00_TRACT_4_gtycui.png
 date: 2026-06-20T09:57:00.000-05:00
 community: sugar-tree-vista
 ---
