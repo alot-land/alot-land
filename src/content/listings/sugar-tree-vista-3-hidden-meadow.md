@@ -16,6 +16,7 @@ showSellerFinance: false
 photos:
   - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783714757/1_IMG_1116_cyd8vy.heic
   - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783714761/2_IMG_1117_bwxgvs.heic
+  - https://res.cloudinary.com/doex0egtl/image/upload/c_limit,f_auto,q_auto,w_1600/v1787173468/DECATUR_017-004.00_TRACT_3_nlpdn4.png
 date: 2026-06-20T09:58:00.000-05:00
 community: sugar-tree-vista
 ---
