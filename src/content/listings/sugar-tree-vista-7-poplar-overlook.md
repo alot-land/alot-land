@@ -15,6 +15,7 @@ gps: "35.802571, -88.030696 "
 showSellerFinance: false
 photos:
   - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783715025/IMG_1187_lrczgz.jpg
+  - https://res.cloudinary.com/doex0egtl/image/upload/c_limit,f_auto,q_auto,w_1600/v1787173469/DECATUR_017-004.00_TRACT_7_bt8bbo.png
 date: 2026-06-20T09:54:00.000-05:00
 community: sugar-tree-vista
 ---
