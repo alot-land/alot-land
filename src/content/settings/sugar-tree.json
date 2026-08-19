@@ -35,7 +35,8 @@
           "body": "Found your lot? Reserve it on the spot. We handle the survey, title, and paperwork, and walk you through to closing."
         }
       ],
-      "button": "Start With a Showing"
+      "button": "Choose Your Lot",
+      "buttonUrl": "#lots"
     },
     "lots": {
       "show": true,
