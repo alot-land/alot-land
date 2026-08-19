@@ -223,6 +223,13 @@
       "name": "David A. Stone",
       "body": "I've spent my whole career around land &mdash; in the land and homebuilding business since my teens, building and selling for the better part of two decades, and now finding and improving the kind of acreage I'd want to own myself. Sugar Tree Vista is exactly that: high, private ground with views I couldn't walk away from.\n\nWhether you're looking for a weekend retreat, a place to build, a homestead, or a smart piece of land to hold, I'll walk every lot with you and tell you straight what each one is best for. No pressure &mdash; just an honest look at the property and your options.\n\n<strong>Why I do this:</strong> I do it for my family &mdash; my wife and two young sons. I want them to look up to me as a businessman and an entrepreneur, someone who does real things with his life. And I want to provide for my family while helping other families provide for theirs, through owning land."
     },
+    "topBar": {
+      "show": true,
+      "email": "David@alot.land",
+      "showPhone": true,
+      "linkText": "Find Your View-Lot",
+      "linkUrl": "#lots"
+    },
     "options": {
       "heading": "Two Easy Ways to Start",
       "showingBody": "Showings are held on our one-day sale Saturdays. Lots go first come, first served &mdash; the earliest slots get the best pick.",
@@ -249,13 +256,6 @@
         "No time limit to build",
         "Perfect for cabins, homes, RVs &amp; travel trailers"
       ]
-    },
-    "topBar": {
-      "show": true,
-      "email": "David@alot.land",
-      "showPhone": true,
-      "linkText": "Book a Showing",
-      "linkUrl": "#contact"
     }
   },
   "galleryPhotos": [],
