@@ -146,7 +146,8 @@
       "eyebrow": "Limited Showings",
       "heading": "Come see it before someone else does.",
       "body": "Only ten lots, reserved first come, first served by private showing. The earliest appointments get the pick of the views.",
-      "ctaSecondary": "Book a Showing Online"
+      "ctaSecondary": "Find Your View-Lot Now",
+      "ctaSecondaryUrl": "#lots"
     },
     "financing": {
       "show": false,
