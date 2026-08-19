@@ -56,7 +56,10 @@ const btn = (k: string, f: string, d: string) => {
 // link() = where it goes. An anchor pointing at a section that's switched off
 // would scroll nowhere, so those fall back to the best live destination.
 const anchorLive: Record<string, boolean> = {
+  '#top': true,
   '#contact': on('options'),
+  '#flybuy': on('flyBuy'),
+  '#ridgeline': on('pitch'),
   '#lots': on('lots'),
   '#highlights': on('highlights'),
   '#location': on('location'),
@@ -64,10 +67,26 @@ const anchorLive: Record<string, boolean> = {
   '#map': on('lotMap'),
   '#purchase': on('purchase'),
   '#financing': on('financing'),
+  '#developer': on('developer'),
+  '#area-guide': on('guideCta'),
+  '#gallery': on('gallery'),
+  '#watch': on('videos'),
+  '#visit': on('final'),
+  '#meet-david': on('guide'),
 };
 const fallbackCta = showingCalendarUrl || `tel:+1${phoneRaw}`;
+// The CMS stores a token for the common destinations so editors pick a section
+// by name instead of typing a raw #anchor.
+const resolveToken = (k: string, f: string, raw: string) => {
+  if (raw === 'BOOKING') return showingCalendarUrl || `tel:+1${phoneRaw}`;
+  if (raw === 'CONSULT') return consultCalendarUrl || `tel:+1${phoneRaw}`;
+  if (raw === 'PHONE')   return `tel:+1${phoneRaw}`;
+  if (raw === 'CUSTOM')  return txt(k, f + 'Custom', '').trim();
+  return raw;
+};
 const link = (k: string, f: string, d: string) => {
-  const raw = txt(k, f, d).trim();
+  const chosen = String(sec(k)[f] ?? '').trim();
+  const raw = resolveToken(k, f, chosen) || d;   // blank dropdown → built-in default
   return (raw.startsWith('#') && anchorLive[raw] === false) ? fallbackCta : raw;
 };
 // External links open in a new tab; anchors and tel: stay in place.
@@ -589,7 +608,7 @@ const drives = [
 )}
 
 {showFlyBuy && (
-<section class="flybuy" style={`order:${ord('flyBuy')}`}>
+<section class="flybuy" id="flybuy" style={`order:${ord('flyBuy')}`}>
   <div class="wrap">
     <div class="ico">✈</div>
     <div>
@@ -605,7 +624,7 @@ const drives = [
 )}
 
 {on('pitch') && (
-<section class="pitch" style={`order:${ord('pitch')}`}>
+<section class="pitch" id="ridgeline" style={`order:${ord('pitch')}`}>
   <div class="topo" aria-hidden="true"><svg viewBox="0 0 1200 500" preserveAspectRatio="xMidYMid slice"><path d="M-20,90 C240,30 440,150 700,90 S1080,10 1240,110"/><path d="M-20,190 C260,130 460,250 720,190 S1100,110 1240,210"/><path d="M-20,300 C280,240 480,360 740,300 S1120,220 1240,320"/></svg></div>
   <div class="wrap">
     <span class="eyebrow" set:html={txt('pitch','eyebrow','Ridgeline Living, Done Right')}></span>
@@ -794,7 +813,7 @@ const drives = [
 )}
 
 {on('guideCta') && (
-<section class="guidecta" style={`order:${ord('guideCta')}`}>
+<section class="guidecta" id="area-guide" style={`order:${ord('guideCta')}`}>
   <div class="box">
     <div>
       <h3 set:html={txt('guideCta','heading','Get the Sugar Tree Vista Area Guide')}></h3>
@@ -822,7 +841,7 @@ const drives = [
 )}
 
 {on('videos') && stvVideos.length > 0 && (
-<section class="stvvid" style={`order:${ord('videos')}`}>
+<section class="stvvid" id="watch" style={`order:${ord('videos')}`}>
   <div class="wrap">
     <span class="eyebrow" set:html={txt('videos','eyebrow','Watch')}></span>
     <h2 set:html={txt('videos','heading','Sugar Tree Vista on Video')}></h2>
@@ -843,7 +862,7 @@ const drives = [
 )}
 
 {on('final') && (
-<section class="final" style={`order:${ord('final')}`}>
+<section class="final" id="visit" style={`order:${ord('final')}`}>
   <div class="topo" aria-hidden="true"><svg viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice"><path d="M-20,90 C240,30 460,150 720,90 S1100,20 1240,110"/><path d="M-20,200 C260,150 480,250 740,200 S1120,140 1240,220"/></svg></div>
   <div class="wrap">
     <span class="eyebrow" set:html={txt('final','eyebrow','Limited Showings')}></span>
@@ -860,7 +879,7 @@ const drives = [
 )}
 
 {on('guide') && (
-<section class="guide" style={`order:${ord('guide')}`}>
+<section class="guide" id="meet-david" style={`order:${ord('guide')}`}>
   <div class="wrap">
     <span class="eyebrow" set:html={txt('guide','eyebrow','Your Land Guide')}></span>
     <div class="grid">
