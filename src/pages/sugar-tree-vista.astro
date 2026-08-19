@@ -25,8 +25,25 @@ const showHeroVideo = st?.data.showHeroVideo ?? true;
 const showingCalendarUrl = st?.data.showingCalendarUrl ?? '';
 const consultCalendarUrl = st?.data.consultCalendarUrl ?? '';
 const areaGuideFormUrl = st?.data.areaGuideFormUrl ?? '';
-const showFinancing = st?.data.showFinancing ?? true;
-const showFlyBuy = st?.data.showFlyBuy ?? true;
+// ── Sections: per-section show/hide + copy, all editable in the CMS ─────────
+// sec('name') returns that section's saved fields; txt() falls back to the
+// built-in default so a blank or missing CMS field never renders empty.
+const SECTIONS: Record<string, any> = (st?.data.sections ?? {}) as any;
+const sec  = (k: string) => SECTIONS[k] ?? {};
+const on   = (k: string) => sec(k).show !== false;          // default: visible
+const txt  = (k: string, f: string, d: string) => {
+  const v = sec(k)[f];
+  return (typeof v === 'string' && v.trim() !== '') ? v : d;
+};
+const list = (k: string, f: string, d: any[]) => {
+  const v = sec(k)[f];
+  return (Array.isArray(v) && v.length) ? v : d;
+};
+// Paragraph bodies: blank line = new <p>
+const paras = (k: string, f: string, d: string) => txt(k, f, d).split(/\n\s*\n/).filter(Boolean);
+
+const showFinancing = on('financing');
+const showFlyBuy = on('flyBuy');
 const heroImage = st?.data.heroImage ?? '';
 const guidePhoto = st?.data.guidePhoto ?? '';
 const developerPhoto = st?.data.developerPhoto ?? '';
@@ -431,15 +448,18 @@ const drives = [
   </div>
 </header>
 
+{on('eventBar') && (
 <div class="event-bar">
   <div class="wrap eb-wrap">
     <ul class="eb-points">
-      <li>One-Day Land Sale</li>
-      <li><span id="sale-date">&mdash;</span></li>
-      <li>First Come, First Served</li>
-      <li>Only 10 View Lots</li>
+      {list('eventBar','points',['One-Day Land Sale','First Come, First Served','Only 10 View Lots']).map((pt: string, i: number) => (
+        <>
+          <li set:html={pt}></li>
+          {i === 0 && <li><span id="sale-date">&mdash;</span></li>}
+        </>
+      ))}
     </ul>
-    <span class="countdown" id="countdown">
+    <span class="countdown" id="countdown" style={sec('eventBar').showCountdown === false ? 'display:none' : ''}>
       <span><b id="cd-d">--</b><small>Days</small></span>
       <span><b id="cd-h">--</b><small>Hrs</small></span>
       <span><b id="cd-m">--</b><small>Min</small></span>
@@ -447,24 +467,27 @@ const drives = [
     </span>
   </div>
 </div>
+)}
 
 <section class="hero" id="top" style={heroImage ? `background-image:linear-gradient(180deg,rgba(10,22,40,.80),rgba(18,42,77,.74)),url('${heroImage}');background-size:cover;background-position:center` : ''}>
   <div class="topo" aria-hidden="true"><svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice"><path d="M-20,120 C200,60 380,180 620,120 S1000,40 1240,140"/><path d="M-20,200 C220,140 420,260 640,200 S1010,120 1240,220"/><path d="M-20,290 C240,230 440,350 660,290 S1020,210 1240,310"/><path d="M-20,390 C260,330 460,450 680,390 S1040,310 1240,410"/></svg></div>
   <div class="wrap">
-    <span class="eyebrow">Decatur County, Tennessee &nbsp;·&nbsp; 10 View Lots</span>
-    <h1>Sugar&nbsp;Tree&nbsp;<em>Vista</em></h1>
-    <p class="sub">Ten ridgeline meadow-view tracts above the Tennessee River at Kentucky Lake. Wide road frontage, deep privacy, and views that go on for miles.</p>
+    <span class="eyebrow" set:html={txt('hero','eyebrow','Decatur County, Tennessee &nbsp;·&nbsp; 10 View Lots')}></span>
+    <h1 set:html={txt('hero','heading','Sugar&nbsp;Tree&nbsp;<em>Vista</em>')}></h1>
+    <p class="sub" set:html={txt('hero','sub','Ten ridgeline meadow-view tracts near the Tennessee River at Kentucky Lake. Wide road frontage, deep privacy, and views that go on for miles.')}></p>
     <div class="stats">
-      <div class="stat"><div class="n">5&ndash;11</div><div class="l">Acre Tracts</div></div>
-      <div class="stat"><div class="n">$59K</div><div class="l">Starting Price</div></div>
-      <div class="stat"><div class="n">10</div><div class="l">Total Lots</div></div>
-      <div class="stat"><div class="n">8&nbsp;min</div><div class="l">To the Marina</div></div>
+      {list('hero','stats',[
+        {value:'5&ndash;11',label:'Acre Tracts'},{value:'$59K',label:'Starting Price'},
+        {value:'10',label:'Total Lots'},{value:'8&nbsp;min',label:'To the Marina'}
+      ]).map((s2: any) => (
+        <div class="stat"><div class="n" set:html={s2.value}></div><div class="l" set:html={s2.label}></div></div>
+      ))}
     </div>
     <div class="cta-row">
-      <a class="btn btn-primary" href="#contact">Book a Private Showing</a>
+      <a class="btn btn-primary" href="#contact" set:html={txt('hero','ctaPrimary','Book a Private Showing')}></a>
       <a class="btn btn-ghost" href={`tel:+1${phoneRaw}`}>Call or Text {phoneDisp}</a>
     </div>
-    {showFlyBuy && <div class="promo-pill">✈&nbsp; <span><b>$1,500 Fly &amp; Buy Credit</b> &mdash; we cover your flight and hotel, up to $1,500 off the price of the lot you buy.</span></div>}
+    {showFlyBuy && <div class="promo-pill">✈&nbsp; <span set:html={txt('hero','promoPill','<b>$1,500 Fly &amp; Buy Credit</b> &mdash; we cover your flight and hotel, up to $1,500 off the price of the lot you buy.')}></span></div>}
 
     {showHeroVideo && heroVideoUrl && (
       <div class="video-frame">
@@ -474,70 +497,72 @@ const drives = [
   </div>
 </section>
 
+{on('options') && (
 <section class="options" id="contact">
   <div class="wrap">
-    <span class="eyebrow">The Next Step</span>
-    <h2>Two Easy Ways to Start</h2>
+    <span class="eyebrow" set:html={txt('options','eyebrow','The Next Step')}></span>
+    <h2 set:html={txt('options','heading','Two Easy Ways to Start')}></h2>
     <div class="opt-grid">
       <div class="opt">
         <div class="body">
           <div class="opt-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-          <h4>Book a Private Showing</h4>
-          <p>Showings are held on our one-day sale Saturdays. Lots go first come, first served &mdash; the earliest slots get the best pick.</p>
+          <h4 set:html={txt('options','showingHeading','Book a Private Showing')}></h4>
+          <p set:html={txt('options','showingBody','Showings are held on our one-day sale Saturdays. Lots go first come, first served &mdash; the earliest slots get the best pick.')}></p>
           {showingCalendarUrl
-            ? <a class="btn btn-primary" href={showingCalendarUrl} target="_blank" rel="noopener">Check Available Showing Times</a>
-            : <a class="btn btn-primary" href={`tel:+1${phoneRaw}`}>Check Available Showing Times</a>}
+            ? <a class="btn btn-primary" href={showingCalendarUrl} target="_blank" rel="noopener" set:html={txt('options','showingButton','Check Available Showing Times')}></a>
+            : <a class="btn btn-primary" href={`tel:+1${phoneRaw}`} set:html={txt('options','showingButton','Check Available Showing Times')}></a>}
         </div>
       </div>
       <div class="opt">
         <div class="body">
           <div class="opt-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
-          <h4>Book a 20-Minute Land Call</h4>
-          {showFlyBuy
-            ? <p>Prefer to talk first? Get pricing, lot details, and maps &mdash; including the $1,500 Fly &amp; Buy Credit &mdash; over the phone or a quick Zoom.</p>
-            : <p>Prefer to talk first? Get pricing, lot details, and maps over the phone or a quick Zoom.</p>}
+          <h4 set:html={txt('options','consultHeading','Book a 20-Minute Land Call')}></h4>
+          <p set:html={txt('options','consultBody','Prefer to talk first? Get pricing, lot details, and maps over the phone or a quick Zoom.')}></p>
           {consultCalendarUrl
-            ? <a class="btn btn-dark" href={consultCalendarUrl} target="_blank" rel="noopener">Schedule a Land Consult</a>
-            : <a class="btn btn-dark" href={`tel:+1${phoneRaw}`}>Schedule a Land Consult</a>}
+            ? <a class="btn btn-dark" href={consultCalendarUrl} target="_blank" rel="noopener" set:html={txt('options','consultButton','Schedule a Land Consult')}></a>
+            : <a class="btn btn-dark" href={`tel:+1${phoneRaw}`} set:html={txt('options','consultButton','Schedule a Land Consult')}></a>}
         </div>
       </div>
     </div>
   </div>
 </section>
+)}
 
 {showFlyBuy && (
 <section class="flybuy">
   <div class="wrap">
     <div class="ico">✈</div>
     <div>
-      <h3>$1,500 Fly &amp; Buy Credit</h3>
-      <p>Coming from out of state? Fly in to walk the land, and when you buy a lot we'll credit up to <b>$1,500</b> of your travel &mdash; flights and hotel &mdash; toward the purchase price.</p>
-      <p class="terms">Credit applies only with the purchase of a lot and is applied to the lot price. Not redeemable for cash. One credit per transaction. Proof of travel required.</p>
+      <h3 set:html={txt('flyBuy','heading','$1,500 Fly &amp; Buy Credit')}></h3>
+      <p set:html={txt('flyBuy','body',"Coming from out of state? Fly in to walk the land, and when you buy a lot we'll credit up to <b>$1,500</b> of your travel &mdash; flights and hotel &mdash; toward the purchase price.")}></p>
+      <p class="terms" set:html={txt('flyBuy','terms','Credit applies only with the purchase of a lot and is applied to the lot price. Not redeemable for cash. One credit per transaction. Proof of travel required.')}></p>
     </div>
-    <a class="btn btn-dark" href="#contact">Book a Showing &amp; Claim It</a>
+    <a class="btn btn-dark" href="#contact" set:html={txt('flyBuy','button','Book a Showing &amp; Claim It')}></a>
   </div>
 </section>
 )}
 
+{on('pitch') && (
 <section class="pitch">
   <div class="topo" aria-hidden="true"><svg viewBox="0 0 1200 500" preserveAspectRatio="xMidYMid slice"><path d="M-20,90 C240,30 440,150 700,90 S1080,10 1240,110"/><path d="M-20,190 C260,130 460,250 720,190 S1100,110 1240,210"/><path d="M-20,300 C280,240 480,360 740,300 S1120,220 1240,320"/></svg></div>
   <div class="wrap">
-    <span class="eyebrow">Ridgeline Living, Done Right</span>
-    <h2>Your land, <em>your way</em> &mdash; on the high ground near the lake.</h2>
-    <p class="lead">Every tract at Sugar Tree Vista sits on a meadow ridgeline with long views over the Tennessee hills. The lots are a mix of open meadow and mature woods, with wide road frontage on each one so your nearest neighbor is never on top of you. Build a cabin, set up an RV, run trails, or just hold a beautiful piece of Tennessee.</p>
-    <p class="lead">And these aren't raw squares on a map. Graded driveways are already in, and every lot comes with a soil map marking approved septic locations &mdash; so you can take it straight to the county and pull a permit. Unrestricted. No crowds. Just space, privacy, and a view you won't get tired of.</p>
-    <a class="btn btn-primary" href="#lots" style="margin-top:10px">See the Available Lots</a>
+    <span class="eyebrow" set:html={txt('pitch','eyebrow','Ridgeline Living, Done Right')}></span>
+    <h2 set:html={txt('pitch','heading','Your land, <em>your way</em> &mdash; on the high ground near the lake.')}></h2>
+    {paras('pitch','body',"Every tract at Sugar Tree Vista sits on a meadow ridgeline with long views over the Tennessee hills.").map((t: string) => (<p class="lead" set:html={t}></p>))}
+    <a class="btn btn-primary" href="#lots" style="margin-top:10px" set:html={txt('pitch','button','See the Available Lots')}></a>
   </div>
 </section>
+)}
 
+{on('lots') && (
 <section class="lots" id="lots">
   <div class="wrap">
     <div class="head">
       <div>
-        <span class="eyebrow">Only Ten Tracts to Choose From</span>
-        <h2>Pick Your View</h2>
+        <span class="eyebrow" set:html={txt('lots','eyebrow','Only Ten Tracts to Choose From')}></span>
+        <h2 set:html={txt('lots','heading','Pick Your View')}></h2>
       </div>
-      <p class="note">Tap any lot for photos, acreage, price, and full details.</p>
+      <p class="note" set:html={txt('lots','note','Tap any lot for photos, acreage, price, and full details.')}></p>
     </div>
     <div class="lot-grid">
       {lots.map(lot => (
@@ -557,46 +582,55 @@ const drives = [
         </a>
       ))}
     </div>
-    <p class="note" style="margin-top:24px;text-align:center;max-width:none">Lots are reserved on a first-come, first-served basis by private showing. <b>Prices subject to change without notice.</b></p>
+    <p class="note" style="margin-top:24px;text-align:center;max-width:none" set:html={txt('lots','footnote','Lots are reserved on a first-come, first-served basis by private showing. <b>Prices subject to change without notice.</b>')}></p>
   </div>
 </section>
+)}
 
+{on('highlights') && (
 <section class="highlights" id="highlights">
   <div class="wrap">
-    <span class="eyebrow" style="display:block;text-align:center;margin-bottom:8px">Why Sugar Tree Vista</span>
-    <h2>Every Purchase Includes</h2>
+    <span class="eyebrow" style="display:block;text-align:center;margin-bottom:8px" set:html={txt('highlights','eyebrow','Why Sugar Tree Vista')}></span>
+    <h2 set:html={txt('highlights','heading','Every Purchase Includes')}></h2>
     <div class="perks">
-      <div class="pk"><b>✓</b><span>Power being run to the road on every lot (coming soon)</span></div>
-      <div class="pk"><b>✓</b><span>Drill your own well &mdash; well drillers on our <a href="/resources/preferred-vendors" style="color:var(--river);text-decoration:underline">preferred-vendor list</a></span></div>
-      <div class="pk"><b>✓</b><span>Soil map included &mdash; approved septic locations marked</span></div>
-      <div class="pk"><b>✓</b><span>Graded driveway already installed (with culverts where needed)</span></div>
-      <div class="pk"><b>✓</b><span>Fully buildable &mdash; unrestricted, no HOA</span></div>
-      <div class="pk"><b>✓</b><span>New survey on every lot</span></div>
-      <div class="pk"><b>✓</b><span>Warranty Deed &amp; clear title</span></div>
-      {showFlyBuy && <div class="pk"><b>✓</b><span>$1,500 Fly &amp; Buy travel credit (with purchase)</span></div>}
-      <div class="pk"><b>✓</b><span>No time limit to build</span></div>
-      <div class="pk"><b>✓</b><span>Perfect for cabins, homes, RVs &amp; travel trailers</span></div>
+      {list('highlights','perks',[
+        'Power being run to the road on every lot (coming soon)',
+        'Soil map included &mdash; approved septic locations marked',
+        'Graded driveway already installed (with culverts where needed)',
+        'Fully buildable &mdash; unrestricted, no HOA',
+        'New survey on every lot',
+        'Warranty Deed &amp; clear title',
+        'No time limit to build',
+      ]).map((pk: string) => (<div class="pk"><b>✓</b><span set:html={pk}></span></div>))}
+      {showFlyBuy && <div class="pk"><b>✓</b><span set:html={txt('flyBuy','perkLine','$1,500 Fly &amp; Buy travel credit (with purchase)')}></span></div>}
+      {showFinancing && <div class="pk"><b>✓</b><span set:html={txt('financing','perkLine','10% discount for cash purchases')}></span></div>}
     </div>
   </div>
 </section>
+)}
 
+{on('location') && (
 <section class="location" id="location">
   <div class="wrap">
-    <span class="eyebrow">The Location</span>
-    <h2>Tennessee's <em>big backyard</em> &mdash; in the path of growth.</h2>
-    <p>Sugar Tree Vista sits in the highlands of Decatur County &mdash; off Ray Miller Rd &amp; Low Gap Rd, Sugar Tree, TN 38380 &mdash; on the ridgelines above the Tennessee River where it widens into Kentucky Lake, one of the largest lakes east of the Mississippi. This is small-town Tennessee at its best: quiet roads, real neighbors, and natural beauty in every direction.</p>
+    <span class="eyebrow" set:html={txt('location','eyebrow','The Location')}></span>
+    <h2 set:html={txt('location','heading',"Tennessee's <em>big backyard</em> &mdash; in the path of growth.")}></h2>
+    {paras('location','body','Sugar Tree Vista sits in the highlands of Decatur County.').map((t: string) => (<p set:html={t}></p>))}
     <!-- Drive times below are David-verified (Ponderosa 8, Natchez Trace 20, Parsons 22, Jackson 45, Nashville 90). -->
     <div class="drives">
-      {drives.map(d => (<div class="drive"><div class="t">{d.t}</div><div class="p">{d.p}</div></div>))}
+      {list('location','drives',drives.map(d => ({time:d.t,place:d.p}))).map((d: any) => (
+        <div class="drive"><div class="t" set:html={d.time}></div><div class="p" set:html={d.place}></div></div>
+      ))}
     </div>
   </div>
 </section>
+)}
 
+{on('explore') && (
 <section class="areamap-sec" id="explore">
   <div class="wrap">
-    <span class="eyebrow">Explore the Area</span>
-    <h2>Everything to Do, <em>All Around You</em></h2>
-    <p>Click a pin for the full listing, one-click directions, and Street View. From the closest boat launch to Kentucky Lake day-trips, here's what's waiting just outside your gate.</p>
+    <span class="eyebrow" set:html={txt('explore','eyebrow','Explore the Area')}></span>
+    <h2 set:html={txt('explore','heading','Everything to Do, <em>All Around You</em>')}></h2>
+    <p set:html={txt('explore','body',"Click a pin for the full listing, one-click directions, and Street View.")}></p>
     <div class="area-grid">
       <div class="area-mapwrap"><div id="areamap"></div></div>
       <aside class="area-listing" id="area-listing"></aside>
@@ -609,92 +643,105 @@ const drives = [
       <span><i style="background:#0a1628"></i> Town</span>
       <span><i style="background:#c47f17"></i> Kentucky Lake day-trips</span>
     </div>
-    <p style="font-size:.72rem;margin-top:10px">Drive times are approximate.</p>
+    <p style="font-size:.72rem;margin-top:10px" set:html={txt('explore','footnote','Drive times are approximate.')}></p>
   </div>
 </section>
+)}
 
+{on('lotMap') && (
 <section class="lotmap" id="map">
   <div class="wrap">
-    <span class="eyebrow">The Lay of the Land</span>
-    <h2>See Every Lot on the Map</h2>
-    <p>Each pin is a homesite &mdash; click one for acreage, price, and current availability.</p>
+    <span class="eyebrow" set:html={txt('lotMap','eyebrow','The Lay of the Land')}></span>
+    <h2 set:html={txt('lotMap','heading','See Every Lot on the Map')}></h2>
+    <p set:html={txt('lotMap','body','Each pin is a homesite &mdash; click one for acreage, price, and current availability.')}></p>
     {lotPins.length > 0
       ? <div id="lotmap"></div>
-      : <div class="map-ph">Lot map coming soon<br><small>Call or text for exact lot locations and directions.</small></div>}
+      : <div class="map-ph">Lot map coming soon<br><small set:html={txt('lotMap','placeholder','Call or text for exact lot locations and directions.')}></small></div>}
   </div>
 </section>
+)}
 
+{on('purchase') && (
 <section class="purchase" id="purchase">
   <div class="topo" aria-hidden="true"><svg viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice"><path d="M-20,80 C240,30 460,130 720,80 S1100,20 1240,100"/><path d="M-20,180 C260,130 480,230 740,180 S1120,120 1240,200"/></svg></div>
   <div class="wrap">
-    <span class="eyebrow">Learn More About</span>
-    <h2>How to Purchase</h2>
+    <span class="eyebrow" set:html={txt('purchase','eyebrow','Learn More About')}></span>
+    <h2 set:html={txt('purchase','heading','How to Purchase')}></h2>
     <div class="steps">
-      <div class="step"><div class="n">STEP 01</div><h4>Book your showing</h4><p>Call, text, or use the scheduler to lock in a private appointment. The earliest showings see the most lots available.</p></div>
-      <div class="step"><div class="n">STEP 02</div><h4>Walk the land with me</h4><p>We'll tour the tracts together. You'll see the views, the road frontage, and the boundaries &mdash; everything you need to decide with confidence.</p></div>
-      <div class="step"><div class="n">STEP 03</div><h4>Reserve &amp; close</h4><p>Found your lot? Reserve it on the spot. We handle the survey, title, and paperwork, and walk you through cash or owner-financing to closing.</p></div>
+      {list('purchase','steps',[
+        {label:'STEP 01',heading:'Book your showing',body:'Call, text, or use the scheduler to lock in a private appointment.'},
+        {label:'STEP 02',heading:'Walk the land with me',body:"We'll tour the tracts together."},
+        {label:'STEP 03',heading:'Reserve &amp; close',body:'Found your lot? Reserve it on the spot.'},
+      ]).map((st2: any) => (
+        <div class="step"><div class="n" set:html={st2.label}></div><h4 set:html={st2.heading}></h4><p set:html={st2.body}></p></div>
+      ))}
     </div>
-    <a class="btn btn-primary" href="#contact" style="margin-top:34px">Start With a Showing</a>
+    <a class="btn btn-primary" href="#contact" style="margin-top:34px" set:html={txt('purchase','button','Start With a Showing')}></a>
   </div>
 </section>
+)}
 
 {showFinancing && (
 <section class="financing" id="financing">
   <div class="wrap">
     <div class="grid">
       <div>
-        <span class="eyebrow">Offering Excellent</span>
-        <h2>Financing</h2>
-        <p>Cash buyers get 10% off the price. Owner financing is available on select terms &mdash; handled directly with David, case by case &mdash; and a land loan or your own lender works too.</p>
+        <span class="eyebrow" set:html={txt('financing','eyebrow','Offering Excellent')}></span>
+        <h2 set:html={txt('financing','heading','Financing')}></h2>
+        <p set:html={txt('financing','body','Cash buyers get 10% off the price.')}></p>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <a class="btn btn-primary" href="/land-payment-calculator?community=sugar-tree-vista">Estimate My Seller-Finance Payment</a>
-          <a class="btn btn-dark" href={`tel:+1${phoneRaw}`}>Call to Talk Financing</a>
+          <a class="btn btn-primary" href="/land-payment-calculator?community=sugar-tree-vista" set:html={txt('financing','calcButton','Estimate My Seller-Finance Payment')}></a>
+          <a class="btn btn-dark" href={`tel:+1${phoneRaw}`} set:html={txt('financing','callButton','Call to Talk Financing')}></a>
         </div>
       </div>
       <ul class="fin-list">
-        <li><span>Owner Financing</span><b>Ask About Terms</b></li>
-        <li><span>Cash Purchase</span><b>10% Cash Discount</b></li>
-        <li><span>Land Loans</span><b>Supported</b></li>
-        <li><span>Down Payment</span><b>By Agreement</b></li>
+        {list('financing','rows',[
+          {label:'Owner Financing',value:'Ask About Terms'},{label:'Cash Purchase',value:'10% Cash Discount'},
+          {label:'Land Loans',value:'Supported'},{label:'Down Payment',value:'By Agreement'},
+        ]).map((r: any) => (<li><span set:html={r.label}></span><b set:html={r.value}></b></li>))}
       </ul>
     </div>
   </div>
 </section>
 )}
 
+{on('developer') && (
 <section class="developer" id="developer">
   <div class="wrap">
     <div class="grid">
       <div>
-        <span class="eyebrow">The Developer</span>
-        <h2>Alot Of Land LLC</h2>
-        <div class="tag">Fewer, better tracts &mdash; chosen for beauty first.</div>
-        <p>Alot Of Land LLC, founded by David A. Stone, finds and improves standout acreage across Middle Tennessee. We're selective on purpose &mdash; we'd rather develop one extraordinary property the right way than push volume.</p>
-        <p>When you buy at Sugar Tree Vista, the hard parts are already handled: a fresh survey, clear title, and a clean, honest closing.</p>
-        <div class="dev-pkg"><div>✓ New Survey</div><div>✓ Clear Title</div><div>✓ Warranty Deed</div><div>✓ Unrestricted</div></div>
+        <span class="eyebrow" set:html={txt('developer','eyebrow','The Developer')}></span>
+        <h2 set:html={txt('developer','heading','Alot Of Land LLC')}></h2>
+        <div class="tag" set:html={txt('developer','tagline','Fewer, better tracts &mdash; chosen for beauty first.')}></div>
+        {paras('developer','body','Alot Of Land LLC, founded by David A. Stone, finds and improves standout acreage across Middle Tennessee.').map((t: string) => (<p set:html={t}></p>))}
+        <div class="dev-pkg">{list('developer','badges',['New Survey','Clear Title','Warranty Deed','Unrestricted']).map((b: string) => (<div>✓ <span set:html={b}></span></div>))}</div>
       </div>
       <div class="dev-img" style={developerPhoto ? `background-image:url('${developerPhoto}');background-size:cover;background-position:center` : ''}>{!developerPhoto && 'Developer photo'}</div>
     </div>
-    <blockquote class="eker">&ldquo;Don't wait to buy land. Buy land and wait.&rdquo;<cite>— A land investor's favorite rule</cite></blockquote>
+    <blockquote class="eker">&ldquo;<span set:html={txt('developer','quote',"Don't wait to buy land. Buy land and wait.")}></span>&rdquo;<cite set:html={txt('developer','quoteCite','— A land investor\'s favorite rule')}></cite></blockquote>
   </div>
 </section>
+)}
 
+{on('guideCta') && (
 <section class="guidecta">
   <div class="box">
     <div>
-      <h3>Get the Sugar Tree Vista Area Guide</h3>
-      <p>Drive times, things to do, the lake, and what makes this corner of Tennessee special &mdash; in one PDF.</p>
+      <h3 set:html={txt('guideCta','heading','Get the Sugar Tree Vista Area Guide')}></h3>
+      <p set:html={txt('guideCta','body','Drive times, things to do, the lake, and what makes this corner of Tennessee special &mdash; in one PDF.')}></p>
     </div>
     {areaGuideFormUrl
-      ? <button type="button" class="btn btn-primary" data-modal-src={areaGuideFormUrl} data-modal-title="Get the Free Area Guide" id="guideDownload">Download the Area Guide</button>
-      : <a class="btn btn-primary" href="/guides/sugar-tree-vista-area-guide.pdf" target="_blank" rel="noopener" id="guideDownload">Download the Area Guide</a>}
+      ? <button type="button" class="btn btn-primary" data-modal-src={areaGuideFormUrl} data-modal-title="Get the Free Area Guide" id="guideDownload" set:html={txt('guideCta','button','Download the Area Guide')}></button>
+      : <a class="btn btn-primary" href="/guides/sugar-tree-vista-area-guide.pdf" target="_blank" rel="noopener" id="guideDownload" set:html={txt('guideCta','button','Download the Area Guide')}></a>}
   </div>
 </section>
+)}
 
+{on('gallery') && (
 <section class="gallery" id="gallery">
   <div class="wrap">
-    <h2>Property Photos</h2>
-    <p>Beauty comes first for us. See the ridgelines, the meadows, the road frontage, and the lake country just minutes away.</p>
+    <h2 set:html={txt('gallery','heading','Property Photos')}></h2>
+    <p set:html={txt('gallery','body','Beauty comes first for us. See the ridgelines, the meadows, the road frontage, and the lake country just minutes away.')}></p>
     <div class="g-grid">
       {gallery.length > 0
         ? gallery.map(src => (<div style={`background-image:url('${src}');background-size:cover;background-position:center`}></div>))
@@ -702,13 +749,14 @@ const drives = [
     </div>
   </div>
 </section>
+)}
 
-{stvVideos.length > 0 && (
+{on('videos') && stvVideos.length > 0 && (
 <section class="stvvid">
   <div class="wrap">
-    <span class="eyebrow">Watch</span>
-    <h2>Sugar Tree Vista on Video</h2>
-    <p>Walk the ridgeline with me &mdash; updates from the field as the lots came together.</p>
+    <span class="eyebrow" set:html={txt('videos','eyebrow','Watch')}></span>
+    <h2 set:html={txt('videos','heading','Sugar Tree Vista on Video')}></h2>
+    <p set:html={txt('videos','body','Walk the ridgeline with me &mdash; updates from the field as the lots came together.')}></p>
     <div class="vid-grid">
       {stvVideos.map(v => (
         <button type="button" class="vid" data-modal-src={`https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0`} data-modal-title="Sugar Tree Vista">
@@ -717,39 +765,41 @@ const drives = [
         </button>
       ))}
     </div>
-    <a class="btn btn-dark" href="/videos">See all videos &rarr;</a>
+    <a class="btn btn-dark" href="/videos" set:html={txt('videos','button','See all videos &rarr;')}></a>
   </div>
 </section>
 )}
 
+{on('final') && (
 <section class="final">
   <div class="topo" aria-hidden="true"><svg viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice"><path d="M-20,90 C240,30 460,150 720,90 S1100,20 1240,110"/><path d="M-20,200 C260,150 480,250 740,200 S1120,140 1240,220"/></svg></div>
   <div class="wrap">
-    <span class="eyebrow">Limited Showings</span>
-    <h2>Come see it before someone else does.</h2>
-    <p>Only ten lots, reserved first come, first served by private showing. The earliest appointments get the pick of the views.</p>
+    <span class="eyebrow" set:html={txt('final','eyebrow','Limited Showings')}></span>
+    <h2 set:html={txt('final','heading','Come see it before someone else does.')}></h2>
+    <p set:html={txt('final','body','Only ten lots, reserved first come, first served by private showing. The earliest appointments get the pick of the views.')}></p>
     <div class="cta-row">
       <a class="btn btn-primary" href={`tel:+1${phoneRaw}`}>Call or Text {phoneDisp}</a>
-      <a class="btn btn-ghost" href="#contact">Book a Showing Online</a>
+      <a class="btn btn-ghost" href="#contact" set:html={txt('final','ctaSecondary','Book a Showing Online')}></a>
     </div>
   </div>
 </section>
+)}
 
+{on('guide') && (
 <section class="guide">
   <div class="wrap">
-    <span class="eyebrow">Your Land Guide</span>
+    <span class="eyebrow" set:html={txt('guide','eyebrow','Your Land Guide')}></span>
     <div class="grid">
       <div class="photo" style={guidePhoto ? `background-image:url('${guidePhoto}');background-size:cover;background-position:center` : ''}>{!guidePhoto && (<>Land&nbsp;Guide<br>Photo</>)}</div>
       <div>
-        <h3>David A. Stone</h3>
-        <p>I've spent my whole career around land &mdash; in the land and homebuilding business since my teens, building and selling for the better part of two decades, and now finding and improving the kind of acreage I'd want to own myself. Sugar Tree Vista is exactly that: high, private ground with views I couldn't walk away from.</p>
-        <p>Whether you're looking for a weekend retreat, a place to build, a homestead, or a smart piece of land to hold, I'll walk every lot with you and tell you straight what each one is best for. No pressure &mdash; just an honest look at the property and your options.</p>
-        <p><strong>Why I do this:</strong> I do it for my family &mdash; my wife and two young sons. I want them to look up to me as a businessman and an entrepreneur, someone who does real things with his life. And I want to provide for my family while helping other families provide for theirs, through owning land.</p>
+        <h3 set:html={txt('guide','name','David A. Stone')}></h3>
+        {paras('guide','body',"I've spent my whole career around land.").map((t: string) => (<p set:html={t}></p>))}
         <a class="btn btn-dark" href={`tel:+1${phoneRaw}`} style="margin-top:8px">Call or Text Me &mdash; {phoneDisp}</a>
       </div>
     </div>
   </div>
 </section>
+)}
 
 {(showingCalendarUrl || consultCalendarUrl || areaGuideFormUrl || stvVideos.length > 0) && (
   <div class="stv-ov" id="stv-ov" hidden>

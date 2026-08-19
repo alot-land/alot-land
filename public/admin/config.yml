@@ -236,6 +236,252 @@ collections:
         name: "sugar-tree"
         file: "src/content/settings/sugar-tree.json"
         fields:
+          # ── Global settings (apply across the page) ──
+          - { label: "One-Day Sale Date", name: "saleDate", widget: "datetime", hint: "The countdown on the Sugar Tree Vista page counts down to this date/time." }
+          - { label: "Hero Background Photo", name: "heroImage", widget: "image", required: false, hint: "Optional drone/landscape photo behind the hero headline. Leave blank for the navy background." }
+          - { label: "Land Guide Photo (David)", name: "guidePhoto", widget: "image", required: false, hint: "Headshot for the 'Your Land Guide' section." }
+          - { label: "Developer Photo", name: "developerPhoto", widget: "image", required: false, hint: "Photo for the 'The Developer' section." }
+          - { label: "Social Share Image (og:image, 1200×630)", name: "ogImage", widget: "image", required: false, hint: "Image shown when the page is shared on Facebook/LinkedIn/X." }
+          - { label: "Gallery Photos", name: "galleryPhotos", widget: "list", required: false, field: { label: "Photo", name: "photo", widget: "image" }, hint: "Photos for the 'Property Photos' gallery." }
+          - { label: "Hero Video URL (YouTube or Vimeo)", name: "heroVideoUrl", widget: "string", required: false, hint: "Paste a link to embed the walkthrough video in the hero. Leave blank to hide it." }
+          - { label: "Show Hero Video", name: "showHeroVideo", widget: "boolean", default: true, required: false, hint: "Toggle off to hide the hero video without deleting the URL." }
+          - { label: "GHL — Showing Calendar URL", name: "showingCalendarUrl", widget: "string", required: false, hint: "GHL 'Book a Showing' calendar link. Blank = the button calls/texts you instead." }
+          - { label: "GHL — Land Consult Calendar URL", name: "consultCalendarUrl", widget: "string", required: false, hint: "GHL '20-Minute Land Call' calendar link. Blank = the button calls/texts you instead." }
+          - { label: "GHL — Area Guide Email Form URL", name: "areaGuideFormUrl", widget: "string", required: false, hint: "GHL email-capture form link (set the form to redirect to the PDF). Blank = PDF downloads directly." }
+
+          # ── Page sections: each one has its own Show toggle + editable copy ──
+          - label: "PAGE SECTIONS"
+            name: "sections"
+            widget: "object"
+            collapsed: false
+            hint: "Every section of the sales page. Open one to hide/show it or edit its wording. Tip: <em>word</em> makes a word gold-italic in a heading."
+            fields:
+              - label: "① Sale Banner (One-Day Land Sale)"
+                name: "eventBar"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Show countdown timer", name: "showCountdown", widget: "boolean", default: true, required: false }
+                  - { label: "Banner points", name: "points", widget: "list", required: false, field: { label: "Point", name: "point", widget: "string" }, hint: "The sale date is inserted automatically after the first point." }
+              - label: "② Hero (top of page)"
+                name: "hero"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Eyebrow (small text above title)", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Headline", name: "heading", widget: "string", required: false }
+                  - { label: "Sub-headline", name: "sub", widget: "text", required: false }
+                  - label: "Stat boxes"
+                    name: "stats"
+                    widget: "list"
+                    required: false
+                    fields:
+                      - { label: "Big number", name: "value", widget: "string" }
+                      - { label: "Label under it", name: "label", widget: "string" }
+                  - { label: "Main button text", name: "ctaPrimary", widget: "string", required: false }
+                  - { label: "Fly & Buy pill text", name: "promoPill", widget: "text", required: false, hint: "Only shows when the Fly & Buy section below is on." }
+              - label: "③ Two Easy Ways to Start"
+                name: "options"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Card 1 — heading", name: "showingHeading", widget: "string", required: false }
+                  - { label: "Card 1 — text", name: "showingBody", widget: "text", required: false }
+                  - { label: "Card 1 — button", name: "showingButton", widget: "string", required: false }
+                  - { label: "Card 2 — heading", name: "consultHeading", widget: "string", required: false }
+                  - { label: "Card 2 — text", name: "consultBody", widget: "text", required: false }
+                  - { label: "Card 2 — button", name: "consultButton", widget: "string", required: false }
+              - label: "④ Fly & Buy Credit"
+                name: "flyBuy"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true, hint: "Also controls the hero pill and the perk line." }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Body", name: "body", widget: "text", required: false }
+                  - { label: "Fine print", name: "terms", widget: "text", required: false }
+                  - { label: "Button", name: "button", widget: "string", required: false }
+                  - { label: "Line in 'Every Purchase Includes'", name: "perkLine", widget: "string", required: false }
+              - label: "⑤ Ridgeline Living (pitch)"
+                name: "pitch"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Body", name: "body", widget: "text", required: false, hint: "Leave a blank line between paragraphs." }
+                  - { label: "Button", name: "button", widget: "string", required: false }
+              - label: "⑥ Pick Your View (the lots)"
+                name: "lots"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Note beside heading", name: "note", widget: "string", required: false }
+                  - { label: "Footnote under the lots", name: "footnote", widget: "text", required: false }
+              - label: "⑦ Every Purchase Includes"
+                name: "highlights"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Checklist items", name: "perks", widget: "list", required: false, field: { label: "Item", name: "perk", widget: "string" }, hint: "Fly & Buy and Financing lines are added automatically when those sections are on." }
+              - label: "⑧ The Location"
+                name: "location"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Body", name: "body", widget: "text", required: false }
+                  - label: "Drive times"
+                    name: "drives"
+                    widget: "list"
+                    required: false
+                    fields:
+                      - { label: "Time", name: "time", widget: "string", hint: "e.g. 22 min" }
+                      - { label: "Place", name: "place", widget: "string" }
+              - label: "⑨ Explore the Area (map)"
+                name: "explore"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Body", name: "body", widget: "text", required: false }
+                  - { label: "Footnote", name: "footnote", widget: "string", required: false }
+              - label: "⑩ See Every Lot on the Map"
+                name: "lotMap"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Body", name: "body", widget: "text", required: false }
+                  - { label: "Text when no lots have GPS yet", name: "placeholder", widget: "string", required: false }
+              - label: "⑪ How to Purchase"
+                name: "purchase"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - label: "Steps"
+                    name: "steps"
+                    widget: "list"
+                    required: false
+                    fields:
+                      - { label: "Step label", name: "label", widget: "string", hint: "e.g. STEP 01" }
+                      - { label: "Step heading", name: "heading", widget: "string" }
+                      - { label: "Step text", name: "body", widget: "text" }
+                  - { label: "Button", name: "button", widget: "string", required: false }
+              - label: "⑫ Financing"
+                name: "financing"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true, hint: "Also controls the Financing nav link and its perk line." }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Body", name: "body", widget: "text", required: false }
+                  - { label: "Calculator button", name: "calcButton", widget: "string", required: false }
+                  - { label: "Call button", name: "callButton", widget: "string", required: false }
+                  - label: "Terms list"
+                    name: "rows"
+                    widget: "list"
+                    required: false
+                    fields:
+                      - { label: "Label", name: "label", widget: "string" }
+                      - { label: "Value", name: "value", widget: "string" }
+                  - { label: "Line in 'Every Purchase Includes'", name: "perkLine", widget: "string", required: false }
+              - label: "⑬ The Developer"
+                name: "developer"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Tagline", name: "tagline", widget: "string", required: false }
+                  - { label: "Body", name: "body", widget: "text", required: false, hint: "Leave a blank line between paragraphs." }
+                  - { label: "Badges", name: "badges", widget: "list", required: false, field: { label: "Badge", name: "badge", widget: "string" } }
+                  - { label: "Pull quote", name: "quote", widget: "string", required: false }
+                  - { label: "Quote credit", name: "quoteCite", widget: "string", required: false }
+              - label: "⑭ Area Guide Download"
+                name: "guideCta"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Body", name: "body", widget: "text", required: false }
+                  - { label: "Button", name: "button", widget: "string", required: false }
+              - label: "⑮ Property Photos"
+                name: "gallery"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Body", name: "body", widget: "text", required: false }
+              - label: "⑯ Sugar Tree Vista on Video"
+                name: "videos"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true, hint: "Auto-hides anyway if no YouTube videos mention Sugar Tree." }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Body", name: "body", widget: "text", required: false }
+                  - { label: "Button", name: "button", widget: "string", required: false }
+              - label: "⑰ Closing Call-to-Action"
+                name: "final"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Heading", name: "heading", widget: "string", required: false }
+                  - { label: "Body", name: "body", widget: "text", required: false }
+                  - { label: "Second button", name: "ctaSecondary", widget: "string", required: false }
+              - label: "⑱ Your Land Guide (David bio)"
+                name: "guide"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this section", name: "show", widget: "boolean", default: true }
+                  - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
+                  - { label: "Name", name: "name", widget: "string", required: false }
+                  - { label: "Bio", name: "body", widget: "text", required: false, hint: "Leave a blank line between paragraphs." }
+      - label: "Videos Page"
+        name: "videos"
+        file: "src/content/settings/videos.json"
+        fields:
+          - { label: "Featured Video URL (optional)", name: "featuredVideoUrl", widget: "string", required: false, hint: "Paste a YouTube link to pin it as the big video at the top of /videos. Leave blank to feature your newest upload automatically." }
+          - { label: "Featured Video Caption (optional)", name: "featuredVideoNote", widget: "string", required: false, hint: "A short line shown under the featured video. Leave blank to use the video's own title." }
+      - label: "Homepage Settings"
+        name: "homepage"
+        file: "src/content/settings/homepage.json"
+        fields:
+          - { label: "YouTube Video ID", name: "homepageVideoId", widget: "string", required: false, hint: "The ID from your YouTube URL e.g. lR3ZteyGK14 from youtube.com/watch?v=lR3ZteyGK14" }
+          - { label: "Hero Tagline", name: "heroTagline", widget: "string", required: false, hint: "e.g. Off-market deals in Arizona, Tennessee & Arkansas." }
+      - label: "Sugar Tree Vista"
+        name: "sugar-tree"
+        file: "src/content/settings/sugar-tree.json"
+        fields:
           - { label: "One-Day Sale Date", name: "saleDate", widget: "datetime", hint: "The countdown on the Sugar Tree Vista page counts down to this date/time." }
           - { label: "Hero Video URL (YouTube or Vimeo)", name: "heroVideoUrl", widget: "string", required: false, hint: "Paste a link to embed the walkthrough video in the hero. Leave blank to hide it." }
           - { label: "Show Hero Video", name: "showHeroVideo", widget: "boolean", default: true, required: false, hint: "Toggle off to hide the hero video on the sales page without deleting the URL." }

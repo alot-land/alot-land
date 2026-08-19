@@ -1,15 +1,176 @@
 {
+  "saleDate": "2026-09-05T07:00:00.000-07:00",
   "heroImage": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783715067/_IMG_1025_kemiid.heic",
   "ogImage": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783715072/_IMG_9131_2_k82iy4.jpg",
-  "showHeroVideo": true,
-  "consultCalendarUrl": "https://brand.alot.land/widget/booking/5Za8uXuhrvp3ZrqCeVFt",
-  "developerPhoto": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783803846/Headshot2_i78gw2.png",
-  "showingCalendarUrl": "https://brand.alot.land/widget/bookings/sugar-tree-vista-saturday-sale",
-  "heroVideoUrl": "",
-  "showFlyBuy": false,
-  "galleryPhotos": [],
-  "saleDate": "2026-09-05T07:00:00.000-07:00",
   "guidePhoto": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783804800/DASFamilyHeadshot1_rtx7kx.png",
-  "showFinancing": false,
-  "areaGuideFormUrl": "https://brand.alot.land/widget/form/8m1H0Bh6KIb50OD1Jzjm"
+  "developerPhoto": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783803846/Headshot2_i78gw2.png",
+  "galleryPhotos": [],
+  "heroVideoUrl": "",
+  "showHeroVideo": true,
+  "showingCalendarUrl": "https://brand.alot.land/widget/bookings/sugar-tree-vista-saturday-sale",
+  "consultCalendarUrl": "https://brand.alot.land/widget/booking/5Za8uXuhrvp3ZrqCeVFt",
+  "areaGuideFormUrl": "https://brand.alot.land/widget/form/8m1H0Bh6KIb50OD1Jzjm",
+  "sections": {
+    "eventBar": {
+      "show": true,
+      "points": ["One-Day Land Sale", "First Come, First Served", "Only 10 View Lots"],
+      "showCountdown": true
+    },
+    "hero": {
+      "eyebrow": "Decatur County, Tennessee &nbsp;·&nbsp; 10 View Lots",
+      "heading": "Sugar&nbsp;Tree&nbsp;<em>Vista</em>",
+      "sub": "Ten ridgeline meadow-view tracts near the Tennessee River at Kentucky Lake. Wide road frontage, deep privacy, and views that go on for miles.",
+      "stats": [
+        { "value": "5&ndash;11", "label": "Acre Tracts" },
+        { "value": "$59K", "label": "Starting Price" },
+        { "value": "10", "label": "Total Lots" },
+        { "value": "8&nbsp;min", "label": "To the Marina" }
+      ],
+      "ctaPrimary": "Book a Private Showing",
+      "promoPill": "<b>$1,500 Fly &amp; Buy Credit</b> &mdash; we cover your flight and hotel, up to $1,500 off the price of the lot you buy."
+    },
+    "options": {
+      "show": true,
+      "eyebrow": "The Next Step",
+      "heading": "Two Easy Ways to Start",
+      "showingHeading": "Book a Private Showing",
+      "showingBody": "Showings are held on our one-day sale Saturdays. Lots go first come, first served &mdash; the earliest slots get the best pick.",
+      "showingButton": "Check Available Showing Times",
+      "consultHeading": "Book a 20-Minute Land Call",
+      "consultBody": "Prefer to talk first? Get pricing, lot details, and maps over the phone or a quick Zoom.",
+      "consultButton": "Schedule a Land Consult"
+    },
+    "flyBuy": {
+      "show": false,
+      "heading": "$1,500 Fly &amp; Buy Credit",
+      "body": "Coming from out of state? Fly in to walk the land, and when you buy a lot we'll credit up to <b>$1,500</b> of your travel &mdash; flights and hotel &mdash; toward the purchase price.",
+      "terms": "Credit applies only with the purchase of a lot and is applied to the lot price. Not redeemable for cash. One credit per transaction. Proof of travel required.",
+      "button": "Book a Showing &amp; Claim It",
+      "perkLine": "$1,500 Fly &amp; Buy travel credit (with purchase)"
+    },
+    "pitch": {
+      "show": true,
+      "eyebrow": "Ridgeline Living, Done Right",
+      "heading": "Your land, <em>your way</em> &mdash; on the high ground near the lake.",
+      "body": "Every tract at Sugar Tree Vista sits on a meadow ridgeline with long views over the Tennessee hills. The lots are a mix of open meadow and mature woods, with wide road frontage on each one so your nearest neighbor is never on top of you. Build a cabin, set up an RV, run trails, or just hold a beautiful piece of Tennessee.\n\nAnd these aren't raw squares on a map. Graded driveways are already in, and every lot comes with a soil map marking approved septic locations &mdash; so you can take it straight to the county and pull a permit. Unrestricted. No crowds. Just space, privacy, and a view you won't get tired of.",
+      "button": "See the Available Lots"
+    },
+    "lots": {
+      "show": true,
+      "eyebrow": "Only Ten Tracts to Choose From",
+      "heading": "Pick Your View",
+      "note": "Tap any lot for photos, acreage, price, and full details.",
+      "footnote": "Lots are reserved on a first-come, first-served basis by private showing. <b>Prices subject to change without notice.</b>"
+    },
+    "highlights": {
+      "show": true,
+      "eyebrow": "Why Sugar Tree Vista",
+      "heading": "Every Purchase Includes",
+      "perks": [
+        "Power being run to the road on every lot (coming soon)",
+        "Drill your own well &mdash; well drillers on our <a href=\"/resources/preferred-vendors\" style=\"color:var(--river);text-decoration:underline\">preferred-vendor list</a>",
+        "Soil map included &mdash; approved septic locations marked",
+        "Graded driveway already installed (with culverts where needed)",
+        "Fully buildable &mdash; unrestricted, no HOA",
+        "New survey on every lot",
+        "Warranty Deed &amp; clear title",
+        "No time limit to build",
+        "Perfect for cabins, homes, RVs &amp; travel trailers"
+      ]
+    },
+    "location": {
+      "show": true,
+      "eyebrow": "The Location",
+      "heading": "Tennessee's <em>big backyard</em> &mdash; in the path of growth.",
+      "body": "Sugar Tree Vista sits in the highlands of Decatur County &mdash; off Ray Miller Rd &amp; Low Gap Rd, Sugar Tree, TN 38380 &mdash; on the ridgelines near the Tennessee River where it widens into Kentucky Lake, one of the largest lakes east of the Mississippi. This is small-town Tennessee at its best: quiet roads, real neighbors, and natural beauty in every direction.",
+      "drives": [
+        { "time": "8 min", "place": "The Ponderosa boat launch — Tennessee River / Kentucky Lake" },
+        { "time": "20 min", "place": "Natchez Trace State Park" },
+        { "time": "22 min", "place": "Parsons, TN — daily supplies" },
+        { "time": "45 min", "place": "Jackson, TN — dining & nightlife" },
+        { "time": "90 min", "place": "Nashville" }
+      ]
+    },
+    "explore": {
+      "show": true,
+      "eyebrow": "Explore the Area",
+      "heading": "Everything to Do, <em>All Around You</em>",
+      "body": "Click a pin for the full listing, one-click directions, and Street View. From the closest boat launch to Kentucky Lake day-trips, here's what's waiting just outside your gate.",
+      "footnote": "Drive times are approximate."
+    },
+    "lotMap": {
+      "show": true,
+      "eyebrow": "The Lay of the Land",
+      "heading": "See Every Lot on the Map",
+      "body": "Each pin is a homesite &mdash; click one for acreage, price, and current availability.",
+      "placeholder": "Call or text for exact lot locations and directions."
+    },
+    "purchase": {
+      "show": true,
+      "eyebrow": "Learn More About",
+      "heading": "How to Purchase",
+      "steps": [
+        { "label": "STEP 01", "heading": "Book your showing", "body": "Call, text, or use the scheduler to lock in a private appointment. The earliest showings see the most lots available." },
+        { "label": "STEP 02", "heading": "Walk the land with me", "body": "We'll tour the tracts together. You'll see the views, the road frontage, and the boundaries &mdash; everything you need to decide with confidence." },
+        { "label": "STEP 03", "heading": "Reserve &amp; close", "body": "Found your lot? Reserve it on the spot. We handle the survey, title, and paperwork, and walk you through to closing." }
+      ],
+      "button": "Start With a Showing"
+    },
+    "financing": {
+      "show": false,
+      "eyebrow": "Offering Excellent",
+      "heading": "Financing",
+      "body": "Cash buyers get 10% off the price. Owner financing is available on select terms &mdash; handled directly with David, case by case &mdash; and a land loan or your own lender works too.",
+      "calcButton": "Estimate My Seller-Finance Payment",
+      "callButton": "Call to Talk Financing",
+      "rows": [
+        { "label": "Owner Financing", "value": "Ask About Terms" },
+        { "label": "Cash Purchase", "value": "10% Cash Discount" },
+        { "label": "Land Loans", "value": "Supported" },
+        { "label": "Down Payment", "value": "By Agreement" }
+      ],
+      "perkLine": "10% discount for cash purchases"
+    },
+    "developer": {
+      "show": true,
+      "eyebrow": "The Developer",
+      "heading": "Alot Of Land LLC",
+      "tagline": "Fewer, better tracts &mdash; chosen for beauty first.",
+      "body": "Alot Of Land LLC, founded by David A. Stone, finds and improves standout acreage across Middle Tennessee. We're selective on purpose &mdash; we'd rather develop one extraordinary property the right way than push volume.\n\nWhen you buy at Sugar Tree Vista, the hard parts are already handled: a fresh survey, clear title, and a clean, honest closing.",
+      "badges": ["New Survey", "Clear Title", "Warranty Deed", "Unrestricted"],
+      "quote": "Don't wait to buy land. Buy land and wait.",
+      "quoteCite": "— A land investor's favorite rule"
+    },
+    "guideCta": {
+      "show": true,
+      "heading": "Get the Sugar Tree Vista Area Guide",
+      "body": "Drive times, things to do, the lake, and what makes this corner of Tennessee special &mdash; in one PDF.",
+      "button": "Download the Area Guide"
+    },
+    "gallery": {
+      "show": true,
+      "heading": "Property Photos",
+      "body": "Beauty comes first for us. See the ridgelines, the meadows, the road frontage, and the lake country just minutes away."
+    },
+    "videos": {
+      "show": true,
+      "eyebrow": "Watch",
+      "heading": "Sugar Tree Vista on Video",
+      "body": "Walk the ridgeline with me &mdash; updates from the field as the lots came together.",
+      "button": "See all videos &rarr;"
+    },
+    "final": {
+      "show": true,
+      "eyebrow": "Limited Showings",
+      "heading": "Come see it before someone else does.",
+      "body": "Only ten lots, reserved first come, first served by private showing. The earliest appointments get the pick of the views.",
+      "ctaSecondary": "Book a Showing Online"
+    },
+    "guide": {
+      "show": true,
+      "eyebrow": "Your Land Guide",
+      "name": "David A. Stone",
+      "body": "I've spent my whole career around land &mdash; in the land and homebuilding business since my teens, building and selling for the better part of two decades, and now finding and improving the kind of acreage I'd want to own myself. Sugar Tree Vista is exactly that: high, private ground with views I couldn't walk away from.\n\nWhether you're looking for a weekend retreat, a place to build, a homestead, or a smart piece of land to hold, I'll walk every lot with you and tell you straight what each one is best for. No pressure &mdash; just an honest look at the property and your options.\n\n<strong>Why I do this:</strong> I do it for my family &mdash; my wife and two young sons. I want them to look up to me as a businessman and an entrepreneur, someone who does real things with his life. And I want to provide for my family while helping other families provide for theirs, through owning land."
+    }
+  }
 }
