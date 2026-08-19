@@ -280,6 +280,7 @@ collections:
                       - { label: "Big number", name: "value", widget: "string" }
                       - { label: "Label under it", name: "label", widget: "string" }
                   - { label: "Main button text", name: "ctaPrimary", widget: "string", required: false }
+                  - { label: "Main button link", name: "ctaPrimaryUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
                   - { label: "Fly & Buy pill text", name: "promoPill", widget: "text", required: false, hint: "Only shows when the Fly & Buy section below is on." }
               - label: "③ Two Easy Ways to Start"
                 name: "options"
@@ -305,6 +306,7 @@ collections:
                   - { label: "Body", name: "body", widget: "text", required: false }
                   - { label: "Fine print", name: "terms", widget: "text", required: false }
                   - { label: "Button", name: "button", widget: "string", required: false }
+                  - { label: "Button link", name: "buttonUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
                   - { label: "Line in 'Every Purchase Includes'", name: "perkLine", widget: "string", required: false }
               - label: "⑤ Ridgeline Living (pitch)"
                 name: "pitch"
@@ -316,6 +318,7 @@ collections:
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false, hint: "Leave a blank line between paragraphs." }
                   - { label: "Button", name: "button", widget: "string", required: false }
+                  - { label: "Button link", name: "buttonUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
               - label: "⑥ Pick Your View (the lots)"
                 name: "lots"
                 widget: "object"
@@ -388,6 +391,7 @@ collections:
                       - { label: "Step heading", name: "heading", widget: "string" }
                       - { label: "Step text", name: "body", widget: "text" }
                   - { label: "Button", name: "button", widget: "string", required: false }
+                  - { label: "Button link", name: "buttonUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
               - label: "⑫ Financing"
                 name: "financing"
                 widget: "object"
@@ -398,7 +402,9 @@ collections:
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
                   - { label: "Calculator button", name: "calcButton", widget: "string", required: false }
+                  - { label: "Calculator button link", name: "calcButtonUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
                   - { label: "Call button", name: "callButton", widget: "string", required: false }
+                  - { label: "Call button link", name: "callButtonUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
                   - label: "Terms list"
                     name: "rows"
                     widget: "list"
@@ -447,6 +453,7 @@ collections:
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
                   - { label: "Button", name: "button", widget: "string", required: false }
+                  - { label: "Button link", name: "buttonUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
               - label: "⑰ Closing Call-to-Action"
                 name: "final"
                 widget: "object"
@@ -457,6 +464,7 @@ collections:
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
                   - { label: "Second button", name: "ctaSecondary", widget: "string", required: false }
+                  - { label: "Second button link", name: "ctaSecondaryUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
               - label: "⑱ Your Land Guide (David bio)"
                 name: "guide"
                 widget: "object"

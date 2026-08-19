@@ -44,6 +44,34 @@ const paras = (k: string, f: string, d: string) => txt(k, f, d).split(/\n\s*\n/)
 
 const showFinancing = on('financing');
 const showFlyBuy = on('flyBuy');
+
+// ── Buttons ────────────────────────────────────────────────────────────────
+// btn() = the label. Never touched in the CMS → built-in default. Cleared to
+// blank → the button is hidden entirely.
+const btn = (k: string, f: string, d: string) => {
+  const v = sec(k)[f];
+  if (v === undefined || v === null) return d;
+  return String(v).trim();
+};
+// link() = where it goes. An anchor pointing at a section that's switched off
+// would scroll nowhere, so those fall back to the best live destination.
+const anchorLive: Record<string, boolean> = {
+  '#contact': on('options'),
+  '#lots': on('lots'),
+  '#highlights': on('highlights'),
+  '#location': on('location'),
+  '#explore': on('explore'),
+  '#map': on('lotMap'),
+  '#purchase': on('purchase'),
+  '#financing': on('financing'),
+};
+const fallbackCta = showingCalendarUrl || `tel:+1${phoneRaw}`;
+const link = (k: string, f: string, d: string) => {
+  const raw = txt(k, f, d).trim();
+  return (raw.startsWith('#') && anchorLive[raw] === false) ? fallbackCta : raw;
+};
+// External links open in a new tab; anchors and tel: stay in place.
+const ext = (u: string) => /^https?:\/\//i.test(u);
 const heroImage = st?.data.heroImage ?? '';
 const guidePhoto = st?.data.guidePhoto ?? '';
 const developerPhoto = st?.data.developerPhoto ?? '';
@@ -425,7 +453,7 @@ const drives = [
     <div class="left"><a href="mailto:David@alot.land">David@alot.land</a></div>
     <div class="right">
       <a href={`tel:+1${phoneRaw}`}><strong>{phoneDisp}</strong></a>
-      <a href="#contact">Book a Showing</a>
+      <a href={on('options') ? '#contact' : fallbackCta} target={on('options') ? undefined : '_blank'} rel={on('options') ? undefined : 'noopener'}>Book a Showing</a>
     </div>
   </div>
 </div>
@@ -436,12 +464,13 @@ const drives = [
     <nav>
       <button class="menu-toggle" aria-label="Menu" id="menuBtn">☰</button>
       <ul id="navlist">
-        <li><a href="#lots">The Lots</a></li>
-        <li><a href="#highlights">Highlights</a></li>
-        <li><a href="#location">Location</a></li>
-        <li><a href="#explore">Explore</a></li>
-        <li><a href="#purchase">How to Buy</a></li>
-        {showFinancing && <li><a href="#financing">Financing</a></li>}
+        {/* Nav only lists sections that are actually on the page */}
+        {on('lots')       && <li><a href="#lots">The Lots</a></li>}
+        {on('highlights') && <li><a href="#highlights">Highlights</a></li>}
+        {on('location')   && <li><a href="#location">Location</a></li>}
+        {on('explore')    && <li><a href="#explore">Explore</a></li>}
+        {on('purchase')   && <li><a href="#purchase">How to Buy</a></li>}
+        {showFinancing    && <li><a href="#financing">Financing</a></li>}
         <li><a href={`tel:+1${phoneRaw}`} style="color:var(--meadow);font-weight:600">Call / Text</a></li>
       </ul>
     </nav>
@@ -484,7 +513,9 @@ const drives = [
       ))}
     </div>
     <div class="cta-row">
-      <a class="btn btn-primary" href="#contact" set:html={txt('hero','ctaPrimary','Book a Private Showing')}></a>
+      {btn('hero','ctaPrimary','Book a Private Showing') && (
+        <a class="btn btn-primary" href={link('hero','ctaPrimaryUrl','#contact')} target={ext(link('hero','ctaPrimaryUrl','#contact')) ? '_blank' : undefined} rel={ext(link('hero','ctaPrimaryUrl','#contact')) ? 'noopener' : undefined} set:html={btn('hero','ctaPrimary','Book a Private Showing')}></a>
+      )}
       <a class="btn btn-ghost" href={`tel:+1${phoneRaw}`}>Call or Text {phoneDisp}</a>
     </div>
     {showFlyBuy && <div class="promo-pill">✈&nbsp; <span set:html={txt('hero','promoPill','<b>$1,500 Fly &amp; Buy Credit</b> &mdash; we cover your flight and hotel, up to $1,500 off the price of the lot you buy.')}></span></div>}
@@ -537,7 +568,9 @@ const drives = [
       <p set:html={txt('flyBuy','body',"Coming from out of state? Fly in to walk the land, and when you buy a lot we'll credit up to <b>$1,500</b> of your travel &mdash; flights and hotel &mdash; toward the purchase price.")}></p>
       <p class="terms" set:html={txt('flyBuy','terms','Credit applies only with the purchase of a lot and is applied to the lot price. Not redeemable for cash. One credit per transaction. Proof of travel required.')}></p>
     </div>
-    <a class="btn btn-dark" href="#contact" set:html={txt('flyBuy','button','Book a Showing &amp; Claim It')}></a>
+    {btn('flyBuy','button','Book a Showing &amp; Claim It') && (
+      <a class="btn btn-dark" href={link('flyBuy','buttonUrl','#contact')} target={ext(link('flyBuy','buttonUrl','#contact')) ? '_blank' : undefined} rel={ext(link('flyBuy','buttonUrl','#contact')) ? 'noopener' : undefined} set:html={btn('flyBuy','button','Book a Showing &amp; Claim It')}></a>
+    )}
   </div>
 </section>
 )}
@@ -549,7 +582,9 @@ const drives = [
     <span class="eyebrow" set:html={txt('pitch','eyebrow','Ridgeline Living, Done Right')}></span>
     <h2 set:html={txt('pitch','heading','Your land, <em>your way</em> &mdash; on the high ground near the lake.')}></h2>
     {paras('pitch','body',"Every tract at Sugar Tree Vista sits on a meadow ridgeline with long views over the Tennessee hills.").map((t: string) => (<p class="lead" set:html={t}></p>))}
-    <a class="btn btn-primary" href="#lots" style="margin-top:10px" set:html={txt('pitch','button','See the Available Lots')}></a>
+    {btn('pitch','button','See the Available Lots') && (
+      <a class="btn btn-primary" href={link('pitch','buttonUrl','#lots')} target={ext(link('pitch','buttonUrl','#lots')) ? '_blank' : undefined} rel={ext(link('pitch','buttonUrl','#lots')) ? 'noopener' : undefined} style="margin-top:10px" set:html={btn('pitch','button','See the Available Lots')}></a>
+    )}
   </div>
 </section>
 )}
@@ -676,7 +711,9 @@ const drives = [
         <div class="step"><div class="n" set:html={st2.label}></div><h4 set:html={st2.heading}></h4><p set:html={st2.body}></p></div>
       ))}
     </div>
-    <a class="btn btn-primary" href="#contact" style="margin-top:34px" set:html={txt('purchase','button','Start With a Showing')}></a>
+    {btn('purchase','button','Start With a Showing') && (
+      <a class="btn btn-primary" href={link('purchase','buttonUrl','#contact')} target={ext(link('purchase','buttonUrl','#contact')) ? '_blank' : undefined} rel={ext(link('purchase','buttonUrl','#contact')) ? 'noopener' : undefined} style="margin-top:34px" set:html={btn('purchase','button','Start With a Showing')}></a>
+    )}
   </div>
 </section>
 )}
@@ -690,8 +727,12 @@ const drives = [
         <h2 set:html={txt('financing','heading','Financing')}></h2>
         <p set:html={txt('financing','body','Cash buyers get 10% off the price.')}></p>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <a class="btn btn-primary" href="/land-payment-calculator?community=sugar-tree-vista" set:html={txt('financing','calcButton','Estimate My Seller-Finance Payment')}></a>
-          <a class="btn btn-dark" href={`tel:+1${phoneRaw}`} set:html={txt('financing','callButton','Call to Talk Financing')}></a>
+          {btn('financing','calcButton','Estimate My Seller-Finance Payment') && (
+            <a class="btn btn-primary" href={link('financing','calcButtonUrl','/land-payment-calculator?community=sugar-tree-vista')} set:html={btn('financing','calcButton','Estimate My Seller-Finance Payment')}></a>
+          )}
+          {btn('financing','callButton','Call to Talk Financing') && (
+            <a class="btn btn-dark" href={link('financing','callButtonUrl',`tel:+1${phoneRaw}`)} set:html={btn('financing','callButton','Call to Talk Financing')}></a>
+          )}
         </div>
       </div>
       <ul class="fin-list">
@@ -765,7 +806,9 @@ const drives = [
         </button>
       ))}
     </div>
-    <a class="btn btn-dark" href="/videos" set:html={txt('videos','button','See all videos &rarr;')}></a>
+    {btn('videos','button','See all videos &rarr;') && (
+      <a class="btn btn-dark" href={link('videos','buttonUrl','/videos')} set:html={btn('videos','button','See all videos &rarr;')}></a>
+    )}
   </div>
 </section>
 )}
@@ -779,7 +822,9 @@ const drives = [
     <p set:html={txt('final','body','Only ten lots, reserved first come, first served by private showing. The earliest appointments get the pick of the views.')}></p>
     <div class="cta-row">
       <a class="btn btn-primary" href={`tel:+1${phoneRaw}`}>Call or Text {phoneDisp}</a>
-      <a class="btn btn-ghost" href="#contact" set:html={txt('final','ctaSecondary','Book a Showing Online')}></a>
+      {btn('final','ctaSecondary','Book a Showing Online') && (
+        <a class="btn btn-ghost" href={link('final','ctaSecondaryUrl','#contact')} target={ext(link('final','ctaSecondaryUrl','#contact')) ? '_blank' : undefined} rel={ext(link('final','ctaSecondaryUrl','#contact')) ? 'noopener' : undefined} set:html={btn('final','ctaSecondary','Book a Showing Online')}></a>
+      )}
     </div>
   </div>
 </section>
