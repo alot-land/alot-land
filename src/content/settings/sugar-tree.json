@@ -249,6 +249,13 @@
         "No time limit to build",
         "Perfect for cabins, homes, RVs &amp; travel trailers"
       ]
+    },
+    "topBar": {
+      "show": true,
+      "email": "David@alot.land",
+      "showPhone": true,
+      "linkText": "Book a Showing",
+      "linkUrl": "#contact"
     }
   },
   "galleryPhotos": [],

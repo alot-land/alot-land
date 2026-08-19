@@ -493,15 +493,26 @@ const drives = [
 <body data-sale-date={saleDate} data-prop-image={propImage}>
 
 <div class="topbar">
+{on('topBar') && (
 <div class="utility">
   <div class="wrap">
-    <div class="left"><a href="mailto:David@alot.land">David@alot.land</a></div>
+    <div class="left">
+      {txt('topBar','email','David@alot.land') && (
+        <a href={`mailto:${txt('topBar','email','David@alot.land')}`} set:html={txt('topBar','email','David@alot.land')}></a>
+      )}
+    </div>
     <div class="right">
-      <a href={`tel:+1${phoneRaw}`}><strong>{phoneDisp}</strong></a>
-      <a href={on('options') ? '#contact' : fallbackCta} target={on('options') ? undefined : '_blank'} rel={on('options') ? undefined : 'noopener'}>Book a Showing</a>
+      {sec('topBar').showPhone !== false && <a href={`tel:+1${phoneRaw}`}><strong>{phoneDisp}</strong></a>}
+      {btn('topBar','linkText','Book a Showing') && (
+        <a href={link('topBar','linkUrl','#contact')}
+           target={ext(link('topBar','linkUrl','#contact')) ? '_blank' : undefined}
+           rel={ext(link('topBar','linkUrl','#contact')) ? 'noopener' : undefined}
+           set:html={btn('topBar','linkText','Book a Showing')}></a>
+      )}
     </div>
   </div>
 </div>
+)}
 
 <header class="nav">
   <div class="wrap">

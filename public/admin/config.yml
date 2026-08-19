@@ -280,6 +280,48 @@ collections:
             collapsed: false
             hint: "Every section of the sales page. Open one to hide/show it or edit its wording. Tip: <em>word</em> makes a word gold-italic in a heading."
             fields:
+              - label: "Top Contact Bar (very top strip)"
+                name: "topBar"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Show this bar", name: "show", widget: "boolean", default: true }
+                  - { label: "Email address (left side)", name: "email", widget: "string", required: false, hint: "Shown at the far left and linked automatically. Clear it to hide the email." }
+                  - { label: "Show phone number", name: "showPhone", widget: "boolean", default: true, required: false, hint: "Uses the number from Settings then Contact Info." }
+                  - { label: "Button text", name: "linkText", widget: "string", required: false, hint: "Clear this to remove the button." }
+                  - label: "Button link"
+                    name: "linkUrl"
+                    widget: "select"
+                    required: false
+                    hint: 'Pick where this button goes. Section names jump down the page; the last option lets you type your own link.'
+                    options:
+                    - { label: "Nowhere yet - pick a destination", value: "" }
+                    - { label: "Hero (top of page)", value: "#top" }
+                    - { label: "Two Easy Ways to Start", value: "#contact" }
+                    - { label: "Fly & Buy Credit", value: "#flybuy" }
+                    - { label: "Ridgeline Living", value: "#ridgeline" }
+                    - { label: "Pick Your View (the lots)", value: "#lots" }
+                    - { label: "Every Purchase Includes", value: "#highlights" }
+                    - { label: "The Location", value: "#location" }
+                    - { label: "Explore the Area (map)", value: "#explore" }
+                    - { label: "See Every Lot on the Map", value: "#map" }
+                    - { label: "How to Purchase", value: "#purchase" }
+                    - { label: "Financing", value: "#financing" }
+                    - { label: "The Developer", value: "#developer" }
+                    - { label: "Area Guide Download", value: "#area-guide" }
+                    - { label: "Property Photos", value: "#gallery" }
+                    - { label: "Sugar Tree Vista on Video", value: "#watch" }
+                    - { label: "Closing Call-to-Action", value: "#visit" }
+                    - { label: "Your Land Guide", value: "#meet-david" }
+                    - { label: "Book a showing - your GHL calendar", value: "BOOKING" }
+                    - { label: "Land consult - your GHL calendar", value: "CONSULT" }
+                    - { label: "Call or text me", value: "PHONE" }
+                    - { label: "Browse all listings", value: "/listings" }
+                    - { label: "Videos page", value: "/videos" }
+                    - { label: "Payment calculator", value: "/land-payment-calculator?community=sugar-tree-vista" }
+                    - { label: "Area guide PDF", value: "/guides/sugar-tree-vista-area-guide.pdf" }
+                    - { label: "Custom link - type it in the box below", value: "CUSTOM" }
+                  - { label: "Button link (custom)", name: "linkUrlCustom", widget: "string", required: false, hint: 'Only used when the dropdown above is set to the custom option. A full https:// link, a page like /videos, or tel:6155386878.' }
               - label: "Sale Banner (One-Day Land Sale)"
                 name: "eventBar"
                 widget: "object"
