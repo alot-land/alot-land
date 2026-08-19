@@ -78,7 +78,6 @@ collections:
       - { label: "Location", name: "location", widget: "string", required: false, hint: "e.g. Knoxville, TN" }
       - { label: "Role / Title", name: "role", widget: "string", required: false, hint: "e.g. Former Real Estate Broker, Land Investor" }
       - { label: "Show on Site", name: "featured", widget: "boolean", default: true }
-      - { label: "Display Order", name: "order", widget: "number", default: 99, hint: "Lower number = shows first" }
       - { label: "Testimonial", name: "body", widget: "text", hint: "Write the full testimonial quote here — no quotation marks needed, they are added automatically" }
       - { label: "Date", name: "date", widget: "datetime" }
 
@@ -175,7 +174,6 @@ collections:
     fields:
       - { label: "Question", name: "question", widget: "string", hint: "The question as it appears in the accordion" }
       - { label: "Category", name: "category", widget: "select", options: [{label: "Buying Land (from us)", value: "buying"}, {label: "Selling Land (to us)", value: "selling"}, {label: "General", value: "general"}] }
-      - { label: "Display Order", name: "order", widget: "number", default: 99, hint: "Lower number = shows first. Buying and Selling are sorted separately." }
       - { label: "Show on Site", name: "active", widget: "boolean", default: true, hint: "Toggle off to hide this FAQ without deleting it" }
       - { label: "Answer", name: "body", widget: "markdown", hint: "Full answer — supports bold, lists, and links" }
 
@@ -188,7 +186,6 @@ collections:
       - { label: "Full Name", name: "name", widget: "string" }
       - { label: "Role / Title", name: "role", widget: "string", hint: "e.g. Founder & CEO, Operations, Transaction Coordinator" }
       - { label: "Photo", name: "photo", widget: "image", required: false, hint: "Headshot or professional photo" }
-      - { label: "Display Order", name: "order", widget: "number", default: 99, hint: "Lower number = shows first" }
       - { label: "Show on Team Page", name: "active", widget: "boolean", default: true }
       - { label: "Bio", name: "body", widget: "markdown", hint: "2–4 sentences about this person's background and role" }
 
@@ -206,7 +203,6 @@ collections:
       - { label: "Phone", name: "phone", widget: "string", required: false, hint: "e.g. (615) 555-1234" }
       - { label: "Website URL", name: "website", widget: "string", required: false, hint: "e.g. https://theirsite.com" }
       - { label: "Show on Site", name: "active", widget: "boolean", default: true }
-      - { label: "Display Order", name: "order", widget: "number", default: 99, hint: "Lower number = shows first" }
       - { label: "Description", name: "body", widget: "markdown", hint: "1–2 sentences about why you recommend them" }
 
   - name: "settings"
@@ -256,7 +252,35 @@ collections:
             collapsed: false
             hint: "Every section of the sales page. Open one to hide/show it or edit its wording. Tip: <em>word</em> makes a word gold-italic in a heading."
             fields:
-              - label: "① Sale Banner (One-Day Land Sale)"
+              - label: "Section Order — drag to rearrange the page"
+                name: "sectionOrder"
+                widget: "list"
+                required: false
+                collapsed: false
+                hint: "Drag the ⠿ handles to change the order sections appear on the page. The Sale Banner always stays pinned at the very top. Any section left out of this list keeps its usual place."
+                field:
+                  label: "Section"
+                  name: "key"
+                  widget: "select"
+                  options:
+                    - { label: "Hero", value: "hero" }
+                    - { label: "Two Easy Ways to Start", value: "options" }
+                    - { label: "Fly & Buy Credit", value: "flyBuy" }
+                    - { label: "Ridgeline Living", value: "pitch" }
+                    - { label: "Pick Your View (the lots)", value: "lots" }
+                    - { label: "Every Purchase Includes", value: "highlights" }
+                    - { label: "The Location", value: "location" }
+                    - { label: "Explore the Area", value: "explore" }
+                    - { label: "See Every Lot on the Map", value: "lotMap" }
+                    - { label: "How to Purchase", value: "purchase" }
+                    - { label: "Financing", value: "financing" }
+                    - { label: "The Developer", value: "developer" }
+                    - { label: "Area Guide Download", value: "guideCta" }
+                    - { label: "Property Photos", value: "gallery" }
+                    - { label: "Sugar Tree Vista on Video", value: "videos" }
+                    - { label: "Closing Call-to-Action", value: "final" }
+                    - { label: "Your Land Guide", value: "guide" }
+              - label: "Sale Banner (One-Day Land Sale)"
                 name: "eventBar"
                 widget: "object"
                 collapsed: true
@@ -264,12 +288,11 @@ collections:
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Show countdown timer", name: "showCountdown", widget: "boolean", default: true, required: false }
                   - { label: "Banner points", name: "points", widget: "list", required: false, field: { label: "Point", name: "point", widget: "string" }, hint: "The sale date is inserted automatically after the first point." }
-              - label: "② Hero (top of page)"
+              - label: "Hero (top of page)"
                 name: "hero"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 10, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Eyebrow (small text above title)", name: "eyebrow", widget: "string", required: false }
                   - { label: "Headline", name: "heading", widget: "string", required: false }
                   - { label: "Sub-headline", name: "sub", widget: "text", required: false }
@@ -283,12 +306,11 @@ collections:
                   - { label: "Main button text", name: "ctaPrimary", widget: "string", required: false }
                   - { label: "Main button link", name: "ctaPrimaryUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
                   - { label: "Fly & Buy pill text", name: "promoPill", widget: "text", required: false, hint: "Only shows when the Fly & Buy section below is on." }
-              - label: "③ Two Easy Ways to Start"
+              - label: "Two Easy Ways to Start"
                 name: "options"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 20, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -298,12 +320,11 @@ collections:
                   - { label: "Card 2 — heading", name: "consultHeading", widget: "string", required: false }
                   - { label: "Card 2 — text", name: "consultBody", widget: "text", required: false }
                   - { label: "Card 2 — button", name: "consultButton", widget: "string", required: false }
-              - label: "④ Fly & Buy Credit"
+              - label: "Fly & Buy Credit"
                 name: "flyBuy"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 30, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true, hint: "Also controls the hero pill and the perk line." }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
@@ -311,45 +332,41 @@ collections:
                   - { label: "Button", name: "button", widget: "string", required: false }
                   - { label: "Button link", name: "buttonUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
                   - { label: "Line in 'Every Purchase Includes'", name: "perkLine", widget: "string", required: false }
-              - label: "⑤ Ridgeline Living (pitch)"
+              - label: "Ridgeline Living (pitch)"
                 name: "pitch"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 40, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false, hint: "Leave a blank line between paragraphs." }
                   - { label: "Button", name: "button", widget: "string", required: false }
                   - { label: "Button link", name: "buttonUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
-              - label: "⑥ Pick Your View (the lots)"
+              - label: "Pick Your View (the lots)"
                 name: "lots"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 50, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Note beside heading", name: "note", widget: "string", required: false }
                   - { label: "Footnote under the lots", name: "footnote", widget: "text", required: false }
-              - label: "⑦ Every Purchase Includes"
+              - label: "Every Purchase Includes"
                 name: "highlights"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 60, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Checklist items", name: "perks", widget: "list", required: false, field: { label: "Item", name: "perk", widget: "string" }, hint: "Fly & Buy and Financing lines are added automatically when those sections are on." }
-              - label: "⑧ The Location"
+              - label: "The Location"
                 name: "location"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 70, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -361,34 +378,31 @@ collections:
                     fields:
                       - { label: "Time", name: "time", widget: "string", hint: "e.g. 22 min" }
                       - { label: "Place", name: "place", widget: "string" }
-              - label: "⑨ Explore the Area (map)"
+              - label: "Explore the Area (map)"
                 name: "explore"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 80, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
                   - { label: "Footnote", name: "footnote", widget: "string", required: false }
-              - label: "⑩ See Every Lot on the Map"
+              - label: "See Every Lot on the Map"
                 name: "lotMap"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 90, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
                   - { label: "Text when no lots have GPS yet", name: "placeholder", widget: "string", required: false }
-              - label: "⑪ How to Purchase"
+              - label: "How to Purchase"
                 name: "purchase"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 100, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -402,12 +416,11 @@ collections:
                       - { label: "Step text", name: "body", widget: "text" }
                   - { label: "Button", name: "button", widget: "string", required: false }
                   - { label: "Button link", name: "buttonUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
-              - label: "⑫ Financing"
+              - label: "Financing"
                 name: "financing"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 110, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true, hint: "Also controls the Financing nav link and its perk line." }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -424,12 +437,11 @@ collections:
                       - { label: "Label", name: "label", widget: "string" }
                       - { label: "Value", name: "value", widget: "string" }
                   - { label: "Line in 'Every Purchase Includes'", name: "perkLine", widget: "string", required: false }
-              - label: "⑬ The Developer"
+              - label: "The Developer"
                 name: "developer"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 120, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
@@ -438,55 +450,50 @@ collections:
                   - { label: "Badges", name: "badges", widget: "list", required: false, field: { label: "Badge", name: "badge", widget: "string" } }
                   - { label: "Pull quote", name: "quote", widget: "string", required: false }
                   - { label: "Quote credit", name: "quoteCite", widget: "string", required: false }
-              - label: "⑭ Area Guide Download"
+              - label: "Area Guide Download"
                 name: "guideCta"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 130, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
                   - { label: "Button", name: "button", widget: "string", required: false }
-              - label: "⑮ Property Photos"
+              - label: "Property Photos"
                 name: "gallery"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 140, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
-              - label: "⑯ Sugar Tree Vista on Video"
+              - label: "Sugar Tree Vista on Video"
                 name: "videos"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 150, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true, hint: "Auto-hides anyway if no YouTube videos mention Sugar Tree." }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
                   - { label: "Button", name: "button", widget: "string", required: false }
                   - { label: "Button link", name: "buttonUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
-              - label: "⑰ Closing Call-to-Action"
+              - label: "Closing Call-to-Action"
                 name: "final"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 160, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Heading", name: "heading", widget: "string", required: false }
                   - { label: "Body", name: "body", widget: "text", required: false }
                   - { label: "Second button", name: "ctaSecondary", widget: "string", required: false }
                   - { label: "Second button link", name: "ctaSecondaryUrl", widget: "string", required: false, hint: "Where the button goes: #contact, #lots, a page like /videos, a full https:// link, or tel:6155386878. Clear the button text above to remove the button." }
-              - label: "⑱ Your Land Guide (David bio)"
+              - label: "Your Land Guide (David bio)"
                 name: "guide"
                 widget: "object"
                 collapsed: true
                 fields:
-                  - { label: "Position on page", name: "order", widget: "number", value_type: "int", default: 170, required: false, hint: "Lower numbers appear higher on the page. Defaults go 10, 20, 30… so you can slot a section between two others (e.g. 55 puts it between 50 and 60)." }
                   - { label: "Show this section", name: "show", widget: "boolean", default: true }
                   - { label: "Eyebrow", name: "eyebrow", widget: "string", required: false }
                   - { label: "Name", name: "name", widget: "string", required: false }

@@ -160,6 +160,8 @@ const settings = defineCollection({
     // sugar-tree.json → sections: per-section show/hide + editable copy.
     // Every field is optional so the page falls back to its built-in default
     // and a missing/partial CMS entry can never break the build.
+    // Drag-to-reorder list of section keys (CMS "Section Order").
+    sectionOrder: z.array(z.string()).optional().default([]),
     sections: z.record(z.string(), z.object({
       show: z.boolean().optional(),
       order: z.number().optional(),

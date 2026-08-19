@@ -59,7 +59,7 @@
         "Unrestricted"
       ],
       "quote": "Don't wait to buy land. Buy land and wait.",
-      "quoteCite": "— A land investor's favorite rule"
+      "quoteCite": "\u2014 A land investor's favorite rule"
     },
     "lotMap": {
       "show": true,
@@ -102,7 +102,7 @@
       "drives": [
         {
           "time": "8 min",
-          "place": "The Ponderosa boat launch — Tennessee River / Kentucky Lake"
+          "place": "The Ponderosa boat launch \u2014 Tennessee River / Kentucky Lake"
         },
         {
           "time": "20 min",
@@ -110,11 +110,11 @@
         },
         {
           "time": "22 min",
-          "place": "Parsons, TN — daily supplies"
+          "place": "Parsons, TN \u2014 daily supplies"
         },
         {
           "time": "45 min",
-          "place": "Jackson, TN — dining & nightlife"
+          "place": "Jackson, TN \u2014 dining & nightlife"
         },
         {
           "time": "90 min",
@@ -173,7 +173,7 @@
       "showCountdown": false
     },
     "hero": {
-      "eyebrow": "Decatur County, Tennessee &nbsp;·&nbsp; 10 View Lots",
+      "eyebrow": "Decatur County, Tennessee &nbsp;\u00b7&nbsp; 10 View Lots",
       "heading": "Sugar&nbsp;Tree&nbsp;<em>Vista</em>",
       "sub": "Ten ridgeline meadow-view tracts near the Tennessee River at Kentucky Lake. Wide road frontage, deep privacy, and views that go on for miles.",
       "stats": [
@@ -234,5 +234,24 @@
   "galleryPhotos": [],
   "saleDate": "2026-09-05T07:00:00.000-07:00",
   "guidePhoto": "https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783804800/DASFamilyHeadshot1_rtx7kx.png",
-  "areaGuideFormUrl": "https://brand.alot.land/widget/form/8m1H0Bh6KIb50OD1Jzjm"
+  "areaGuideFormUrl": "https://brand.alot.land/widget/form/8m1H0Bh6KIb50OD1Jzjm",
+  "sectionOrder": [
+    "hero",
+    "options",
+    "flyBuy",
+    "pitch",
+    "lots",
+    "highlights",
+    "location",
+    "explore",
+    "lotMap",
+    "purchase",
+    "financing",
+    "developer",
+    "guideCta",
+    "gallery",
+    "videos",
+    "final",
+    "guide"
+  ]
 }

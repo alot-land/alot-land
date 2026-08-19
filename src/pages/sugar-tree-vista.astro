@@ -74,16 +74,24 @@ const link = (k: string, f: string, d: string) => {
 const ext = (u: string) => /^https?:\/\//i.test(u);
 
 // ── Section order ──────────────────────────────────────────────────────────
-// Sections live in a flex column, so their on-page order is just a CSS number.
-// Defaults are spaced by 10 so a section can be slotted between two others.
-const DEFAULT_ORDER: Record<string, number> = {
-  hero: 10, options: 20, flyBuy: 30, pitch: 40, lots: 50, highlights: 60,
-  location: 70, explore: 80, lotMap: 90, purchase: 100, financing: 110,
-  developer: 120, guideCta: 130, gallery: 140, videos: 150, final: 160, guide: 170,
-};
+// Order comes from the CMS "Section Order" drag list. Sections left out of the
+// list keep their built-in position, so a partial list can't scramble the page.
+const DEFAULT_ORDER: string[] = [
+  'hero','options','flyBuy','pitch','lots','highlights','location','explore',
+  'lotMap','purchase','financing','developer','guideCta','gallery','videos','final','guide',
+];
+const savedOrder: string[] = (st?.data.sectionOrder ?? []).filter(
+  (k: string) => DEFAULT_ORDER.includes(k)
+);
+// Dragged sections first (in the chosen order), then anything not listed,
+// each keeping its relative default position.
+const finalOrder: string[] = [
+  ...savedOrder,
+  ...DEFAULT_ORDER.filter(k => !savedOrder.includes(k)),
+];
 const ord = (k: string) => {
-  const v = sec(k).order;
-  return (typeof v === 'number' && !Number.isNaN(v)) ? v : (DEFAULT_ORDER[k] ?? 999);
+  const i = finalOrder.indexOf(k);
+  return (i === -1 ? DEFAULT_ORDER.indexOf(k) : i) * 10;
 };
 const heroImage = st?.data.heroImage ?? '';
 const guidePhoto = st?.data.guidePhoto ?? '';
