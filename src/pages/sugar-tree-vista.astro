@@ -841,28 +841,35 @@ const drives = [
 <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script is:inline>
+  // Any section can be switched off in the CMS, so every element this script
+  // touches may legitimately be absent. $() returns null-safely and every use
+  // is guarded — a hidden section must never throw and kill the whole script
+  // (that would take the maps down with it).
+  var $ = function(id){ return document.getElementById(id); };
+  var setText = function(id, val){ var el = $(id); if (el) el.textContent = val; };
+
   // ---- year ----
-  document.getElementById('yr').textContent = new Date().getFullYear();
+  setText('yr', new Date().getFullYear());
 
   // ---- mobile menu ----
-  document.getElementById('menuBtn').addEventListener('click', function(){ document.getElementById('navlist').classList.toggle('open'); });
+  var menuBtn = $('menuBtn');
+  if (menuBtn) menuBtn.addEventListener('click', function(){ var nl = $('navlist'); if (nl) nl.classList.toggle('open'); });
 
-  // ---- countdown (reads CMS sale date) ----
+  // ---- countdown (reads CMS sale date; skipped if the sale bar is hidden) ----
   var SALE = new Date(document.body.dataset.saleDate);
-  document.getElementById('sale-date').textContent = SALE.toLocaleDateString('en-US',{weekday:'long', month:'long', day:'numeric'});
-  function tick(){
-    var d = Math.max(0, SALE.getTime() - Date.now());
-    var day=Math.floor(d/86400000); d-=day*86400000;
-    var hr=Math.floor(d/3600000); d-=hr*3600000;
-    var min=Math.floor(d/60000); d-=min*60000;
-    var sec=Math.floor(d/1000);
-    var p=function(n){return String(n).padStart(2,'0');};
-    document.getElementById('cd-d').textContent=p(day);
-    document.getElementById('cd-h').textContent=p(hr);
-    document.getElementById('cd-m').textContent=p(min);
-    document.getElementById('cd-s').textContent=p(sec);
+  if ($('sale-date') || $('cd-d')) {
+    setText('sale-date', SALE.toLocaleDateString('en-US',{weekday:'long', month:'long', day:'numeric'}));
+    var tick = function(){
+      var d = Math.max(0, SALE.getTime() - Date.now());
+      var day=Math.floor(d/86400000); d-=day*86400000;
+      var hr=Math.floor(d/3600000); d-=hr*3600000;
+      var min=Math.floor(d/60000); d-=min*60000;
+      var sec=Math.floor(d/1000);
+      var p=function(n){return String(n).padStart(2,'0');};
+      setText('cd-d',p(day)); setText('cd-h',p(hr)); setText('cd-m',p(min)); setText('cd-s',p(sec));
+    };
+    tick(); setInterval(tick,1000);
   }
-  tick(); setInterval(tick,1000);
 
   // ---- scroll reveal ----
   var io = new IntersectionObserver(function(entries){
