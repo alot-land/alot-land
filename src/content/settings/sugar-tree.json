@@ -209,7 +209,7 @@
       "consultHeading": "Book a 20-Minute Land Call",
       "showingButton": "Check Available Showing Times",
       "showingHeading": "Book a Private Showing",
-      "show": true,
+      "show": false,
       "consultButton": "Schedule a Land Consult"
     },
     "highlights": {
