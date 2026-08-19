@@ -5,7 +5,7 @@ featured: true
 state: Tennessee
 county: Decatur
 acreage: "5.47"
-price: $62,000
+price: $59,000
 address: 1526 Ray Miller Road, Sugar Tree, TN 38380
 zoning: Unrestricted / No HOA
 roadAccess: Graded driveway installed
