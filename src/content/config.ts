@@ -162,7 +162,7 @@ const settings = defineCollection({
     // and a missing/partial CMS entry can never break the build.
     // Drag-to-reorder list of section keys (CMS "Section Order").
     sectionOrder: z.array(z.string()).optional().default([]),
-    sections: z.record(z.string(), z.object({
+    sections: z.record(z.string(), z.union([z.object({
       show: z.boolean().optional(),
       order: z.number().optional(),
       showCountdown: z.boolean().optional(),
@@ -208,7 +208,7 @@ const settings = defineCollection({
       drives: z.array(z.object({ time: z.string(), place: z.string() })).optional(),
       steps: z.array(z.object({ label: z.string(), heading: z.string(), body: z.string() })).optional(),
       rows: z.array(z.object({ label: z.string(), value: z.string() })).optional(),
-    })).optional().default({}),
+    }), z.any()])).optional().default({}),
   }),
 });
 

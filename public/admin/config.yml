@@ -502,40 +502,40 @@ collections:
           - { label: "GHL — Area Guide Email Form URL (custom)", name: "areaGuideFormUrlCustom", widget: "string", required: false, hint: 'Only used when the dropdown above is set to the custom option. A full https:// link, a page like /videos, or tel:6155386878.' }
 
           # ── Page sections: each one has its own Show toggle + editable copy ──
+          - label: "Section Order — drag to rearrange the page"
+            name: "sectionOrder"
+            widget: "list"
+            required: false
+            collapsed: false
+            hint: "Drag the ⠿ handles to change the order sections appear on the page. The Sale Banner always stays pinned at the very top. Any section left out of this list keeps its usual place."
+            field:
+              label: "Section"
+              name: "key"
+              widget: "select"
+              options:
+                - { label: "Hero", value: "hero" }
+                - { label: "Two Easy Ways to Start", value: "options" }
+                - { label: "Fly & Buy Credit", value: "flyBuy" }
+                - { label: "Ridgeline Living", value: "pitch" }
+                - { label: "Pick Your View (the lots)", value: "lots" }
+                - { label: "Every Purchase Includes", value: "highlights" }
+                - { label: "The Location", value: "location" }
+                - { label: "Explore the Area", value: "explore" }
+                - { label: "See Every Lot on the Map", value: "lotMap" }
+                - { label: "How to Purchase", value: "purchase" }
+                - { label: "Financing", value: "financing" }
+                - { label: "The Developer", value: "developer" }
+                - { label: "Area Guide Download", value: "guideCta" }
+                - { label: "Property Photos", value: "gallery" }
+                - { label: "Sugar Tree Vista on Video", value: "videos" }
+                - { label: "Closing Call-to-Action", value: "final" }
+                - { label: "Your Land Guide", value: "guide" }
           - label: "PAGE SECTIONS"
             name: "sections"
             widget: "object"
             collapsed: false
             hint: "Every section of the sales page. Open one to hide/show it or edit its wording. Tip: <em>word</em> makes a word gold-italic in a heading."
             fields:
-              - label: "Section Order — drag to rearrange the page"
-                name: "sectionOrder"
-                widget: "list"
-                required: false
-                collapsed: false
-                hint: "Drag the ⠿ handles to change the order sections appear on the page. The Sale Banner always stays pinned at the very top. Any section left out of this list keeps its usual place."
-                field:
-                  label: "Section"
-                  name: "key"
-                  widget: "select"
-                  options:
-                    - { label: "Hero", value: "hero" }
-                    - { label: "Two Easy Ways to Start", value: "options" }
-                    - { label: "Fly & Buy Credit", value: "flyBuy" }
-                    - { label: "Ridgeline Living", value: "pitch" }
-                    - { label: "Pick Your View (the lots)", value: "lots" }
-                    - { label: "Every Purchase Includes", value: "highlights" }
-                    - { label: "The Location", value: "location" }
-                    - { label: "Explore the Area", value: "explore" }
-                    - { label: "See Every Lot on the Map", value: "lotMap" }
-                    - { label: "How to Purchase", value: "purchase" }
-                    - { label: "Financing", value: "financing" }
-                    - { label: "The Developer", value: "developer" }
-                    - { label: "Area Guide Download", value: "guideCta" }
-                    - { label: "Property Photos", value: "gallery" }
-                    - { label: "Sugar Tree Vista on Video", value: "videos" }
-                    - { label: "Closing Call-to-Action", value: "final" }
-                    - { label: "Your Land Guide", value: "guide" }
               - label: "Sale Banner (One-Day Land Sale)"
                 name: "eventBar"
                 widget: "object"

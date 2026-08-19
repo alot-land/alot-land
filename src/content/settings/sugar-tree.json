@@ -65,10 +65,6 @@
       "note": "Tap any lot for photos, acreage, price, and full details.",
       "footnote": "Lots are reserved on a first-come, first-served basis by private showing. <b>Prices subject to change without notice.</b>"
     },
-    "sectionOrder": [
-      "highlights",
-      "pitch"
-    ],
     "developer": {
       "show": true,
       "eyebrow": "The Developer",
@@ -82,7 +78,7 @@
         "Unrestricted"
       ],
       "quote": "Don't wait to buy land. Buy land and wait.",
-      "quoteCite": "— A land investor's favorite rule"
+      "quoteCite": "\u2014 A land investor's favorite rule"
     },
     "lotMap": {
       "show": true,
@@ -125,7 +121,7 @@
       "drives": [
         {
           "time": "8 min",
-          "place": "The Ponderosa boat launch — Tennessee River / Kentucky Lake"
+          "place": "The Ponderosa boat launch \u2014 Tennessee River / Kentucky Lake"
         },
         {
           "time": "20 min",
@@ -133,11 +129,11 @@
         },
         {
           "time": "22 min",
-          "place": "Parsons, TN — daily supplies"
+          "place": "Parsons, TN \u2014 daily supplies"
         },
         {
           "time": "45 min",
-          "place": "Jackson, TN — dining & nightlife"
+          "place": "Jackson, TN \u2014 dining & nightlife"
         },
         {
           "time": "90 min",
@@ -196,7 +192,7 @@
       "showCountdown": false
     },
     "hero": {
-      "eyebrow": "Decatur County, Tennessee &nbsp;·&nbsp; 10 View Lots",
+      "eyebrow": "Decatur County, Tennessee &nbsp;\u00b7&nbsp; 10 View Lots",
       "heading": "Sugar&nbsp;Tree&nbsp;<em>Vista</em>",
       "sub": "Ten ridgeline meadow-view tracts near the Tennessee River at Kentucky Lake. Wide road frontage, deep privacy, and views that go on for miles.",
       "stats": [
