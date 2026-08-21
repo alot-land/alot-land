@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchEntries, updateEntry, deleteEntry, createEntry } from '../lib/queries';
@@ -36,7 +36,8 @@ export default function Entries() {
   const remove = useMutation({ mutationFn: deleteEntry, onSuccess: invalidate });
 
   // ---- inline add-in-place ----
-  const [addOpen, setAddOpen] = useState(false);
+  // addAnchor: null (closed) | 'top' (form above table) | <entryId> (form under that row)
+  const [addAnchor, setAddAnchor] = useState(null);
   const [justAdded, setJustAdded] = useState(0);
   const BLANK = {
     entry_date: today(), category: 'Acquisitions & Underwriting', description: '',
@@ -45,7 +46,8 @@ export default function Entries() {
   };
   const [addForm, setAddForm] = useState(BLANK);
   const setA = (k, v) => setAddForm((p) => ({ ...p, [k]: v }));
-  const openAddOn = (date) => { setAddForm({ ...BLANK, entry_date: date || today() }); setAddOpen(true); };
+  const openAddOn = (date, anchor = 'top') => { setAddForm({ ...BLANK, entry_date: date || today() }); setJustAdded(0); setAddAnchor(anchor); };
+  const closeAdd = () => setAddAnchor(null);
 
   const create = useMutation({
     mutationFn: () => createEntry({
@@ -101,11 +103,11 @@ export default function Entries() {
         right={
           <div className="flex items-center gap-2">
             <button
-              onClick={() => (addOpen ? setAddOpen(false) : openAddOn(today()))}
-              title="Add a new entry. Set its date and it drops into the list in date order."
+              onClick={() => (addAnchor === 'top' ? closeAdd() : openAddOn(today(), 'top'))}
+              title="Add a new entry. Set its date and it drops into the list in date order. Or hover a row and click + to add right there."
               className="rounded-xl bg-gold text-bg px-3 py-2 text-sm font-medium hover:brightness-110"
             >
-              {addOpen ? 'Close' : '+ Add entry'}
+              {addAnchor === 'top' ? 'Close' : '+ Add entry'}
             </button>
             <button
               onClick={exportCsv}
@@ -119,12 +121,12 @@ export default function Entries() {
       />
 
       <div className="px-4 sm:px-8 py-4 sm:py-6 space-y-4">
-        {/* Inline add form */}
-        {addOpen && (
+        {/* Add form at top (from the header "+ Add entry" button) */}
+        {addAnchor === 'top' && (
           <AddInline
             form={addForm} setA={setA}
             onSubmit={() => { if (addForm.description.trim() && parseFloat(addForm.hours) > 0) create.mutate(); }}
-            pending={create.isPending} justAdded={justAdded}
+            pending={create.isPending} justAdded={justAdded} onClose={closeAdd}
           />
         )}
 
@@ -172,7 +174,8 @@ export default function Entries() {
             </thead>
             <tbody>
               {filtered.map((e) => (
-                <tr key={e.id} className={`border-b border-border/50 hover:bg-panel-2/40 group ${e.needs_review ? 'bg-gold/5' : ''}`}>
+                <Fragment key={e.id}>
+                <tr className={`border-b border-border/50 hover:bg-panel-2/40 group ${e.needs_review ? 'bg-gold/5' : ''}`}>
                   <td className="px-3 py-2 whitespace-nowrap text-muted tabular-nums" title={e.entry_date}>{e.entry_date}</td>
                   <td className="px-3 py-2">
                     <select
@@ -214,10 +217,26 @@ export default function Entries() {
                     <input type="checkbox" checked={!!e.needs_review} title={COLS.rev} onChange={(ev) => set(e.id, { needs_review: ev.target.checked })} className="accent-gold" />
                   </td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
-                    <button onClick={() => openAddOn(e.entry_date)} title={`Add a new entry on ${e.entry_date}`} className="opacity-0 group-hover:opacity-100 text-muted hover:text-gold text-xs mr-2">+</button>
+                    <button
+                      onClick={() => (addAnchor === e.id ? closeAdd() : openAddOn(e.entry_date, e.id))}
+                      title={`Add a new entry on ${e.entry_date}, right here`}
+                      className={`text-base leading-none mr-2 ${addAnchor === e.id ? 'text-gold' : 'opacity-0 group-hover:opacity-100 text-muted hover:text-gold'}`}
+                    >+</button>
                     <button onClick={() => remove.mutate(e.id)} title="Delete this entry" className="text-muted hover:text-danger text-xs">✕</button>
                   </td>
                 </tr>
+                {addAnchor === e.id && (
+                  <tr>
+                    <td colSpan={9} className="p-2 bg-bg/40">
+                      <AddInline
+                        form={addForm} setA={setA}
+                        onSubmit={() => { if (addForm.description.trim() && parseFloat(addForm.hours) > 0) create.mutate(); }}
+                        pending={create.isPending} justAdded={justAdded} onClose={closeAdd}
+                      />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
               {!filtered.length && (
                 <tr><td colSpan={9} className="px-3 py-8 text-center text-muted">No entries match these filters.</td></tr>
@@ -243,7 +262,7 @@ function Th({ children, title, className = '' }) {
 
 const inp = 'w-full bg-bg border border-border-hi rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-gold';
 
-function AddInline({ form, setA, onSubmit, pending, justAdded }) {
+function AddInline({ form, setA, onSubmit, pending, justAdded, onClose }) {
   const nonRe = form.category === 'Non-REPS' || form.category === 'Coaching/Education';
   return (
     <form
@@ -251,9 +270,12 @@ function AddInline({ form, setA, onSubmit, pending, justAdded }) {
       className="rounded-2xl border border-gold/40 bg-panel p-4"
       style={{ boxShadow: 'inset 4px 0 0 0 #F5B800' }}
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 gap-3">
         <div className="text-[11px] uppercase tracking-widest text-gold">Add entry</div>
-        <div className="text-[11px] text-muted">Set the date to place it — it slots into the list in date order.</div>
+        <div className="flex items-center gap-3">
+          <div className="text-[11px] text-muted hidden sm:block">Set the date to place it — it slots into the list in date order.</div>
+          {onClose && <button type="button" onClick={onClose} title="Close" className="text-muted hover:text-text text-sm">✕</button>}
+        </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
         <label className="col-span-1" title="The day this happened — determines where it lands in the list.">
