@@ -47,6 +47,28 @@ function stripMd(text: string): string {
     .trim();
 }
 
+// YouTube id out of any common link shape
+function ytId(url?: string): string {
+  if (!url) return '';
+  const m = String(url).match(/(?:youtu\.be\/|watch\?v=|\/shorts\/|\/embed\/|\/v\/)([A-Za-z0-9_-]{6,})/);
+  return m ? m[1] : '';
+}
+
+// A recorded answer is stronger evidence than text alone: it ties the answer to
+// a named person and gives search engines a VideoObject to surface.
+const videoSchemas = faqs
+  .filter(f => ytId(f.data.videoUrl))
+  .map(f => ({
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: f.data.question,
+    description: stripMd(f.body).slice(0, 320),
+    embedUrl: `https://www.youtube-nocookie.com/embed/${ytId(f.data.videoUrl)}`,
+    thumbnailUrl: `https://i.ytimg.com/vi/${ytId(f.data.videoUrl)}/hqdefault.jpg`,
+    ...(f.data.videoDate ? { uploadDate: new Date(f.data.videoDate).toISOString() } : {}),
+    publisher: { '@type': 'Organization', name: siteConfig.name },
+  }));
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -62,6 +84,7 @@ const faqSchema = {
 ---
 
 <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+{videoSchemas.map(v => (<script type="application/ld+json" set:html={JSON.stringify(v)} />))}
 
 <section class="py-20 bg-white">
   <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -98,6 +121,13 @@ const faqSchema = {
                   </span>
                 </button>
                 <div class="faq-body hidden px-5 pb-5">
+                  {ytId(faq.data.videoUrl) && (
+                    <div class="mb-4 aspect-video w-full overflow-hidden rounded-xl bg-bg-dark">
+                      <iframe class="w-full h-full" src={`https://www.youtube-nocookie.com/embed/${ytId(faq.data.videoUrl)}?rel=0`}
+                        title={faq.data.question} loading="lazy" allowfullscreen
+                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                    </div>
+                  )}
                   <div class="text-gray-600 text-sm leading-relaxed prose prose-sm max-w-none">
                     <faq.rendered.Content />
                   </div>
@@ -130,6 +160,13 @@ const faqSchema = {
                   </span>
                 </button>
                 <div class="faq-body hidden px-5 pb-5">
+                  {ytId(faq.data.videoUrl) && (
+                    <div class="mb-4 aspect-video w-full overflow-hidden rounded-xl bg-bg-dark">
+                      <iframe class="w-full h-full" src={`https://www.youtube-nocookie.com/embed/${ytId(faq.data.videoUrl)}?rel=0`}
+                        title={faq.data.question} loading="lazy" allowfullscreen
+                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                    </div>
+                  )}
                   <div class="text-gray-600 text-sm leading-relaxed prose prose-sm max-w-none">
                     <faq.rendered.Content />
                   </div>
@@ -164,6 +201,13 @@ const faqSchema = {
                 </span>
               </button>
               <div class="faq-body hidden px-5 pb-5">
+                {ytId(faq.data.videoUrl) && (
+                  <div class="mb-4 aspect-video w-full overflow-hidden rounded-xl bg-bg-dark">
+                    <iframe class="w-full h-full" src={`https://www.youtube-nocookie.com/embed/${ytId(faq.data.videoUrl)}?rel=0`}
+                      title={faq.data.question} loading="lazy" allowfullscreen
+                      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                  </div>
+                )}
                 <div class="text-gray-600 text-sm leading-relaxed prose prose-sm max-w-none">
                   <faq.rendered.Content />
                 </div>

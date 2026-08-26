@@ -125,6 +125,10 @@ const faqs = defineCollection({
   schema: z.object({
     question: z.string(),
     category: z.enum(['buying', 'selling', 'general']),
+    // David answers the question on camera; the clip plays inside the accordion
+    // and emits VideoObject schema so the answer is attributable to a person.
+    videoUrl: z.string().optional(),
+    videoDate: z.coerce.date().optional(),
     order: z.number().default(99),
     active: z.boolean().default(true),
   }),

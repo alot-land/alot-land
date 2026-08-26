@@ -175,6 +175,8 @@ collections:
       - { label: "Question", name: "question", widget: "string", hint: "The question as it appears in the accordion" }
       - { label: "Category", name: "category", widget: "select", options: [{label: "Buying Land (from us)", value: "buying"}, {label: "Selling Land (to us)", value: "selling"}, {label: "General", value: "general"}] }
       - { label: "Show on Site", name: "active", widget: "boolean", default: true, hint: "Toggle off to hide this FAQ without deleting it" }
+      - { label: "Video Answer URL (YouTube)", name: "videoUrl", widget: "string", required: false, hint: "Paste the YouTube link of you answering this question. It plays inside the FAQ and tells Google a real person answered it." }
+      - { label: "Video Recorded On", name: "videoDate", widget: "datetime", required: false, hint: "Optional. Used in the video markup." }
       - { label: "Answer", name: "body", widget: "markdown", hint: "Full answer — supports bold, lists, and links" }
 
   - name: "team"
