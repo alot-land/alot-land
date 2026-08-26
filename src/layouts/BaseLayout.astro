@@ -61,16 +61,15 @@ const globalSchema = {
       url: siteOrigin,
       telephone: `+1${siteConfig.phoneRaw}`,
       email: siteConfig.email,
-      address: {
-        '@type': 'PostalAddress',
-        streetAddress: siteConfig.address.street,
-        addressLocality: siteConfig.address.city,
-        addressRegion: siteConfig.address.state,
-        postalCode: siteConfig.address.zip,
-        addressCountry: 'US',
-      },
+      // No PostalAddress on purpose. The land business is a service-area
+      // operation covering Middle Tennessee, and the only address on file is a
+      // registered agent's — which search engines distrust and which conflicts
+      // with the service area. areaServed is the correct signal here.
+      // (This is website markup only; GoHighLevel keeps its own address for
+      // A2P/SMS registration and is unaffected.)
       areaServed: [
         { '@type': 'State', name: 'Tennessee' },
+        { '@type': 'Country', name: 'United States' },
       ],
       description: siteConfig.description,
       priceRange: '$$',

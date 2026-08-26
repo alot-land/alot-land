@@ -1,6 +1,22 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FAQSection from '../components/FAQSection.astro';
 import TestimonialSection from '../components/TestimonialSection.astro';
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Sell Your Land for Cash',
+  serviceType: 'Land Buying Service',
+  description: 'We buy raw, rural and vacant land directly from owners for cash — including inherited, landlocked, overgrown and back-taxes parcels — with no agent commissions and no listing.',
+  provider: { '@type': 'RealEstateAgent', name: 'Alot of Land LLC', url: 'https://alot.land' },
+  areaServed: { '@type': 'State', name: 'Tennessee' },
+  availableChannel: {
+    '@type': 'ServiceChannel',
+    serviceUrl: 'https://alot.landsell-land/',
+    servicePhone: '+16155386878',
+  },
+};
+
 ---
 
 <BaseLayout
@@ -8,6 +24,7 @@ import TestimonialSection from '../components/TestimonialSection.astro';
   description="Get a fast, fair cash offer on your land. Fill out our quick form and we'll be in touch within 1 business day."
   noChat={true}
 >
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(serviceSchema)} />
   <!-- Hero -->
   <div class="bg-bg-dark text-white py-14">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -70,6 +87,8 @@ import TestimonialSection from '../components/TestimonialSection.astro';
     <script src="https://brand.alot.land/js/form_embed.js"></script>
   </div>
 
+
+  <FAQSection only="selling" eyebrow="Selling Your Land" heading="Common questions about selling land" intro="Straight answers about how we buy, what we pay, and how fast it closes." />
 
 </BaseLayout>
 

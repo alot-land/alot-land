@@ -6,9 +6,19 @@ const contactSettings = await getEntry('settings', 'contact');
 const phone    = contactSettings?.data.phone    ?? siteConfig.phone;
 const phoneRaw = contactSettings?.data.phoneRaw ?? siteConfig.phoneRaw;
 
+interface Props {
+  /** Show only one category. Omit for all (homepage). */
+  only?: 'buying' | 'selling';
+  eyebrow?: string;
+  heading?: string;
+  intro?: string;
+}
+const { only, eyebrow, heading, intro } = Astro.props as Props;
+
 const allFaqs = await getCollection('faqs').catch(() => []);
 const faqs = allFaqs
   .filter(f => f.data.active)
+  .filter(f => !only || f.data.category === only || f.data.category === 'general')
   .sort((a, b) => a.data.order - b.data.order);
 
 const buying  = faqs.filter(f => f.data.category === 'buying');
@@ -58,20 +68,20 @@ const faqSchema = {
 
     <!-- Header -->
     <div class="text-center mb-12">
-      <p class="text-xs font-bold uppercase tracking-widest text-gold mb-2">Got Questions?</p>
-      <h2 class="font-display font-black text-3xl sm:text-4xl text-bg-dark mb-3">Frequently Asked Questions</h2>
-      <p class="text-gray-500 max-w-xl mx-auto">Everything you need to know about buying land from us or selling your land to us.</p>
+      <p class="text-xs font-bold uppercase tracking-widest text-gold mb-2">{eyebrow ?? 'Got Questions?'}</p>
+      <h2 class="font-display font-black text-3xl sm:text-4xl text-bg-dark mb-3">{heading ?? 'Frequently Asked Questions'}</h2>
+      <p class="text-gray-500 max-w-xl mx-auto">{intro ?? 'Everything you need to know about buying land from us or selling your land to us.'}</p>
     </div>
 
     <!-- Two-column layout for buying + selling -->
-    <div class="grid md:grid-cols-2 gap-8 md:gap-12">
+    <div class={only ? "grid gap-8" : "grid md:grid-cols-2 gap-8 md:gap-12"}>
 
       <!-- Buying column -->
       {buyingR.length > 0 && (
         <div>
           <div class="flex items-center gap-3 mb-6">
-            <span class="text-2xl">🌿</span>
-            <h3 class="font-display font-black text-xl text-bg-dark">Buying Land</h3>
+            {!only && <span class="text-2xl">🌿</span>}
+            {!only && <h3 class="font-display font-black text-xl text-bg-dark">Buying Land</h3>}
           </div>
           <div class="space-y-3" id="faq-buying">
             {buyingR.map((faq, i) => (
@@ -102,8 +112,8 @@ const faqSchema = {
       {sellingR.length > 0 && (
         <div>
           <div class="flex items-center gap-3 mb-6">
-            <span class="text-2xl">💰</span>
-            <h3 class="font-display font-black text-xl text-bg-dark">Selling Your Land</h3>
+            {!only && <span class="text-2xl">💰</span>}
+            {!only && <h3 class="font-display font-black text-xl text-bg-dark">Selling Your Land</h3>}
           </div>
           <div class="space-y-3" id="faq-selling">
             {sellingR.map((faq, i) => (

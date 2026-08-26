@@ -1,6 +1,22 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FAQSection from '../components/FAQSection.astro';
 import TestimonialSection from '../components/TestimonialSection.astro';
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Find Land to Buy',
+  serviceType: 'Land Sourcing Service',
+  description: 'Tell us the acreage, budget and use you have in mind and we source off-market rural land in Middle Tennessee to match it.',
+  provider: { '@type': 'RealEstateAgent', name: 'Alot of Land LLC', url: 'https://alot.land' },
+  areaServed: { '@type': 'State', name: 'Tennessee' },
+  availableChannel: {
+    '@type': 'ServiceChannel',
+    serviceUrl: 'https://alot.landfind-land/',
+    servicePhone: '+16155386878',
+  },
+};
+
 ---
 
 <BaseLayout
@@ -8,6 +24,7 @@ import TestimonialSection from '../components/TestimonialSection.astro';
   description="Tell us what land you're looking for and we'll source it off-market. Arizona and Tennessee."
   noChat={true}
 >
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(serviceSchema)} />
   <!-- Hero -->
   <div class="bg-bg-dark text-white py-16">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -65,6 +82,8 @@ import TestimonialSection from '../components/TestimonialSection.astro';
     </div>
   </div>
 
+
+  <FAQSection only="buying" eyebrow="Buying Land" heading="Common questions about buying land" intro="What we sell, how the process works, and what it costs." />
 
 </BaseLayout>
 

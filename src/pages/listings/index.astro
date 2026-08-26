@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import FAQSection from '../../components/FAQSection.astro';
 import ListingCard from '../../components/ListingCard.astro';
 import { getCollection } from 'astro:content';
 
@@ -325,4 +326,6 @@ const mapListings = sorted
 
     });
   </script>
+  <FAQSection only="buying" eyebrow="Buying Land" heading="Common questions about buying land" intro="What we sell, how the process works, and what it costs." />
+
 </BaseLayout>
