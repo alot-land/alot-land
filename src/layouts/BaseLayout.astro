@@ -44,6 +44,10 @@ const globalSchema = {
       description: siteConfig.description,
     },
     {
+      // Organization, deliberately NOT RealEstateAgent. Alot of Land LLC buys
+      // and sells its own land as principal; David A. Stone is not a licensed
+      // agent, and the site says so in writing. Claiming an agent type here
+      // would contradict that disclosure.
       '@type': 'Organization',
       '@id': `${siteOrigin}/#organization`,
       name: siteConfig.name,
@@ -55,7 +59,7 @@ const globalSchema = {
       sameAs: Object.values(siteConfig.social).filter(Boolean),
     },
     {
-      '@type': 'RealEstateAgent',
+      '@type': 'Organization',
       '@id': `${siteOrigin}/#business`,
       name: siteConfig.name,
       url: siteOrigin,
