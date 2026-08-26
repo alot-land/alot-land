@@ -1,0 +1,220 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getEntry } from 'astro:content';
+import { siteConfig } from '../../config/site.js';
+
+const contactSettings = await getEntry('settings', 'contact');
+const phone    = contactSettings?.data.phone    ?? siteConfig.phone;
+const phoneRaw = contactSettings?.data.phoneRaw ?? siteConfig.phoneRaw;
+
+const published = '2026-08-19';
+const url = 'https://alot.land/guides/how-to-buy-land/';
+
+// Article + FAQPage. The FAQ entries repeat the section answer blocks verbatim,
+// which is deliberate — a passage that stands alone is the unit that gets quoted.
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'How to Buy Land: What to Check Before You Pay for a Parcel',
+  description:
+    'A land buyer walks through the order of steps: verifying legal access, checking what the county will let you build, reading a soil map, and closing through a title company.',
+  datePublished: published,
+  dateModified: published,
+  author: {
+    '@type': 'Person',
+    name: 'David A. Stone',
+    jobTitle: 'Land investor and developer',
+    worksFor: { '@type': 'Organization', name: 'Alot of Land LLC' },
+    url: 'https://alot.land/about/',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Alot of Land LLC',
+    logo: { '@type': 'ImageObject', url: 'https://alot.land/images/alotdotland_hzLogo.png' },
+  },
+  mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+};
+
+const faqs = [
+  {
+    q: 'How do I buy land?',
+    a: 'Buying land runs in a fixed order: confirm the parcel has legal road access, check what the county will let you build, find out where a septic system can go, then close through a title company. Access and septic decide whether the land is usable at all, so check those before you fall in love with a view.',
+  },
+  {
+    q: 'Does buying land need an inspection like a house?',
+    a: 'No, and that catches people out. There is no home inspector for a field. The equivalent checks are a survey to confirm boundaries, a title search for liens and easements, and a soil map showing where a septic system can legally go. Those three replace an inspection, and you arrange them yourself.',
+  },
+  {
+    q: 'What is legal access, and why does it matter so much?',
+    a: 'Legal access means a recorded right to reach the parcel from a public road — either frontage or a recorded easement across someone else’s land. A handshake with a neighbour is not access. Without it a parcel is landlocked, which means you usually cannot finance it, insure it, or pull a building permit.',
+  },
+  {
+    q: 'Can you get a mortgage on raw land?',
+    a: 'Usually not the kind you would get for a house. Most banks treat raw land as higher risk and either decline it or want 20 to 50 percent down on a shorter term. The common routes are cash, a local bank or farm credit lender who knows land, or owner financing from the seller.',
+  },
+  {
+    q: 'What kills a land deal most often?',
+    a: 'Access and septic, in that order. A parcel with no recorded way in is worth a fraction of one with road frontage, and ground that will not perc cannot carry a house. Both are knowable before you spend money, and both are missed constantly because a parcel looks fine standing on it.',
+  },
+];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map(f => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
+
+const breadcrumb = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://alot.land/' },
+    { '@type': 'ListItem', position: 2, name: 'Guides', item: 'https://alot.land/guides/' },
+    { '@type': 'ListItem', position: 3, name: 'How to Buy Land', item: url },
+  ],
+};
+---
+
+<BaseLayout
+  title="How to Buy Land"
+  description="A land buyer's walkthrough: how to check legal access, what the county will let you build, where a septic system can go, and how land closings actually work."
+>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(breadcrumb)} />
+
+  <!-- Header -->
+  <div class="bg-bg-dark text-white py-14">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <p class="text-xs font-bold uppercase tracking-widest text-gold mb-3">Guide</p>
+      <h1 class="font-display font-black text-4xl sm:text-5xl mb-4 leading-tight">How to Buy Land</h1>
+      <p class="text-gray-300 text-lg">What to check before you pay for a parcel — from someone who buys them.</p>
+      <p class="text-gray-500 text-sm mt-5">
+        By <a href="/about/" class="text-gold hover:underline">David A. Stone</a>, land investor ·
+        Alot of Land LLC · <time datetime={published}>August 2026</time>
+      </p>
+    </div>
+  </div>
+
+  <article class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 prose prose-gray max-w-none">
+
+    <p class="text-lg text-gray-700 leading-relaxed">
+      Buying land runs in a fixed order: confirm the parcel has legal road access, check what the
+      county will let you build, find out where a septic system can go, then close through a title
+      company. Access and septic decide whether the land is usable at all, so check those before you
+      fall in love with a view.
+    </p>
+
+    <p>
+      I buy rural land for a living and resell it, so I look at parcels that other people passed on
+      and work out why. Most of the time the reason is one of the four things below. None of them are
+      hard to check. They just get skipped, because standing on a nice piece of ground is persuasive
+      and paperwork is not.
+    </p>
+
+    <h2>Does the parcel have legal access?</h2>
+    <p>
+      Legal access means a recorded right to reach the parcel from a public road — either road
+      frontage or a recorded easement across someone else's land. A handshake with a neighbour is not
+      access. Without it a parcel is landlocked, which means you usually cannot finance it, insure it,
+      or pull a building permit.
+    </p>
+    <p>
+      This is the single biggest difference between two parcels that look identical on a map. I have
+      seen adjoining tracts differ by 40% in value because one touched the road and the other did not.
+      Ask for the deed and look for the easement language. If someone tells you access "has never been
+      a problem," that is not the same as access existing.
+    </p>
+
+    <h2>What will the county let you build?</h2>
+    <p>
+      Call the county planning office and ask two questions: what is this parcel zoned, and what is
+      the minimum lot size. That five-minute call tells you whether you can put a house on it, split
+      it later, park an RV, or run a business from it. Unrestricted land has no HOA and no build
+      time-limit, which is not the same as having no zoning at all.
+    </p>
+    <p>
+      Rural counties are usually more permissive than people expect, but the rules that do exist are
+      firm. Setbacks, minimum acreage, and road frontage requirements decide whether a parcel can ever
+      be subdivided — which matters even if you never plan to, because it sets what the land is worth
+      to the next buyer.
+    </p>
+
+    <h2>Where can a septic system go?</h2>
+    <p>
+      Almost no rural parcel has sewer, so a house needs a septic system, and a septic system needs
+      ground that will absorb water. A soil map marks where a system can legally be installed. If no
+      part of the parcel passes, you cannot put a house on it regardless of how good it looks.
+    </p>
+    <p>
+      Septic is not a percentage of the land — it is a contiguous area in a specific place. A parcel
+      can be 80% unsuitable and still be perfectly buildable if the right corner passes. That is why
+      every lot we sell comes with a soil map showing the approved locations, so a buyer can take it
+      straight to the county rather than paying for the test and hoping.
+    </p>
+
+    <h2>How does a land closing actually work?</h2>
+    <p>
+      A title company runs the closing. They search the title for liens, unpaid taxes and easements,
+      confirm the seller is the legal owner, prepare the deed, and record it with the county. That
+      recording is what makes you the owner. It typically takes one to three weeks on a cash purchase.
+    </p>
+    <p>
+      Skipping the title company to save a few hundred dollars is the most expensive mistake in this
+      whole process. Unpaid back taxes and undisclosed heirs follow the land, not the person who sold
+      it to you.
+    </p>
+
+    <h2>How do people pay for land?</h2>
+    <p>
+      Most banks treat raw land as higher risk than a house and either decline it or want 20 to 50
+      percent down on a shorter term. The common routes are cash, a local bank or farm credit lender
+      who actually knows land, or owner financing from the seller.
+    </p>
+    <p>
+      Owner financing is common in this corner of the market because it solves a real problem: the
+      buyer cannot get a bank loan on a vacant parcel, and the seller wants the sale. It is a
+      recorded note with a down payment and terms — not an informal arrangement.
+    </p>
+
+    <h2>What kills a land deal most often?</h2>
+    <p>
+      Access and septic, in that order. A parcel with no recorded way in is worth a fraction of one
+      with road frontage, and ground that will not perc cannot carry a house. Both are knowable before
+      you spend money, and both are missed constantly because a parcel looks fine when you are
+      standing on it.
+    </p>
+
+    <h2>Common questions</h2>
+    <div class="not-prose space-y-4 mt-6">
+      {faqs.map(f => (
+        <div class="border border-gray-100 rounded-2xl bg-bg-light p-5">
+          <h3 class="font-display font-bold text-base text-bg-dark mb-2">{f.q}</h3>
+          <p class="text-gray-600 text-sm leading-relaxed">{f.a}</p>
+        </div>
+      ))}
+    </div>
+
+    <div class="not-prose mt-12 rounded-2xl bg-bg-dark text-white p-7">
+      <h2 class="font-display font-black text-2xl mb-2">Looking at land in Tennessee?</h2>
+      <p class="text-gray-300 mb-5">
+        Every parcel we sell already has the checks above done — legal access, a soil map with
+        approved septic locations, a new survey and a warranty deed.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <a href="/listings/" class="bg-gold text-bg-dark font-bold px-6 py-3 rounded-xl hover:bg-yellow-400 transition-colors text-center">Browse available land</a>
+        <a href={`tel:${phoneRaw}`} class="border border-white/40 text-white font-bold px-6 py-3 rounded-xl hover:bg-white/10 transition-colors text-center">Call or text {phone}</a>
+      </div>
+    </div>
+
+    <p class="text-sm text-gray-500 mt-8 not-prose">
+      Related: <a href="/sell-land/" class="text-gold hover:underline">selling land</a> ·
+      <a href="/sugar-tree-vista/" class="text-gold hover:underline">Sugar Tree Vista</a> ·
+      <a href="/videos/" class="text-gold hover:underline">land videos</a>
+    </p>
+  </article>
+</BaseLayout>

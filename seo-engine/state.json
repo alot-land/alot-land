@@ -1,7 +1,7 @@
 {
   "site": "alot.land",
   "business": "Alot of Land LLC",
-  "cycle": 0,
+  "cycle": 2,
   "cycle_0_completed": "2026-08-26",
   "positioning": "national \u2014 'how do i sell my land' cluster; GBP deprioritised for this site",
   "crawlability": {
@@ -28,7 +28,8 @@
     "missing": [
       "Service",
       "Article (no guides exist yet)"
-    ]
+    ],
+    "note": "RealEstateAgent removed sitewide 2026-08-19 \u2014 David is an investor, not a licensed agent, and the site says so."
   },
   "nap": {
     "name": "Alot of Land LLC",
@@ -54,7 +55,7 @@
         "us_ai_search_volume": 3580658
       }
     },
-    "indexed_pages_expected": 29
+    "indexed_pages_expected": 30
   },
   "target_cluster": {
     "seed": "sell my land",
@@ -101,9 +102,83 @@
       }
     ],
     "combined_volume": 1170,
-    "note": "keyword_suggestions only; keyword_ideas drifts"
+    "note": "keyword_suggestions only; keyword_ideas drifts",
+    "transactional_tennessee": [
+      {
+        "kw": "hunting land for sale in tennessee",
+        "vol": 590,
+        "difficulty": 0
+      },
+      {
+        "kw": "unrestricted land for sale in tennessee",
+        "vol": 390,
+        "difficulty": 0
+      },
+      {
+        "kw": "unrestricted land for sale",
+        "vol": 2400,
+        "difficulty": 0,
+        "scope": "national"
+      },
+      {
+        "kw": "hunting land near me for sale",
+        "vol": 2900,
+        "difficulty": 0,
+        "scope": "national"
+      },
+      {
+        "kw": "rural land for sale tn",
+        "vol": 210,
+        "difficulty": 11
+      }
+    ],
+    "buy_side": [
+      {
+        "kw": "how to buy land",
+        "vol": 4400,
+        "difficulty": 0
+      },
+      {
+        "kw": "how to buy land to build a house",
+        "vol": 1000,
+        "difficulty": 0
+      },
+      {
+        "kw": "how to buy land with no money",
+        "vol": 1000,
+        "difficulty": 0
+      },
+      {
+        "kw": "buying land in tennessee",
+        "vol": 390,
+        "difficulty": 11
+      }
+    ]
   },
-  "moves_run": [],
-  "next_move": "guide answering 'how do i sell my land' \u2014 one page, video-sourced if David will record",
-  "pages_published_this_cycle": 0
+  "moves_run": [
+    {
+      "cycle": 0,
+      "date": "2026-08-26",
+      "move": "crawl audit + llms.txt + baseline",
+      "new_pages": 0
+    },
+    {
+      "cycle": 1,
+      "date": "2026-08-26",
+      "move": "FAQ distribution by intent, 3 demand-driven FAQs, schema fixes",
+      "new_pages": 0
+    },
+    {
+      "cycle": 2,
+      "date": "2026-08-26",
+      "move": "/listings retargeted to the Tennessee transactional cluster; new guide 'How to Buy Land'",
+      "new_pages": 1
+    }
+  ],
+  "next_move": "Rewrite /guides/how-to-buy-land from David's video transcript once recorded; then a second guide for the 'unrestricted land' cluster.",
+  "pages_published_this_cycle": 0,
+  "pending_from_david": [
+    "Record the 17 FAQ videos (see Land-FAQ-Shot-List.pdf)",
+    "Paste each YouTube link into /admin \u2192 FAQs \u2192 Video Answer URL"
+  ]
 }
