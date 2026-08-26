@@ -1,0 +1,109 @@
+{
+  "site": "alot.land",
+  "business": "Alot of Land LLC",
+  "cycle": 0,
+  "cycle_0_completed": "2026-08-26",
+  "positioning": "national \u2014 'how do i sell my land' cluster; GBP deprioritised for this site",
+  "crawlability": {
+    "robots_txt": "allows all; only /admin/ disallowed",
+    "crawlers_allowed": [
+      "Googlebot",
+      "Google-Extended",
+      "GPTBot",
+      "ClaudeBot",
+      "PerplexityBot",
+      "OAI-SearchBot"
+    ],
+    "cdn": "Netlify \u2014 verified 200 for GPTBot, ClaudeBot, PerplexityBot",
+    "llms_txt": "published this cycle"
+  },
+  "schema": {
+    "present": [
+      "Organization",
+      "RealEstateAgent",
+      "WebSite",
+      "FAQPage (home)",
+      "Product/Offer/BreadcrumbList (listings)"
+    ],
+    "missing": [
+      "Service",
+      "Article (no guides exist yet)"
+    ]
+  },
+  "nap": {
+    "name": "Alot of Land LLC",
+    "phone": "+16155386878",
+    "published_address": "4539 N 22nd St Ste R, Phoenix, AZ 85016",
+    "issue": "that is the registered-agent address, not the real office (7301 N 16th St, Phoenix AZ 85020). Recommend removing PostalAddress and relying on areaServed for this national play.",
+    "areaServed": [
+      "Tennessee"
+    ]
+  },
+  "sitemap": {
+    "url": "https://alot.land/sitemap-index.xml",
+    "urls": 29,
+    "lastmod": "absent \u2014 deliberately not faked"
+  },
+  "baseline": {
+    "ai_mentions_us": 0,
+    "ai_search_volume_us": 0,
+    "measured": "2026-08-26",
+    "control": {
+      "landwatch.com": {
+        "us_mentions": 4036,
+        "us_ai_search_volume": 3580658
+      }
+    },
+    "indexed_pages_expected": 29
+  },
+  "target_cluster": {
+    "seed": "sell my land",
+    "keywords": [
+      {
+        "kw": "how to sell my land",
+        "vol": 390,
+        "difficulty": 7,
+        "cpc": 35.24
+      },
+      {
+        "kw": "how do i sell my land",
+        "vol": 390,
+        "difficulty": 12,
+        "cpc": 35.24
+      },
+      {
+        "kw": "how can i sell my land",
+        "vol": 390,
+        "difficulty": 7,
+        "cpc": 35.24
+      },
+      {
+        "kw": "how to sell my land fast",
+        "vol": 30,
+        "difficulty": 15,
+        "cpc": 22.94
+      },
+      {
+        "kw": "how can i sell my land fast",
+        "vol": 30,
+        "difficulty": 8,
+        "cpc": 22.94
+      },
+      {
+        "kw": "how much can i sell my land for",
+        "vol": 30,
+        "cpc": 28.92
+      },
+      {
+        "kw": "how much should i sell my land for",
+        "vol": 30,
+        "cpc": 11.18
+      }
+    ],
+    "combined_volume": 1170,
+    "note": "keyword_suggestions only; keyword_ideas drifts"
+  },
+  "moves_run": [],
+  "next_move": "guide answering 'how do i sell my land' \u2014 one page, video-sourced if David will record",
+  "pages_published_this_cycle": 0
+}
