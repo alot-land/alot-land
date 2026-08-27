@@ -1,0 +1,121 @@
+{
+  "site": "alot.land",
+  "note": "Weekly SEO metrics. Appended by seo-engine/collect-metrics.mjs.",
+  "records": [
+    {
+      "date": "2026-08-27",
+      "site": "alot.land",
+      "cycle": 2,
+      "ai": {
+        "mentions": 0,
+        "aiSearchVolume": 0
+      },
+      "control": {
+        "domain": "landwatch.com",
+        "mentions": 4035,
+        "aiSearchVolume": 3580779,
+        "healthy": true
+      },
+      "indexedPages": 30,
+      "keywords": [
+        {
+          "keyword": "how to sell my land",
+          "searchVolume": 390,
+          "cpc": 35.24,
+          "difficulty": 7
+        },
+        {
+          "keyword": "how do i sell my land",
+          "searchVolume": 390,
+          "cpc": 35.24,
+          "difficulty": 7
+        },
+        {
+          "keyword": "how can i sell my land",
+          "searchVolume": 390,
+          "cpc": 35.24,
+          "difficulty": 7
+        },
+        {
+          "keyword": "how to sell my land fast",
+          "searchVolume": 30,
+          "cpc": 22.94,
+          "difficulty": 8
+        },
+        {
+          "keyword": "how can i sell my land fast",
+          "searchVolume": 30,
+          "cpc": 22.94,
+          "difficulty": 8
+        },
+        {
+          "keyword": "how much can i sell my land for",
+          "searchVolume": 30,
+          "cpc": null,
+          "difficulty": 0
+        },
+        {
+          "keyword": "how much should i sell my land for",
+          "searchVolume": 30,
+          "cpc": 11.18,
+          "difficulty": 0
+        },
+        {
+          "keyword": "hunting land for sale in tennessee",
+          "searchVolume": 590,
+          "cpc": null,
+          "difficulty": 0
+        },
+        {
+          "keyword": "unrestricted land for sale in tennessee",
+          "searchVolume": 390,
+          "cpc": 0.65,
+          "difficulty": 0
+        },
+        {
+          "keyword": "unrestricted land for sale",
+          "searchVolume": 2400,
+          "cpc": null,
+          "difficulty": 0
+        },
+        {
+          "keyword": "hunting land near me for sale",
+          "searchVolume": 2900,
+          "cpc": 0.32,
+          "difficulty": 0
+        },
+        {
+          "keyword": "rural land for sale tn",
+          "searchVolume": 210,
+          "cpc": 0.57,
+          "difficulty": 0
+        },
+        {
+          "keyword": "how to buy land",
+          "searchVolume": 4400,
+          "cpc": null,
+          "difficulty": 0
+        },
+        {
+          "keyword": "how to buy land to build a house",
+          "searchVolume": 1000,
+          "cpc": 4.65,
+          "difficulty": 0
+        },
+        {
+          "keyword": "how to buy land with no money",
+          "searchVolume": 1000,
+          "cpc": 5.66,
+          "difficulty": 0
+        },
+        {
+          "keyword": "buying land in tennessee",
+          "searchVolume": 390,
+          "cpc": 0.97,
+          "difficulty": 11
+        }
+      ],
+      "apiCostUsd": 0.3059
+    }
+  ]
+}
