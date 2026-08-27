@@ -6,7 +6,8 @@
     "dev": "astro dev",
     "optimize": "node scripts/optimize-images.mjs",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "check:cms": "node scripts/check-cms-parity.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.1.6",

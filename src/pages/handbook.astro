@@ -161,6 +161,15 @@ const sections = [
       working on this site.
     </p>
     <p>
+      The dangerous direction is a field that exists in <code>config.ts</code> but <em>not</em> in
+      <code>config.yml</code>. The CMS rewrites a file from only the fields it knows, so that field is
+      <strong>deleted the moment anyone saves that entry</strong> — no error, no warning, and the loss
+      only shows up later as scrambled ordering or a blank section. This bit four collections at once.
+      After touching either file, check they still agree:
+    </p>
+    <pre class="bg-gray-100 rounded-xl p-4 overflow-x-auto text-xs"><code>npm run check:cms</code></pre>
+
+    <p>
       <code>/sugar-tree-vista</code> is deliberately standalone — it has its own HTML and styles and does
       not use <code>BaseLayout</code>. That means it inherits nothing, including structured data, which
       has to be declared on the page itself.
