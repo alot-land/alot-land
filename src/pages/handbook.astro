@@ -65,6 +65,25 @@ const sections = [
       others. <code>mfda</code> builds from its own branch, not <code>main</code>.
     </p>
 
+    <h3>These two pages are password-protected</h3>
+    <p>
+      This handbook and <a href="/seo/">the SEO dashboard</a> sit behind a password. They are working
+      pages, not public ones, and <code>noindex</code> alone only stops search engines — it does not
+      stop a person with the URL.
+    </p>
+    <p>
+      The gate is a Netlify edge function (<code>netlify/edge-functions/private-pages.js</code>) covering
+      <code>/seo</code> and <code>/handbook</code> only. The username is <strong>alot</strong>; the
+      password lives in Netlify as the secret environment variable
+      <code>PRIVATE_PAGES_PASSWORD</code>, and David holds it. It is write-only in Netlify — it cannot
+      be read back out, so if it is lost it gets replaced rather than recovered.
+    </p>
+    <p>
+      It <strong>fails closed</strong>. If the variable is missing or empty for a deploy context, those
+      pages return 503 instead of opening. A blank field is never an exposure — but it does mean a new
+      deploy context needs the value adding before these pages work there.
+    </p>
+
     <h2 id="backend">Back end — what the CMS controls</h2>
     <p>Everything below is edited at <code>/admin</code> with no code involved.</p>
 
