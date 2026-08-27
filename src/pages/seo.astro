@@ -1,0 +1,209 @@
+---
+// SEO tracking dashboard. Private working page — noindex, not in the sitemap,
+// linked from /admin. Reads the committed history file at build time, so there
+// is no fetch, no CORS and no backend: the weekly metrics job commits a record,
+// Netlify rebuilds, this page updates itself.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import history from '../../seo-engine/history.json';
+import state from '../../seo-engine/state.json';
+
+const records = [...(history.records ?? [])].sort((a, b) => a.date.localeCompare(b.date));
+const latest = records[records.length - 1] ?? null;
+const first = records[0] ?? null;
+const prev = records.length > 1 ? records[records.length - 2] : null;
+
+const delta = (a, b) => (a == null || b == null) ? null : a - b;
+const mentionsDelta = prev ? delta(latest?.ai?.mentions, prev.ai?.mentions) : null;
+const pagesDelta = prev ? delta(latest?.indexedPages, prev.indexedPages) : null;
+
+// Keywords, biggest opportunity first: high volume and low difficulty.
+const keywords = [...(latest?.keywords ?? [])]
+  .filter(k => k.searchVolume)
+  .sort((a, b) => (b.searchVolume ?? 0) - (a.searchVolume ?? 0));
+
+const totalVolume = keywords.reduce((s, k) => s + (k.searchVolume ?? 0), 0);
+// What this traffic would cost to buy, if we ranked and took a ~30% click share.
+const trafficValue = keywords.reduce((s, k) => s + ((k.searchVolume ?? 0) * 0.3 * (k.cpc ?? 0)), 0);
+
+const cycles = state.moves_run ?? [];
+const pending = state.pending_from_david ?? [];
+
+// Sparkline points for the mentions trend.
+function spark(values, w = 260, h = 44) {
+  if (values.length < 2) return null;
+  const max = Math.max(...values, 1);
+  const step = w / (values.length - 1);
+  return values.map((v, i) => `${(i * step).toFixed(1)},${(h - (v / max) * h).toFixed(1)}`).join(' ');
+}
+const mentionSpark = spark(records.map(r => r.ai?.mentions ?? 0));
+const fmt = n => n == null ? '—' : n.toLocaleString('en-US');
+---
+
+<BaseLayout title="SEO Tracking" description="Internal SEO and AI-citation tracking for alot.land." noindex={true}>
+  <div class="bg-bg-dark text-white py-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <p class="text-xs font-bold uppercase tracking-widest text-gold mb-2">Internal · not indexed</p>
+      <h1 class="font-display font-black text-3xl sm:text-4xl mb-2">SEO Tracking</h1>
+      <p class="text-gray-400">
+        {latest ? <>Last measured <strong class="text-white">{latest.date}</strong> · cycle {latest.cycle ?? '—'} · updates automatically every Monday.</>
+                : <>No measurements yet.</>}
+      </p>
+    </div>
+  </div>
+
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    {!latest && (
+      <div class="rounded-2xl border border-gray-200 bg-white p-8 text-center">
+        <p class="text-gray-600">The weekly job has not run yet. It collects the first record on Monday, or run it now from the Actions tab.</p>
+      </div>
+    )}
+
+    {latest && (
+      <>
+        <!-- Headline numbers -->
+        <div class="grid sm:grid-cols-3 gap-4">
+          <div class="rounded-2xl border border-gray-200 bg-white p-6">
+            <p class="text-xs font-bold uppercase tracking-widest text-text-muted mb-2">AI mentions (US)</p>
+            <p class="font-display font-black text-4xl text-bg-dark tabular-nums">{fmt(latest.ai?.mentions)}</p>
+            <p class="text-sm mt-2">
+              {mentionsDelta == null ? <span class="text-gray-400">baseline</span>
+                : mentionsDelta > 0 ? <span class="text-green-brand font-semibold">+{mentionsDelta} since last week</span>
+                : mentionsDelta < 0 ? <span class="text-red-600 font-semibold">{mentionsDelta} since last week</span>
+                : <span class="text-gray-400">no change</span>}
+            </p>
+            {mentionSpark && (
+              <svg viewBox="0 0 260 44" class="w-full h-11 mt-3" aria-hidden="true">
+                <polyline points={mentionSpark} fill="none" stroke="#F5B800" stroke-width="2" stroke-linejoin="round" />
+              </svg>
+            )}
+          </div>
+
+          <div class="rounded-2xl border border-gray-200 bg-white p-6">
+            <p class="text-xs font-bold uppercase tracking-widest text-text-muted mb-2">Pages indexed</p>
+            <p class="font-display font-black text-4xl text-bg-dark tabular-nums">{fmt(latest.indexedPages)}</p>
+            <p class="text-sm mt-2">
+              {pagesDelta == null ? <span class="text-gray-400">baseline</span>
+                : pagesDelta === 0 ? <span class="text-gray-400">no change</span>
+                : <span class="text-green-brand font-semibold">+{pagesDelta} since last week</span>}
+            </p>
+            <p class="text-xs text-gray-400 mt-3">Unexplained growth here is a warning sign, not a win — it means pages are being published faster than intended.</p>
+          </div>
+
+          <div class="rounded-2xl border border-gray-200 bg-white p-6">
+            <p class="text-xs font-bold uppercase tracking-widest text-text-muted mb-2">Traffic value / mo</p>
+            <p class="font-display font-black text-4xl text-bg-dark tabular-nums">${Math.round(trafficValue).toLocaleString('en-US')}</p>
+            <p class="text-sm text-gray-500 mt-2">If we ranked for the tracked set</p>
+            <p class="text-xs text-gray-400 mt-3">{fmt(totalVolume)} searches a month across {keywords.length} keywords, priced at their ad cost.</p>
+          </div>
+        </div>
+
+        <!-- Data integrity -->
+        <div class={`mt-4 rounded-xl border p-4 text-sm ${latest.control?.healthy ? 'border-gray-200 bg-white text-gray-600' : 'border-red-300 bg-red-50 text-red-800'}`}>
+          {latest.control?.healthy
+            ? <>✅ <strong>Measurement is trustworthy.</strong> The control domain ({latest.control.domain}) returned {fmt(latest.control.mentions)} mentions in the same run, so a zero above is real rather than a broken call.</>
+            : <>⚠️ <strong>Treat this run as suspect.</strong> The control domain returned zero too, which means the API or the parser failed — not that the site is invisible.</>}
+        </div>
+
+        <!-- Keywords -->
+        <h2 class="font-display font-black text-2xl text-bg-dark mt-10 mb-1">Tracked keywords</h2>
+        <p class="text-gray-500 text-sm mb-4">Difficulty runs 0–100. Anything at 0 with real volume is an opening — it means nobody has answered it properly.</p>
+        <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-text-muted border-b border-gray-100">
+                <th class="py-3 px-4 font-semibold">Keyword</th>
+                <th class="py-3 px-4 font-semibold text-right">Searches/mo</th>
+                <th class="py-3 px-4 font-semibold text-right">Difficulty</th>
+                <th class="py-3 px-4 font-semibold text-right">Cost per click</th>
+              </tr>
+            </thead>
+            <tbody>
+              {keywords.map(k => (
+                <tr class="border-b border-gray-50 last:border-0">
+                  <td class="py-3 px-4 text-bg-dark">{k.keyword}</td>
+                  <td class="py-3 px-4 text-right tabular-nums font-semibold">{fmt(k.searchVolume)}</td>
+                  <td class="py-3 px-4 text-right">
+                    <span class={`inline-block px-2 py-0.5 rounded-full text-xs font-bold tabular-nums ${
+                      k.difficulty == null ? 'bg-gray-100 text-gray-400'
+                      : k.difficulty <= 10 ? 'bg-green-100 text-green-800'
+                      : k.difficulty <= 30 ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-red-100 text-red-800'}`}>
+                      {k.difficulty ?? '—'}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-right tabular-nums text-gray-500">{k.cpc ? `$${k.cpc.toFixed(2)}` : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- History -->
+        <h2 class="font-display font-black text-2xl text-bg-dark mt-10 mb-4">Measurement history</h2>
+        <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-text-muted border-b border-gray-100">
+                <th class="py-3 px-4 font-semibold">Date</th>
+                <th class="py-3 px-4 font-semibold text-right">AI mentions</th>
+                <th class="py-3 px-4 font-semibold text-right">Pages</th>
+                <th class="py-3 px-4 font-semibold text-right">Control</th>
+                <th class="py-3 px-4 font-semibold text-right">API cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...records].reverse().map(r => (
+                <tr class="border-b border-gray-50 last:border-0">
+                  <td class="py-3 px-4 tabular-nums">{r.date}</td>
+                  <td class="py-3 px-4 text-right tabular-nums font-semibold">{fmt(r.ai?.mentions)}</td>
+                  <td class="py-3 px-4 text-right tabular-nums">{fmt(r.indexedPages)}</td>
+                  <td class="py-3 px-4 text-right tabular-nums text-gray-500">{fmt(r.control?.mentions)}</td>
+                  <td class="py-3 px-4 text-right tabular-nums text-gray-500">${r.apiCostUsd?.toFixed(2) ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {records.length < 4 && (
+          <p class="text-sm text-gray-500 mt-3">A trend needs a few weeks of records. Expect flat numbers at first — that is normal, and it is exactly when people quit.</p>
+        )}
+      </>
+    )}
+
+    <!-- Cycles + what's pending -->
+    <div class="grid md:grid-cols-2 gap-4 mt-10">
+      <div class="rounded-2xl border border-gray-200 bg-white p-6">
+        <h2 class="font-display font-black text-xl text-bg-dark mb-3">Cycles run</h2>
+        <ul class="space-y-3">
+          {cycles.map(c => (
+            <li class="text-sm">
+              <span class="font-bold text-bg-dark">Cycle {c.cycle}</span>
+              <span class="text-gray-400"> · {c.date}</span>
+              {c.new_pages > 0 && <span class="ml-2 inline-block px-2 py-0.5 rounded-full bg-gold/20 text-xs font-bold text-bg-dark">+{c.new_pages} page</span>}
+              <p class="text-gray-600 mt-0.5">{c.move}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div class="rounded-2xl border border-gray-200 bg-white p-6">
+        <h2 class="font-display font-black text-xl text-bg-dark mb-3">Waiting on you</h2>
+        {pending.length ? (
+          <ul class="space-y-2 text-sm text-gray-700 list-disc pl-5">
+            {pending.map(item => (<li>{item}</li>))}
+          </ul>
+        ) : <p class="text-gray-500 text-sm">Nothing outstanding.</p>}
+        <p class="text-xs text-gray-400 mt-4">
+          The full queue lives in <code class="bg-gray-100 px-1 rounded">seo-engine/queue.md</code>.
+          Content awaiting approval arrives as a pull request on GitHub.
+        </p>
+      </div>
+    </div>
+
+    <p class="text-xs text-gray-400 mt-8">
+      Data: <code class="bg-gray-100 px-1 rounded">seo-engine/history.json</code>, collected Mondays by the
+      Weekly SEO metrics action and committed to the repo. This page rebuilds itself from that file.
+    </p>
+  </div>
+</BaseLayout>

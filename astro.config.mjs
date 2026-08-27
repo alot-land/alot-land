@@ -21,7 +21,9 @@ export default defineConfig({
         !page.includes('/invest') &&
         !page.includes('/land-payment-calculator') &&
         !page.includes('/listings/favorites') &&
-        !page.includes('/media'),
+        !page.includes('/media') &&
+        !page.includes('/seo') &&
+        !page.includes('/handbook'),
     }),
   ],
 });

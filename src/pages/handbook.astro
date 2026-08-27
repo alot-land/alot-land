@@ -1,0 +1,227 @@
+---
+// Operations handbook. Private working page — noindex, out of the sitemap,
+// linked from /admin. Written so a competent hire can run this site without
+// David. Keep it updated as part of each cycle, not as a one-off.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const listings = await getCollection('listings').catch(() => []);
+const faqs = await getCollection('faqs').catch(() => []);
+const communities = await getCollection('communities').catch(() => []);
+
+const sections = [
+  { id: 'orientation', label: 'Orientation' },
+  { id: 'backend',     label: 'Back end — the CMS' },
+  { id: 'frontend',    label: 'Front end — the code' },
+  { id: 'seo',         label: 'SEO routine' },
+  { id: 'gotchas',     label: 'Known traps' },
+  { id: 'runbook',     label: 'When something breaks' },
+];
+---
+
+<BaseLayout title="Operations Handbook" description="How alot.land is built, edited and maintained." noindex={true}>
+  <div class="bg-bg-dark text-white py-10">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <p class="text-xs font-bold uppercase tracking-widest text-gold mb-2">Internal · not indexed</p>
+      <h1 class="font-display font-black text-3xl sm:text-4xl mb-3">Operations Handbook</h1>
+      <p class="text-gray-400 max-w-2xl">Everything needed to run alot.land — what the CMS controls, how the site is built, and how the SEO routine works. Written for whoever is doing the work, whether that is David or a hire.</p>
+      <nav class="flex flex-wrap gap-2 mt-6">
+        {sections.map(s => (
+          <a href={`#${s.id}`} class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">{s.label}</a>
+        ))}
+      </nav>
+    </div>
+  </div>
+
+  <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 prose prose-gray max-w-none
+                  prose-h2:font-display prose-h2:font-black prose-h2:text-bg-dark prose-h2:mt-12
+                  prose-h3:font-display prose-h3:font-bold prose-h3:text-bg-dark
+                  prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded prose-code:text-sm">
+
+    <h2 id="orientation">Orientation</h2>
+    <p>
+      alot.land is a static site. Nothing runs on a server: pages are built into plain HTML and served
+      from a CDN. That is why it is fast and why there is very little to break.
+    </p>
+    <table>
+      <tbody>
+        <tr><td><strong>Code</strong></td><td><code>github.com/alot-land/alot-land</code></td></tr>
+        <tr><td><strong>Framework</strong></td><td>Astro, with Tailwind for styling</td></tr>
+        <tr><td><strong>Editing</strong></td><td>Decap CMS at <code>/admin</code>, logged in with Netlify Identity</td></tr>
+        <tr><td><strong>Hosting</strong></td><td>Netlify, rebuilds automatically on every push to <code>main</code></td></tr>
+        <tr><td><strong>Images</strong></td><td>Cloudinary, chosen inside the CMS</td></tr>
+        <tr><td><strong>Forms &amp; calendars</strong></td><td>GoHighLevel, embedded by URL</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>The loop:</strong> someone edits in <code>/admin</code> → Decap commits that change to
+      GitHub → Netlify sees the commit and rebuilds → the live site updates. Usually one to two
+      minutes. If a change is not showing, it is almost always either the build still running or a
+      cached browser — check both before assuming something is broken.
+    </p>
+    <p>
+      One repo drives <strong>four</strong> Netlify sites, separated by base directory: the root is
+      alot.land, <code>time-audit/</code>, <code>mission-control/</code> and <code>mfda/</code> are the
+      others. <code>mfda</code> builds from its own branch, not <code>main</code>.
+    </p>
+
+    <h2 id="backend">Back end — what the CMS controls</h2>
+    <p>Everything below is edited at <code>/admin</code> with no code involved.</p>
+
+    <h3>Listings ({listings.length} live)</h3>
+    <p>
+      One entry per parcel. Creates the page at <code>/listings/&lt;slug&gt;/</code> automatically, and
+      the same entry feeds the homepage, the listings index, the community page and any sales page for
+      its community. Edit once, it updates everywhere.
+    </p>
+    <ul>
+      <li><strong>Status</strong> drives the badge, the page title and the social-share stamp. Sold listings are hidden from the homepage automatically.</li>
+      <li><strong>Featured on Homepage</strong> is the only control over what appears in the homepage row.</li>
+      <li><strong>GPS</strong> as <code>lat,lng</code> places the map pin. Without it, no pin.</li>
+      <li><strong>Address</strong> is optional and has its own show/hide toggle, so it can be stored privately.</li>
+      <li><strong>Community</strong> links the parcel to a community and switches on the gold banner at the top of the listing.</li>
+      <li><strong>Never put the price in the description text.</strong> The price field already appears in four places. A price typed into prose goes stale the moment the field changes, and it looks like the site is wrong.</li>
+    </ul>
+
+    <h3>Sugar Tree Vista sales page</h3>
+    <p>
+      Settings → Sugar Tree Vista. The whole page is editable: <strong>18 section panels</strong>, each
+      with a show/hide toggle and its own copy, plus a drag list that sets the order sections appear in.
+    </p>
+    <ul>
+      <li>Buttons have a text field and a <strong>destination dropdown</strong> — pick a section by name rather than typing a link. Clearing the text removes the button.</li>
+      <li>A button pointing at a hidden section automatically redirects to the booking calendar, so it can never dead-end.</li>
+      <li><code>&lt;em&gt;word&lt;/em&gt;</code> in a heading gives the gold italic accent.</li>
+      <li>Leaving a field blank restores its built-in wording — blanking a field cannot leave the page empty.</li>
+    </ul>
+
+    <h3>FAQs ({faqs.length} live)</h3>
+    <p>
+      Categorised <em>buying</em> or <em>selling</em>. They appear on the pages that match their intent —
+      selling on <code>/sell-land</code>, buying on <code>/find-land</code> and <code>/listings</code>,
+      everything on the homepage — and each page emits its own FAQ markup for search engines.
+    </p>
+    <p>
+      Each FAQ takes a <strong>Video Answer URL</strong>. Paste a YouTube link and the clip plays inside
+      the accordion and adds video markup that attributes the answer to a named person. This matters
+      more than it looks: it is the difference between anonymous text and a real person answering.
+    </p>
+
+    <h3>Communities ({communities.length} live)</h3>
+    <p>
+      Groups listings and creates <code>/communities/&lt;slug&gt;/</code>. The <strong>Button Link</strong>
+      field is what makes the gold banner appear on every listing in that community.
+    </p>
+
+    <h3>Images — one rule that matters</h3>
+    <p>
+      Upload through the CMS so images go to Cloudinary. The media library is configured to cap width at
+      1600px automatically. This is not cosmetic: an uncapped phone photo is <strong>2.4 MB</strong>, and
+      capped it is <strong>384 KB</strong> — the difference between a lot page loading on rural cell
+      signal and being abandoned. If a Cloudinary URL ever appears without
+      <code>w_1600,c_limit</code>, it was added by hand and should be fixed.
+    </p>
+
+    <h2 id="frontend">Front end — where things live</h2>
+    <table>
+      <thead><tr><th>Path</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td><code>src/pages/</code></td><td>One file per URL. <code>[slug].astro</code> generates a page per content entry.</td></tr>
+        <tr><td><code>src/content/</code></td><td>The content itself — listings, FAQs, communities, settings. This is what the CMS writes to.</td></tr>
+        <tr><td><code>src/content/config.ts</code></td><td>Defines what fields exist and their types.</td></tr>
+        <tr><td><code>src/components/</code></td><td>Reused pieces — header, footer, FAQ accordion, listing card.</td></tr>
+        <tr><td><code>src/layouts/BaseLayout.astro</code></td><td>Wraps most pages. Owns the site-wide structured data.</td></tr>
+        <tr><td><code>public/admin/config.yml</code></td><td>Defines every field in the CMS.</td></tr>
+        <tr><td><code>seo-engine/</code></td><td>SEO state, metrics history, queue and log.</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>Adding a field is always two edits.</strong> <code>config.ts</code> defines it and
+      <code>config.yml</code> exposes it in the CMS. Change one without the other and the field either
+      silently disappears when saved, or fails the build. This is the single most common mistake when
+      working on this site.
+    </p>
+    <p>
+      <code>/sugar-tree-vista</code> is deliberately standalone — it has its own HTML and styles and does
+      not use <code>BaseLayout</code>. That means it inherits nothing, including structured data, which
+      has to be declared on the page itself.
+    </p>
+
+    <h2 id="seo">The SEO routine</h2>
+    <p>
+      The goal is being <em>quoted</em> by AI search, not only ranked. The method is one deliberate
+      improvement a week, published slowly enough to be indistinguishable from a person working.
+    </p>
+    <table>
+      <thead><tr><th>File</th><th>Holds</th></tr></thead>
+      <tbody>
+        <tr><td><code>seo-engine/state.json</code></td><td>Where the programme is: cycle number, target keywords, what has run.</td></tr>
+        <tr><td><code>seo-engine/history.json</code></td><td>Weekly measurements. Written by the Monday job, never by hand.</td></tr>
+        <tr><td><code>seo-engine/queue.md</code></td><td>Everything waiting on a person.</td></tr>
+        <tr><td><code>seo-engine/log.md</code></td><td>What each cycle changed, newest first.</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <a href="/seo/">The tracking dashboard</a> reads those files and is the fastest way to see where
+      things stand.
+    </p>
+
+    <h3>Rules that are not negotiable</h3>
+    <ul>
+      <li><strong>One new page per cycle, maximum.</strong> Publishing velocity is what scaled-content detection keys on. Ten pages in a week gets flagged on the pattern regardless of quality.</li>
+      <li><strong>Improve before you add.</strong> If a page already answers the query, make that page better rather than building a competitor to it.</li>
+      <li><strong>Publishing nothing is allowed.</strong> Automated SEO gets sites penalised because it feels obliged to produce output weekly. If nothing clears the bar, ship nothing and say so.</li>
+      <li><strong>Answer blocks.</strong> Every section and FAQ opens with 40–60 words that make sense read alone. Models quote passages, not pages — a passage that needs its surroundings cannot be extracted.</li>
+      <li><strong>Question-shaped headings.</strong> "What does land actually cost?" beats "Pricing".</li>
+      <li><strong>Never serve different content to crawlers.</strong> That is cloaking, and it is one of the few things that earns a manual penalty rather than just poor ranking.</li>
+      <li><strong>Off-site work is drafted, never posted.</strong> Review requests and profile posts get written and queued for a human.</li>
+    </ul>
+
+    <h3>Words that fail review</h3>
+    <p class="text-sm">
+      <em>in today's fast-paced world · look no further · elevate your space · nestled in · boasts ·
+      unlock · in conclusion · dive into · when it comes to · rest assured · top-notch ·
+      state-of-the-art · game-changer · seamless · robust solution · take it to the next level</em>
+    </p>
+
+    <h3>Measuring honestly</h3>
+    <p>
+      Every metrics run also measures a <strong>control domain</strong>. If the control returns zero, the
+      measurement is broken rather than the site being invisible — a parsing bug once made every domain
+      look like zero, which reads exactly like failure. The dashboard says plainly whether a run is
+      trustworthy. Expect flat numbers for the first month; that is normal and it is when people quit.
+    </p>
+
+    <h2 id="gotchas">Known traps</h2>
+    <ul>
+      <li><strong>Brave caches hard.</strong> A change that "did not work" is usually cached. Hard-refresh, use a private window, or add <code>?x=1</code> to the URL. Check on a phone before concluding anything is broken.</li>
+      <li><strong>Decap is pinned to 3.14.1 on purpose.</strong> It used to auto-update, and a release broke the editor completely. Do not change it back to a floating version without testing.</li>
+      <li><strong>A CMS save can fail the build.</strong> If a saved value does not match what <code>config.ts</code> expects, the build fails and Netlify keeps serving the old version — so the site looks frozen rather than broken. Check the Actions tab and the Netlify deploy log.</li>
+      <li><strong>New GitHub organisations block third-party apps by default.</strong> That silently breaks CMS saving while builds keep working. Fixed at <code>github.com/settings/applications</code> → Netlify → grant the org.</li>
+      <li><strong>Git ref corruption.</strong> Occasionally <code>refs/heads/main</code> is replaced by a stale <code>main.lock</code>. The lock holds the correct commit — rename it back to <code>main</code>. Do not re-initialise the repo.</li>
+      <li><strong>Website markup and GoHighLevel are separate.</strong> Changing schema, addresses or copy on the site never affects GHL's phone number, chatbot or SMS registration.</li>
+    </ul>
+
+    <h2 id="runbook">When something breaks</h2>
+    <table>
+      <thead><tr><th>Symptom</th><th>Look here first</th></tr></thead>
+      <tbody>
+        <tr><td>A change is not appearing</td><td>Is the build finished? Then hard-refresh. Then check on another device.</td></tr>
+        <tr><td>Everything is stuck on an old version</td><td>A failing build. Netlify deploy log, then the Actions tab.</td></tr>
+        <tr><td><code>/admin</code> will not load</td><td>The CMS config is invalid — usually duplicate names or bad indentation in <code>config.yml</code>.</td></tr>
+        <tr><td>Saving in <code>/admin</code> fails</td><td>GitHub org app permissions, or Git Gateway needs disabling and re-enabling in Netlify Identity.</td></tr>
+        <tr><td>A page is blank or a map is missing</td><td>A JavaScript error stops everything after it. Open the browser console.</td></tr>
+        <tr><td>Pages loading slowly</td><td>An image without <code>w_1600,c_limit</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="not-prose mt-10 rounded-2xl bg-bg-dark text-white p-6">
+      <h2 class="font-display font-black text-xl mb-2">Keeping this current</h2>
+      <p class="text-gray-300 text-sm">
+        This page lives at <code class="bg-white/10 px-1 rounded">src/pages/handbook.astro</code>. Update
+        it in the same change that alters how something works, not afterwards — a handbook that lags the
+        system is worse than none, because it is trusted and wrong.
+      </p>
+    </div>
+  </article>
+</BaseLayout>

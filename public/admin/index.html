@@ -21,5 +21,22 @@
         });
       }
     </script>
+    <!-- Fixed helper bar. Decap owns the rest of this page, so this sits on top
+         of it rather than inside it and survives CMS version changes. -->
+    <style>
+      #alot-bar{position:fixed;right:14px;bottom:14px;z-index:9999;display:flex;gap:8px;
+        font:500 13px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+      #alot-bar a{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;
+        background:#0A0A0A;color:#fff;text-decoration:none;box-shadow:0 2px 10px rgba(0,0,0,.22)}
+      #alot-bar a:hover{background:#222}
+      #alot-bar a.gold{background:#F5B800;color:#0A0A0A}
+      #alot-bar a.gold:hover{background:#ffc61a}
+      @media(max-width:640px){#alot-bar{right:8px;bottom:8px}#alot-bar a{padding:8px 11px;font-size:12px}}
+    </style>
+    <div id="alot-bar">
+      <a class="gold" href="/seo/" target="_blank" rel="noopener" title="AI mentions, keywords and what is waiting on you">📈 SEO tracking</a>
+      <a href="/handbook/" target="_blank" rel="noopener" title="How this site and its content system work">📘 Handbook</a>
+      <a href="/" target="_blank" rel="noopener" title="Open the live site">↗ View site</a>
+    </div>
   </body>
 </html>
