@@ -180,13 +180,19 @@ const stvSchema = {
   '@context': 'https://schema.org',
   '@graph': [
     {
+      // Same @id as the rest of the site. This page does not use BaseLayout, so
+      // it declares the entity itself — but declaring it under a different id
+      // would make it a separate organization to a parser.
       '@type': 'Organization',
-      '@id': 'https://alot.land/#business',
+      '@id': 'https://alot.land/#organization',
       name: 'Alot of Land LLC',
       url: 'https://alot.land',
       telephone: `+1${phoneRaw}`,
       email: 'David@alot.land',
-      areaServed: { '@type': 'State', name: 'Tennessee' },
+      areaServed: [
+        { '@type': 'State', name: 'Tennessee' },
+        { '@type': 'Country', name: 'United States' },
+      ],
     },
     {
       '@type': 'Product',
@@ -194,7 +200,7 @@ const stvSchema = {
       description: 'Ten unrestricted ridgeline tracts of 5.4 to 11.4 acres near the Tennessee River at Kentucky Lake. Graded driveways, soil maps marking approved septic locations, new survey and warranty deed on every lot.',
       url: 'https://alot.land/sugar-tree-vista',
       ...(ogImageUrl ? { image: ogImageUrl } : {}),
-      brand: { '@type': 'Organization', name: 'Alot of Land LLC' },
+      brand: { '@id': 'https://alot.land/#organization' },
       ...(priced.length ? { offers: {
         '@type': 'AggregateOffer',
         priceCurrency: 'USD',
@@ -202,7 +208,7 @@ const stvSchema = {
         highPrice: Math.max(...priced),
         offerCount: lots.length,
         availability: 'https://schema.org/InStock',
-        seller: { '@id': 'https://alot.land/#business' },
+        seller: { '@id': 'https://alot.land/#organization' },
       } } : {}),
     },
     {
@@ -242,7 +248,7 @@ const drives = [
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Sugar Tree Vista — Ridgeline Acreage near Kentucky Lake, TN</title>
-<meta name="description" content="Ten unrestricted ridgeline homesites, 5.4–11.4 acres, near Kentucky Lake in Decatur County, TN. Driveways in, septic soil maps included. Owner financing. From $59,000." />
+<meta name="description" content="Ten unrestricted ridgeline homesites, 5.4–11.4 acres, on the high ground near Kentucky Lake in Decatur County, TN. Driveways in, septic soil maps included." />
 <link rel="canonical" href="https://alot.land/sugar-tree-vista/" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Alot Of Land LLC" />

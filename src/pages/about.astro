@@ -1,25 +1,17 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
+// The full Person lives in the sitewide graph. This page declares itself as the
+// profile page FOR that entity rather than describing a second one.
+//
+// The previous block also carried its own sameAs list pointing at davidbuysland
+// handles — youtube.com/@DavidBuysLand now 404s, and the rest of the site uses
+// davidthelandguy. Conflicting sameAs actively works against entity
+// consolidation, so identity comes from siteConfig alone now.
 const personSchema = {
   '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: 'David A. Stone',
-  jobTitle: 'Founder & CEO',
-  worksFor: {
-    '@type': 'Organization',
-    name: 'Alot of Land LLC',
-    url: 'https://alot.land',
-  },
-  url: 'https://alot.land/about',
-  sameAs: [
-    'https://www.instagram.com/davidbuysland/',
-    'https://www.linkedin.com/in/davidbuysland/',
-    'https://www.youtube.com/@DavidBuysLand',
-    'https://www.tiktok.com/@davidbuysland',
-  ],
-  description: 'David A. Stone is the founder of Alot of Land LLC, finding great land at great prices in Arizona and Tennessee.',
-  knowsAbout: ['Land investing', 'Off-market real estate', 'Land acquisition', 'Arizona real estate', 'Tennessee real estate'],
+  '@type': 'ProfilePage',
+  mainEntity: { '@id': 'https://alot.land/#david' },
 };
 ---
 
@@ -43,7 +35,7 @@ const personSchema = {
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="grid lg:grid-cols-2 gap-12 items-center">
         <div>
-          <img
+          <img loading="lazy" decoding="async"
             src="/images/david-das1.jpg"
             alt="David A Stone — Alot of Land LLC"
             class="w-full rounded-2xl aspect-[4/5] object-cover shadow-lg"

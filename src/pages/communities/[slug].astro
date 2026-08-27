@@ -51,7 +51,7 @@ const statusColor: Record<string, string> = {
   <!-- Hero -->
   <div class="relative h-80 sm:h-[28rem] overflow-hidden">
     {mainImage ? (
-      <img src={mainImage} alt={title} class="w-full h-full object-cover" />
+      <img loading="lazy" decoding="async" src={mainImage} alt={title} class="w-full h-full object-cover" />
     ) : (
       <div class="w-full h-full bg-gradient-to-br from-bg-dark to-gray-700"></div>
     )}

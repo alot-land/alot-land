@@ -32,7 +32,17 @@ const canonicalUrl = new URL(Astro.url.pathname, siteOrigin).href;
 const ogImageUrl = ogImage.startsWith('http') ? ogImage : `${siteOrigin}${ogImage}`;
 const { gaMeasurementId } = siteConfig.analytics;
 
-// ── Global structured data (every page) ──────────────────────────────────────
+// ── Global structured data (every page) ────────────────────────────────────
+//
+// ONE Organization node and ONE Person node, each with a stable @id that the
+// rest of the site references instead of restating. This was previously split
+// across five unlinked copies — two here, plus inline ones inside
+// Service.provider, Article.publisher and author.worksFor — and every unlinked
+// copy reads as a SEPARATE entity to a parser. That fragments precisely the
+// entity this site is trying to make citable, so it is consolidated here.
+const orgId    = `${siteOrigin}/#organization`;
+const personId = `${siteOrigin}/#david`;
+
 const globalSchema = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -42,6 +52,7 @@ const globalSchema = {
       url: siteOrigin,
       name: siteConfig.name,
       description: siteConfig.description,
+      publisher: { '@id': orgId },
     },
     {
       // Organization, deliberately NOT RealEstateAgent. Alot of Land LLC buys
@@ -49,20 +60,14 @@ const globalSchema = {
       // agent, and the site says so in writing. Claiming an agent type here
       // would contradict that disclosure.
       '@type': 'Organization',
-      '@id': `${siteOrigin}/#organization`,
+      '@id': orgId,
       name: siteConfig.name,
       url: siteOrigin,
       logo: {
         '@type': 'ImageObject',
         url: `${siteOrigin}/images/alotdotland_hzLogo.png`,
       },
-      sameAs: Object.values(siteConfig.social).filter(Boolean),
-    },
-    {
-      '@type': 'Organization',
-      '@id': `${siteOrigin}/#business`,
-      name: siteConfig.name,
-      url: siteOrigin,
+      image: `${siteOrigin}/images/alotdotland_hzLogo.png`,
       telephone: `+1${siteConfig.phoneRaw}`,
       email: siteConfig.email,
       // No PostalAddress on purpose. The land business is a service-area
@@ -77,6 +82,28 @@ const globalSchema = {
       ],
       description: siteConfig.description,
       priceRange: '$$',
+      founder: { '@id': personId },
+      sameAs: Object.values(siteConfig.social).filter(Boolean),
+    },
+    {
+      // David is the authority the citations are meant to attach to, so he is a
+      // first-class entity on every page rather than only on /about.
+      '@type': 'Person',
+      '@id': personId,
+      name: 'David A. Stone',
+      jobTitle: 'Land investor',
+      description: 'David A. Stone buys and sells rural land in Middle Tennessee as a principal — not as a licensed agent — through Alot of Land LLC.',
+      url: `${siteOrigin}/about/`,
+      worksFor: { '@id': orgId },
+      knowsAbout: [
+        'Buying rural land',
+        'Selling land without a realtor',
+        'Unrestricted land',
+        'Owner financing',
+        'Land valuation',
+        'Tennessee real estate',
+      ],
+      sameAs: Object.values(siteConfig.social).filter(Boolean),
     },
   ],
 };

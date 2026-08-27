@@ -57,7 +57,7 @@ const byCategory = categories
               <!-- Logo / Name row -->
               <div class="flex items-center gap-3">
                 {vendor.data.logo ? (
-                  <img src={vendor.data.logo} alt={vendor.data.name} class="w-12 h-12 object-contain rounded-xl border border-gray-100 flex-shrink-0" />
+                  <img loading="lazy" decoding="async" src={vendor.data.logo} alt={vendor.data.name} class="w-12 h-12 object-contain rounded-xl border border-gray-100 flex-shrink-0" />
                 ) : (
                   <div class="w-12 h-12 rounded-xl bg-gold flex items-center justify-center font-display font-black text-bg-dark text-lg flex-shrink-0">
                     {vendor.data.name.charAt(0)}

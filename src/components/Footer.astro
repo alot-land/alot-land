@@ -8,7 +8,7 @@ const phoneRaw = contactSettings?.data.phoneRaw ?? siteConfig.phoneRaw;
 const email    = contactSettings?.data.email    ?? siteConfig.email;
 // Hidden until alot.capital launches — flip on in Settings → Contact.
 const showInvestCta = contactSettings?.data.showInvestCta ?? true;
-const { name, social, address } = siteConfig;
+const { name, social } = siteConfig;
 
 const navLinks = [
   { label: 'Listings',            href: '/listings' },
@@ -37,7 +37,7 @@ const socialLinks = [
       <!-- Brand -->
       <div>
         <a href="/" class="flex items-center mb-4">
-          <img src="/images/alotdotland_hzLogo.png" alt="Alot of Land LLC" class="h-8 w-auto" />
+          <img loading="lazy" decoding="async" src="/images/alotdotland_hzLogo.png" alt="Alot of Land LLC" class="h-8 w-auto" />
         </a>
         <p class="text-sm leading-relaxed mb-5">
           Buy Land, Sell Land &amp; Build Wealth With Land.
@@ -85,7 +85,15 @@ const socialLinks = [
           </li>
           <li class="text-sm flex items-start gap-2">
             <span>📍</span>
-            <span>{address.street}<br />{address.city}, {address.state} {address.zip}</span>
+            <!--
+              Service area, not a street address. The only address on file is a
+              registered agent's suite in Phoenix — publishing it contradicted the
+              Tennessee service area on every page, and registered-agent addresses
+              are exactly what search engines discount. The schema already dropped
+              it in favour of areaServed; this is the visible half of that fix.
+              (Website only. GoHighLevel keeps its own address for A2P/SMS.)
+            -->
+            <span>Serving Middle Tennessee<br />Buying and selling land statewide</span>
           </li>
         </ul>
       </div>

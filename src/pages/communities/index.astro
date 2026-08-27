@@ -97,7 +97,7 @@ const statusColor: Record<string, string> = {
               <!-- Image -->
               <div class="sm:w-80 lg:w-96 flex-shrink-0 relative overflow-hidden">
                 {thumb ? (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={thumb}
                     alt={community.data.title}
                     class="w-full h-56 sm:h-full object-cover group-hover:scale-105 transition-transform duration-300"

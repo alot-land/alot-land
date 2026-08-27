@@ -54,7 +54,7 @@ const { social } = siteConfig;
               data-id={featured.id}
               aria-label={`Play: ${featured.title}`}
             >
-              <img src={featured.thumb} alt="" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition duration-300" />
+              <img loading="lazy" decoding="async" src={featured.thumb} alt="" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition duration-300" />
               <span class="absolute inset-0 flex items-center justify-center">
                 <span class="w-20 h-20 rounded-full bg-gold text-bg-dark flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                   <svg viewBox="0 0 24 24" class="w-8 h-8 ml-1" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>

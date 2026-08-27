@@ -25,7 +25,7 @@ const soldSchema = soldCount > 0 ? {
       '@type': 'Offer',
       priceCurrency: 'USD',
       availability: 'https://schema.org/SoldOut',
-      seller: { '@type': 'Organization', name: siteConfig.name },
+      seller: { '@id': 'https://alot.land/#organization' },
     },
     ...(l.data.buyerTestimonial ? {
       review: {

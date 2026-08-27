@@ -89,7 +89,7 @@ const states = ['Arizona', 'Tennessee'];
                   >
                     <div class="flex items-center gap-4">
                       {vendor.data.logo ? (
-                        <img src={vendor.data.logo} alt={vendor.data.name} class="w-14 h-14 object-contain rounded-xl border border-gray-100 flex-shrink-0" />
+                        <img loading="lazy" decoding="async" src={vendor.data.logo} alt={vendor.data.name} class="w-14 h-14 object-contain rounded-xl border border-gray-100 flex-shrink-0" />
                       ) : (
                         <div class="w-14 h-14 rounded-xl bg-gold flex items-center justify-center font-display font-black text-bg-dark text-2xl flex-shrink-0">
                           {vendor.data.name.charAt(0)}

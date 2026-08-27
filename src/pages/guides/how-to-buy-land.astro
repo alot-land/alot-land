@@ -20,18 +20,10 @@ const articleSchema = {
     'A land buyer walks through the order of steps: verifying legal access, checking what the county will let you build, reading a soil map, and closing through a title company.',
   datePublished: published,
   dateModified: published,
-  author: {
-    '@type': 'Person',
-    name: 'David A. Stone',
-    jobTitle: 'Land investor and developer',
-    worksFor: { '@type': 'Organization', name: 'Alot of Land LLC' },
-    url: 'https://alot.land/about/',
-  },
-  publisher: {
-    '@type': 'Organization',
-    name: 'Alot of Land LLC',
-    logo: { '@type': 'ImageObject', url: 'https://alot.land/images/alotdotland_hzLogo.png' },
-  },
+  // References, not restatements — the full Person and Organization live in the
+  // sitewide graph. A second inline copy would read as a different entity.
+  author: { '@id': 'https://alot.land/#david' },
+  publisher: { '@id': 'https://alot.land/#organization' },
   mainEntityOfPage: { '@type': 'WebPage', '@id': url },
 };
 

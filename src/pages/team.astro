@@ -15,13 +15,20 @@ const rendered = await Promise.all(
 const siteOrigin = `https://${siteConfig.domain}`;
 const teamSchema = members.length > 0 ? {
   '@context': 'https://schema.org',
-  '@graph': members.map(m => ({
+  // Every person gets a stable @id. David's must be the sitewide one — without
+  // it he appears twice on this page as two unlinked people with different job
+  // titles, which is the same entity-splitting problem in miniature.
+  '@graph': members.map(m => {
+    const slug = m.id.replace(/\.md$/, '');   // content-layer ids keep the extension
+    return {
     '@type': 'Person',
+    '@id': slug === 'david-stone' ? `${siteOrigin}/#david` : `${siteOrigin}/team/#${slug}`,
     name: m.data.name,
     jobTitle: m.data.role,
-    worksFor: { '@type': 'Organization', name: siteConfig.name, url: siteOrigin },
+    worksFor: { '@id': 'https://alot.land/#organization' },
     ...(m.data.photo ? { image: m.data.photo.startsWith('http') ? m.data.photo : `${siteOrigin}${m.data.photo}` } : {}),
-  })),
+    };
+  }),
 } : null;
 ---
 
@@ -51,7 +58,7 @@ const teamSchema = members.length > 0 ? {
                   {member.data.name.charAt(0)}
                 </div>
                 {member.data.photo && (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={member.data.photo}
                     alt={member.data.name}
                     class="absolute inset-0 w-full h-full object-cover object-top"

@@ -21,6 +21,13 @@ const faqs = allFaqs
   .filter(f => !only || f.data.category === only || f.data.category === 'general')
   .sort((a, b) => a.data.order - b.data.order);
 
+// FAQ questions must be real headings, not styled spans. The playbook asks for
+// question-shaped HEADINGS: models and extractors lean on the document outline
+// to decide what a passage answers, and a question rendered only inside a
+// clickable control contributes nothing to that outline. The level depends on
+// whether the category headings are rendered, so levels are never skipped.
+const QTag = only ? 'h3' : 'h4';
+
 const buying  = faqs.filter(f => f.data.category === 'buying');
 const selling = faqs.filter(f => f.data.category === 'selling');
 const general = faqs.filter(f => f.data.category === 'general');
@@ -109,17 +116,19 @@ const faqSchema = {
           <div class="space-y-3" id="faq-buying">
             {buyingR.map((faq, i) => (
               <div class="faq-item border border-gray-100 rounded-2xl overflow-hidden bg-bg-light" data-faq={`buying-${i}`}>
-                <button
-                  class="faq-trigger w-full flex items-center justify-between gap-4 px-5 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-inset rounded-2xl"
-                  aria-expanded="false"
-                >
-                  <span class="font-semibold text-bg-dark text-sm leading-snug">{faq.data.question}</span>
-                  <span class="faq-icon flex-shrink-0 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center transition-transform">
-                    <svg class="w-3 h-3 text-bg-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                  </span>
-                </button>
+                <QTag class="m-0 font-normal">
+                  <button
+                    class="faq-trigger w-full flex items-center justify-between gap-4 px-5 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-inset rounded-2xl"
+                    aria-expanded="false"
+                  >
+                    <span class="font-semibold text-bg-dark text-sm leading-snug">{faq.data.question}</span>
+                    <span class="faq-icon flex-shrink-0 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center transition-transform">
+                      <svg class="w-3 h-3 text-bg-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </span>
+                  </button>
+                </QTag>
                 <div class="faq-body hidden px-5 pb-5">
                   {ytId(faq.data.videoUrl) && (
                     <div class="mb-4 aspect-video w-full overflow-hidden rounded-xl bg-bg-dark">
@@ -148,17 +157,19 @@ const faqSchema = {
           <div class="space-y-3" id="faq-selling">
             {sellingR.map((faq, i) => (
               <div class="faq-item border border-gray-100 rounded-2xl overflow-hidden bg-bg-light" data-faq={`selling-${i}`}>
-                <button
-                  class="faq-trigger w-full flex items-center justify-between gap-4 px-5 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-inset rounded-2xl"
-                  aria-expanded="false"
-                >
-                  <span class="font-semibold text-bg-dark text-sm leading-snug">{faq.data.question}</span>
-                  <span class="faq-icon flex-shrink-0 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center transition-transform">
-                    <svg class="w-3 h-3 text-bg-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                  </span>
-                </button>
+                <QTag class="m-0 font-normal">
+                  <button
+                    class="faq-trigger w-full flex items-center justify-between gap-4 px-5 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-inset rounded-2xl"
+                    aria-expanded="false"
+                  >
+                    <span class="font-semibold text-bg-dark text-sm leading-snug">{faq.data.question}</span>
+                    <span class="faq-icon flex-shrink-0 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center transition-transform">
+                      <svg class="w-3 h-3 text-bg-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    </span>
+                  </button>
+                </QTag>
                 <div class="faq-body hidden px-5 pb-5">
                   {ytId(faq.data.videoUrl) && (
                     <div class="mb-4 aspect-video w-full overflow-hidden rounded-xl bg-bg-dark">
@@ -189,17 +200,19 @@ const faqSchema = {
         <div class="grid md:grid-cols-2 gap-3">
           {generalR.map((faq, i) => (
             <div class="faq-item border border-gray-100 rounded-2xl overflow-hidden bg-bg-light" data-faq={`general-${i}`}>
-              <button
-                class="faq-trigger w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
-                aria-expanded="false"
-              >
-                <span class="font-semibold text-bg-dark text-sm leading-snug">{faq.data.question}</span>
-                <span class="faq-icon flex-shrink-0 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center transition-transform">
-                  <svg class="w-3 h-3 text-bg-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
-                  </svg>
-                </span>
-              </button>
+              <QTag class="m-0 font-normal">
+                <button
+                  class="faq-trigger w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+                  aria-expanded="false"
+                >
+                  <span class="font-semibold text-bg-dark text-sm leading-snug">{faq.data.question}</span>
+                  <span class="faq-icon flex-shrink-0 w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center transition-transform">
+                    <svg class="w-3 h-3 text-bg-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </span>
+                </button>
+              </QTag>
               <div class="faq-body hidden px-5 pb-5">
                 {ytId(faq.data.videoUrl) && (
                   <div class="mb-4 aspect-video w-full overflow-hidden rounded-xl bg-bg-dark">

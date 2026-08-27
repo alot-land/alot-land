@@ -1,9 +1,9 @@
 {
   "site": "alot.land",
   "business": "Alot of Land LLC",
-  "cycle": 2,
+  "cycle": 3,
   "cycle_0_completed": "2026-08-26",
-  "positioning": "national \u2014 'how do i sell my land' cluster; GBP deprioritised for this site",
+  "positioning": "national — 'how do i sell my land' cluster; GBP deprioritised for this site",
   "crawlability": {
     "robots_txt": "allows all; only /admin/ disallowed",
     "crawlers_allowed": [
@@ -14,36 +14,53 @@
       "PerplexityBot",
       "OAI-SearchBot"
     ],
-    "cdn": "Netlify \u2014 verified 200 for GPTBot, ClaudeBot, PerplexityBot",
-    "llms_txt": "published this cycle"
+    "cdn": "Netlify — verified 200 for GPTBot, ClaudeBot, PerplexityBot",
+    "llms_txt": "published this cycle",
+    "verified": "2026-08-27 — Googlebot, Google-Extended, GPTBot, ClaudeBot, PerplexityBot, OAI-SearchBot, Bingbot all 200 with byte-identical HTML to a browser. No cloaking."
   },
   "schema": {
     "present": [
       "Organization",
-      "RealEstateAgent",
+      "Person",
       "WebSite",
-      "FAQPage (home)",
-      "Product/Offer/BreadcrumbList (listings)"
+      "Service",
+      "FAQPage",
+      "Article",
+      "Product/Offer/AggregateOffer",
+      "BreadcrumbList",
+      "Place",
+      "ProfilePage",
+      "CollectionPage"
     ],
     "missing": [
-      "Service",
-      "Article (no guides exist yet)"
+      "VideoObject (waiting on David's FAQ videos)"
     ],
-    "note": "RealEstateAgent removed sitewide 2026-08-19 \u2014 David is an investor, not a licensed agent, and the site says so."
+    "entity_consolidation": "One Organization (#organization) and one Person (#david), referenced by @id everywhere. Audited 2026-08-27: was previously split across five unlinked copies, which reads as five separate entities.",
+    "note": "RealEstateAgent removed sitewide 2026-08-19 — David is an investor, not a licensed agent, and the site says so."
   },
   "nap": {
     "name": "Alot of Land LLC",
     "phone": "+16155386878",
-    "published_address": "4539 N 22nd St Ste R, Phoenix, AZ 85016",
-    "issue": "that is the registered-agent address, not the real office (7301 N 16th St, Phoenix AZ 85020). Recommend removing PostalAddress and relying on areaServed for this national play.",
+    "published_address": "none — service-area business",
+    "resolved": "Registered-agent address removed from the footer 2026-08-27; retained on /privacy and /terms only, where the legal address belongs. GoHighLevel keeps its own address for A2P/SMS and is unaffected.",
     "areaServed": [
-      "Tennessee"
+      "Tennessee",
+      "United States"
     ]
   },
   "sitemap": {
     "url": "https://alot.land/sitemap-index.xml",
-    "urls": 29,
-    "lastmod": "absent \u2014 deliberately not faked"
+    "urls": 30,
+    "lastmod": "absent — deliberately not faked",
+    "excluded": [
+      "/admin",
+      "/seo",
+      "/handbook",
+      "/invest",
+      "/media",
+      "/listings/favorites",
+      "/land-payment-calculator"
+    ]
   },
   "baseline": {
     "ai_mentions_us": 0,
@@ -173,12 +190,19 @@
       "date": "2026-08-26",
       "move": "/listings retargeted to the Tennessee transactional cluster; new guide 'How to Buy Land'",
       "new_pages": 1
+    },
+    {
+      "cycle": 3,
+      "date": "2026-08-27",
+      "move": "Automation + full audit: metrics/review/transcript jobs, dashboard, handbook, password gate; entity consolidation, FAQ questions promoted to headings, footer address removed, lazy loading",
+      "new_pages": 0
     }
   ],
-  "next_move": "Rewrite /guides/how-to-buy-land from David's video transcript once recorded; then a second guide for the 'unrestricted land' cluster.",
+  "next_move": "Rewrite FAQ answers from David's video transcripts once recorded (transcripts now pull automatically). Then a guide for the 'unrestricted land' cluster.",
   "pages_published_this_cycle": 0,
   "pending_from_david": [
-    "Record the 17 FAQ videos (see Land-FAQ-Shot-List.pdf)",
-    "Paste each YouTube link into /admin \u2192 FAQs \u2192 Video Answer URL"
+    "Record the 5 priority FAQ videos",
+    "Paste each YouTube link into /admin → FAQs → Video Answer URL (transcript pulls itself)",
+    "Decide on question-shaped H2s for /sell-land and /find-land (proposed, not applied — brand copy)"
   ]
 }

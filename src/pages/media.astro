@@ -58,7 +58,7 @@ function formatDate(date: Date) {
           {books.map(book => (
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
               {book.data.coverImage ? (
-                <img src={book.data.coverImage} alt={book.data.title} class="w-full h-64 object-contain bg-gray-50 p-4" />
+                <img loading="lazy" decoding="async" src={book.data.coverImage} alt={book.data.title} class="w-full h-64 object-contain bg-gray-50 p-4" />
               ) : (
                 <div class="w-full h-64 bg-gradient-to-br from-bg-dark to-gray-700 flex items-center justify-center p-6">
                   <p class="text-white font-display font-black text-xl text-center leading-snug">{book.data.title}</p>
@@ -117,7 +117,7 @@ function formatDate(date: Date) {
               class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex gap-4 p-5 group"
             >
               {ep.data.coverImage ? (
-                <img src={ep.data.coverImage} alt={ep.data.showName} class="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+                <img loading="lazy" decoding="async" src={ep.data.coverImage} alt={ep.data.showName} class="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
               ) : (
                 <div class="w-16 h-16 rounded-xl bg-bg-dark flex items-center justify-center flex-shrink-0 text-2xl">🎙️</div>
               )}

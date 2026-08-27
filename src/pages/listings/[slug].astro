@@ -112,14 +112,14 @@ const listingSchema = {
   description: pageDescription,
   image: photos.map(p => p.startsWith('http') ? p : `${siteOrigin}${p}`),
   url: canonicalUrl,
-  brand: { '@type': 'Organization', name: 'Alot of Land LLC' },
+  brand: { '@id': 'https://alot.land/#organization' },
   offers: {
     '@type': 'Offer',
     priceCurrency: 'USD',
     ...(priceNumeric ? { price: priceNumeric } : { priceSpecification: { '@type': 'UnitPriceSpecification', description: 'Contact for Price' } }),
     availability: schemaAvailability,
     url: canonicalUrl,
-    seller: { '@type': 'Organization', name: 'Alot of Land LLC' },
+    seller: { '@id': 'https://alot.land/#organization' },
   },
   additionalProperty: [
     { '@type': 'PropertyValue', name: 'Acreage',     value: `${acreage} acres` },
