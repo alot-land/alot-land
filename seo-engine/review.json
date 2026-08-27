@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-27T18:43:46Z",
+  "updated": "2026-08-27T18:45:24Z",
   "open": [
     {
       "number": 18,
@@ -7,7 +7,8 @@
       "url": "https://github.com/alot-land/alot-land/pull/18",
       "opened": "2026-07-29",
       "additions": 4795,
-      "deletions": 0
+      "deletions": 0,
+      "isCycle": false
     }
   ]
 }
