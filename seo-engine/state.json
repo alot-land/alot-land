@@ -202,7 +202,7 @@
   "pages_published_this_cycle": 0,
   "pending_from_david": [
     "Record the 5 priority FAQ videos",
-    "Paste each YouTube link into /admin → FAQs → Video Answer URL (transcript pulls itself)",
-    "Decide on question-shaped H2s for /sell-land and /find-land (proposed, not applied — brand copy)"
+    "Upload to YouTube (Public or Unlisted) and paste each link into /admin → FAQs → Video Answer URL",
+    "Audit GHL workflow triggers — sellers are getting buyer nurture emails"
   ]
 }
