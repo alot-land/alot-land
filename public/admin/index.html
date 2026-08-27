@@ -33,8 +33,14 @@
       #alot-bar a.gold:hover{background:#ffc61a}
       @media(max-width:640px){#alot-bar{right:8px;bottom:8px}#alot-bar a{padding:8px 11px;font-size:12px}}
     </style>
+    <!--
+      Links to every other back-office page. Kept in step with
+      src/components/BackendNav.astro — if a tool is added there, add it here
+      too, so no page can be reached without a way back out.
+    -->
     <div id="alot-bar">
-      <a class="gold" href="/seo/" target="_blank" rel="noopener" title="AI mentions, keywords and what is waiting on you">📈 SEO tracking</a>
+      <a class="gold" href="/crm/" target="_blank" rel="noopener" title="Who has reached out and who needs a reply today">📇 Leads</a>
+      <a href="/seo/" target="_blank" rel="noopener" title="AI mentions, keywords and what is waiting on you">📈 SEO</a>
       <a href="/handbook/" target="_blank" rel="noopener" title="How this site and its content system work">📘 Handbook</a>
       <a href="/" target="_blank" rel="noopener" title="Open the live site">↗ View site</a>
     </div>

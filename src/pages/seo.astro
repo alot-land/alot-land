@@ -7,6 +7,7 @@
 // itself. The queue is read from seo-engine/queue.md rather than duplicated
 // here, so the page can never disagree with the file.
 import BaseLayout from '../layouts/BaseLayout.astro';
+import BackendNav from '../components/BackendNav.astro';
 import history from '../../seo-engine/history.json';
 import state from '../../seo-engine/state.json';
 import review from '../../seo-engine/review.json';
@@ -59,7 +60,8 @@ const statusStyle = s =>
   : 'bg-bg-dark text-white';
 ---
 
-<BaseLayout title="Dashboard" description="Private operations dashboard for alot.land." noindex={true}>
+<BaseLayout title="Dashboard" description="Private operations dashboard for alot.land." noindex={true} bare={true}>
+  <BackendNav current="seo" />
   <div class="bg-bg-dark text-white py-10">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
       <p class="text-xs font-bold uppercase tracking-widest text-gold mb-2">alot.land · private</p>

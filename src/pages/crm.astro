@@ -1,0 +1,319 @@
+---
+// CRM dashboard over GoHighLevel. Private page — password-gated at the edge
+// along with /api/*, noindex, out of the sitemap.
+//
+// Rendered client-side from /api/crm/data because this is live operational
+// data: a build-time snapshot of who owes a reply would be wrong within
+// minutes. The GHL token stays in the function; nothing secret reaches here.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BackendNav from '../components/BackendNav.astro';
+---
+
+<BaseLayout title="CRM" description="Private lead dashboard." noindex={true} bare={true}>
+  <BackendNav current="crm" />
+  <div class="bg-bg-dark text-white py-8">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <p class="text-xs font-bold uppercase tracking-widest text-gold mb-2">alot.land · private</p>
+      <div class="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+        <h1 class="font-display font-black text-3xl sm:text-4xl">Leads</h1>
+        <p id="summary" class="text-gray-400">Loading…</p>
+        <button id="refresh" class="ml-auto text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">Refresh</button>
+      </div>
+      <nav class="flex flex-wrap gap-2 mt-5">
+        <a href="#today" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gold text-bg-dark">Today</a>
+        <a href="#followup" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">Follow-up</a>
+        <a href="#pipeline" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">Pipeline</a>
+        <a href="/seo/" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">SEO</a>
+        <a href="/admin/" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">CMS</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div id="banner"></div>
+
+    <h2 id="today" class="font-display font-black text-2xl text-bg-dark mb-1">Today</h2>
+    <p class="text-gray-500 text-sm mb-5">People waiting on a human. Clear this list and nobody has been dropped.</p>
+    <div id="today-list" class="space-y-3"><p class="text-gray-400 text-sm">Loading…</p></div>
+
+    <h2 id="followup" class="font-display font-black text-2xl text-bg-dark mt-12 mb-1">Follow-up</h2>
+    <p class="text-gray-500 text-sm mb-5">Gone quiet. Not urgent — but this is where deals die if nobody looks.</p>
+    <div id="followup-list" class="space-y-3"><p class="text-gray-400 text-sm">Loading…</p></div>
+
+    <h2 id="pipeline" class="font-display font-black text-2xl text-bg-dark mt-12 mb-5">Pipeline</h2>
+    <div id="pipeline-list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><p class="text-gray-400 text-sm">Loading…</p></div>
+  </div>
+
+  <!-- Contact drawer -->
+  <div id="drawer" class="fixed inset-0 z-50 hidden">
+    <div id="drawer-bg" class="absolute inset-0 bg-black/40"></div>
+    <div class="absolute right-0 top-0 h-full w-full max-w-xl bg-white shadow-2xl flex flex-col">
+      <div class="p-5 border-b border-gray-100 flex items-start gap-3">
+        <div class="min-w-0">
+          <h3 id="d-name" class="font-display font-black text-xl text-bg-dark truncate">—</h3>
+          <p id="d-meta" class="text-sm text-gray-500 truncate"></p>
+        </div>
+        <button id="d-close" class="ml-auto text-gray-400 hover:text-bg-dark text-2xl leading-none px-2">&times;</button>
+      </div>
+
+      <div class="p-5 border-b border-gray-100 flex flex-wrap gap-2">
+        <a id="d-call" href="#" class="bg-bg-dark text-white font-bold px-4 py-2 rounded-xl text-sm">📞 Call</a>
+        <a id="d-tel-sms" href="#" class="border border-bg-dark text-bg-dark font-bold px-4 py-2 rounded-xl text-sm">Text from phone</a>
+        <select id="d-cadence" class="border border-gray-200 rounded-xl text-sm px-3 py-2"></select>
+        <button id="d-enrol" class="bg-gold text-bg-dark font-bold px-4 py-2 rounded-xl text-sm">Start follow-up</button>
+        <button id="d-unenrol" class="text-gray-500 underline text-sm px-2 hidden">Stop follow-up</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-5 space-y-6">
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-widest text-text-muted mb-3">Conversation</h4>
+          <div id="d-messages" class="space-y-2 text-sm"><p class="text-gray-400">Loading…</p></div>
+        </div>
+        <div>
+          <h4 class="text-xs font-bold uppercase tracking-widest text-text-muted mb-3">Your notes</h4>
+          <div id="d-notes" class="space-y-2 text-sm mb-3"></div>
+          <textarea id="d-note-input" rows="2" placeholder="Note to self — stays on this contact" class="w-full border border-gray-200 rounded-xl p-3 text-sm"></textarea>
+          <button id="d-note-save" class="mt-2 bg-bg-dark text-white font-bold px-4 py-2 rounded-xl text-sm">Save note</button>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 p-5 bg-bg-light">
+        <div class="flex gap-2 mb-2">
+          <button data-mode="sms"   class="d-mode bg-bg-dark text-white text-xs font-bold px-3 py-1.5 rounded-lg">Text</button>
+          <button data-mode="email" class="d-mode bg-white text-bg-dark border border-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg">Email</button>
+        </div>
+        <input id="d-subject" placeholder="Subject" class="w-full border border-gray-200 rounded-xl p-2.5 text-sm mb-2 hidden" />
+        <textarea id="d-body" rows="3" placeholder="Write a message…" class="w-full border border-gray-200 rounded-xl p-3 text-sm"></textarea>
+        <div class="flex items-center gap-3 mt-2">
+          <button id="d-send" class="bg-gold text-bg-dark font-bold px-5 py-2.5 rounded-xl text-sm">Send</button>
+          <span id="d-status" class="text-sm text-gray-500"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+  (function () {
+    var state = { data: null, contact: null, mode: 'sms' };
+    var $ = function (id) { return document.getElementById(id); };
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+
+    function ago(iso) {
+      if (!iso) return '';
+      var m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+      if (isNaN(m)) return '';
+      if (m < 1) return 'just now';
+      if (m < 60) return m + 'm ago';
+      var h = Math.floor(m / 60); if (h < 24) return h + 'h ago';
+      var d = Math.floor(h / 24); return d + 'd ago';
+    }
+    function when(iso) {
+      var d = new Date(iso);
+      return isNaN(d) ? '' : d.toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', month: 'short', day: 'numeric' });
+    }
+
+    var REASON = {
+      unanswered:  { label: 'Waiting on you', cls: 'bg-red-100 text-red-800' },
+      'new-lead':  { label: 'New lead',       cls: 'bg-gold/30 text-bg-dark' },
+      appointment: { label: 'Appointment',    cls: 'bg-blue-100 text-blue-800' },
+      quiet:       { label: 'Gone quiet',     cls: 'bg-gray-200 text-gray-700' }
+    };
+
+    function why(item) {
+      var out = [];
+      var d = item.details || {};
+      if (d.unanswered) out.push('Replied ' + d.unanswered.waitingHours + 'h ago and nobody has answered' + (d.unanswered.preview ? ': “' + esc(d.unanswered.preview) + '”' : ''));
+      if (d['new-lead']) out.push('Came in ' + d['new-lead'].ageHours + 'h ago via ' + esc(d['new-lead'].source) + (d['new-lead'].overdue ? ' — overdue' : '') + '. No human has contacted them.');
+      if (d.appointment) out.push(d.appointment.needsOutcome
+        ? 'Appointment passed — mark what happened'
+        : esc(d.appointment.title || 'Appointment') + ' in ' + d.appointment.inHours + 'h (' + when(d.appointment.startTime) + ')');
+      if (d.quiet) out.push('No contact for ' + d.quiet.quietDays + ' days · ' + esc(d.quiet.stage || 'in pipeline'));
+      return out;
+    }
+
+    function card(item) {
+      var c = item.contact;
+      var badges = (item.reasons || []).map(function (r) {
+        var m = REASON[r] || { label: r, cls: 'bg-gray-100 text-gray-600' };
+        return '<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ' + m.cls + '">' + m.label + '</span>';
+      }).join(' ');
+      return '<div class="rounded-2xl border border-gray-200 bg-white p-5">' +
+        '<div class="flex flex-wrap items-center gap-2 mb-2">' + badges +
+          '<span class="text-xs text-gray-400 ml-auto">' + ago(item.sortAt) + '</span></div>' +
+        '<p class="font-display font-bold text-lg text-bg-dark">' + esc(c.name || 'Unnamed contact') + '</p>' +
+        '<p class="text-xs text-gray-500 mb-3">' + esc(c.phone || '') + (c.phone && c.email ? ' · ' : '') + esc(c.email || '') + '</p>' +
+        why(item).map(function (w) { return '<p class="text-sm text-gray-600 leading-relaxed">' + w + '</p>'; }).join('') +
+        '<div class="flex flex-wrap gap-2 mt-4">' +
+          (c.phone ? '<a href="tel:' + esc(c.phone) + '" class="bg-bg-dark text-white font-bold px-4 py-2 rounded-xl text-sm">📞 Call</a>' : '') +
+          '<button data-open="' + esc(c.id) + '" class="bg-gold text-bg-dark font-bold px-4 py-2 rounded-xl text-sm">Open &amp; reply</button>' +
+        '</div></div>';
+    }
+
+    function render() {
+      var d = state.data;
+      var counts = d.counts || {};
+      $('summary').textContent = d.connected
+        ? (counts.today === 0 ? 'Nobody is waiting. ' : counts.today + (counts.today === 1 ? ' person needs you. ' : ' people need you. ')) +
+          counts.followUp + ' gone quiet.'
+        : 'Not connected to GoHighLevel yet.';
+
+      $('banner').innerHTML = d.connected
+        ? ((d.warnings || []).length ? '<div class="rounded-xl border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-900 mb-6"><strong>Partial data.</strong> ' + esc(d.warnings.join(' · ')) + '</div>' : '')
+        : '<div class="rounded-2xl border-2 border-gold bg-gold/10 p-6 mb-8"><p class="font-bold text-bg-dark mb-1">GoHighLevel is not connected yet</p><p class="text-sm text-gray-700">' + esc(d.message || '') + '</p></div>';
+
+      var t = d.today || [];
+      $('today-list').innerHTML = t.length ? t.map(card).join('')
+        : '<div class="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500 text-sm">' +
+          (d.connected ? 'Nobody is waiting on you. Everything answered.' : 'Connect GoHighLevel to see leads here.') + '</div>';
+
+      var f = d.followUp || [];
+      $('followup-list').innerHTML = f.length ? f.map(card).join('')
+        : '<div class="rounded-2xl border border-gray-200 bg-white p-8 text-center text-gray-500 text-sm">Nothing has gone quiet.</div>';
+
+      var byStage = {};
+      (d.opportunities || []).forEach(function (o) {
+        if (o.status && o.status !== 'open') return;
+        (byStage[o.stageName || 'Unsorted'] = byStage[o.stageName || 'Unsorted'] || []).push(o);
+      });
+      var stages = Object.keys(byStage);
+      $('pipeline-list').innerHTML = stages.length ? stages.map(function (s) {
+        var items = byStage[s];
+        var total = items.reduce(function (a, o) { return a + (o.monetaryValue || 0); }, 0);
+        return '<div class="rounded-2xl border border-gray-200 bg-white p-5">' +
+          '<div class="flex items-baseline gap-2 mb-3"><h3 class="font-display font-bold text-bg-dark">' + esc(s) + '</h3>' +
+          '<span class="text-xs text-gray-400 ml-auto tabular-nums">' + items.length + (total ? ' · $' + total.toLocaleString('en-US') : '') + '</span></div>' +
+          items.slice(0, 8).map(function (o) {
+            var c = (d.contacts || []).filter(function (x) { return x.id === o.contactId; })[0];
+            return '<button data-open="' + esc(o.contactId) + '" class="block w-full text-left text-sm py-1.5 border-b border-gray-50 last:border-0 hover:text-gold">' +
+              esc((c && c.name) || o.name || 'Contact') + '</button>';
+          }).join('') + '</div>';
+      }).join('') : '<p class="text-gray-400 text-sm">No open opportunities.</p>';
+
+      var sel = $('d-cadence');
+      sel.innerHTML = (d.cadences || []).map(function (c) {
+        return '<option value="' + esc(c.id) + '">' + esc(c.name) + ' (' + c.steps + ' steps)</option>';
+      }).join('');
+    }
+
+    async function load() {
+      $('summary').textContent = 'Loading…';
+      try {
+        var res = await fetch('/api/crm/data', { headers: { accept: 'application/json' } });
+        state.data = await res.json();
+      } catch (e) {
+        state.data = { connected: false, message: 'Could not reach the server. ' + e.message, today: [], followUp: [], counts: {} };
+      }
+      render();
+    }
+
+    // ── Drawer ──────────────────────────────────────────────────────────────
+    function openContact(id) {
+      var d = state.data || {};
+      var all = (d.today || []).concat(d.followUp || []).map(function (i) { return i.contact; })
+        .concat(d.contacts || []);
+      var c = all.filter(function (x) { return x && x.id === id; })[0];
+      if (!c) return;
+      state.contact = c;
+      $('d-name').textContent = c.name || 'Unnamed contact';
+      $('d-meta').textContent = [c.phone, c.email].filter(Boolean).join(' · ');
+      $('d-call').href = c.phone ? 'tel:' + c.phone : '#';
+      $('d-tel-sms').href = c.phone ? 'sms:' + c.phone : '#';
+      $('d-unenrol').classList.toggle('hidden', !c.enrolment);
+      $('d-status').textContent = c.enrolment ? 'In "' + c.enrolment.cadenceId + '" since ' + String(c.enrolment.enrolledAt).slice(0, 10) : '';
+      $('d-messages').innerHTML = '<p class="text-gray-400">Loading…</p>';
+      $('d-notes').innerHTML = '';
+      $('drawer').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+
+      var conv = null;
+      ((d.today || []).concat(d.followUp || [])).forEach(function (i) {
+        if (i.contact.id === id && i.details && i.details.unanswered) conv = i.details.unanswered.conversationId;
+      });
+      post({ action: 'history', contactId: id, conversationId: conv }).then(function (r) {
+        if (!r || r.error) { $('d-messages').innerHTML = '<p class="text-gray-400">No conversation history available.</p>'; return; }
+        $('d-messages').innerHTML = (r.messages || []).length ? r.messages.map(function (m) {
+          var inbound = m.direction === 'inbound';
+          return '<div class="rounded-xl p-3 ' + (inbound ? 'bg-bg-light' : 'bg-bg-dark text-white') + '">' +
+            '<div class="text-[10px] uppercase tracking-wider mb-1 ' + (inbound ? 'text-text-muted' : 'text-gray-400') + '">' +
+              (inbound ? 'Them' : (m.byAutomation ? '⚙️ Automation' : 'You')) + ' · ' + esc(m.type) + ' · ' + when(m.at) + '</div>' +
+            (m.subject ? '<div class="font-semibold mb-1">' + esc(m.subject) + '</div>' : '') +
+            '<div>' + esc(m.body).replace(/\n/g, '<br>') + '</div></div>';
+        }).join('') : '<p class="text-gray-400">No messages yet.</p>';
+        $('d-notes').innerHTML = (r.notes || []).length ? r.notes.map(function (n) {
+          return '<div class="rounded-xl bg-bg-light p-3"><div class="text-[10px] uppercase tracking-wider text-text-muted mb-1">' + when(n.at) + '</div>' + esc(n.body) + '</div>';
+        }).join('') : '<p class="text-gray-400">No notes yet.</p>';
+      });
+    }
+
+    function closeDrawer() { $('drawer').classList.add('hidden'); document.body.style.overflow = ''; }
+
+    async function post(body) {
+      try {
+        var res = await fetch('/api/crm/action', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+        });
+        return await res.json();
+      } catch (e) { return { error: e.message }; }
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      document.querySelectorAll('.d-mode').forEach(function (b) {
+        var on = b.getAttribute('data-mode') === mode;
+        b.className = 'd-mode text-xs font-bold px-3 py-1.5 rounded-lg ' +
+          (on ? 'bg-bg-dark text-white' : 'bg-white text-bg-dark border border-gray-200');
+      });
+      $('d-subject').classList.toggle('hidden', mode !== 'email');
+    }
+
+    document.addEventListener('click', function (e) {
+      var open = e.target.closest('[data-open]');
+      if (open) { openContact(open.getAttribute('data-open')); return; }
+      var mode = e.target.closest('.d-mode');
+      if (mode) { setMode(mode.getAttribute('data-mode')); return; }
+      if (e.target.closest('#d-close') || e.target.id === 'drawer-bg') { closeDrawer(); return; }
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDrawer(); });
+
+    $('refresh').addEventListener('click', load);
+
+    $('d-send').addEventListener('click', async function () {
+      if (!state.contact) return;
+      var body = $('d-body').value.trim();
+      if (!body) { $('d-status').textContent = 'Nothing to send.'; return; }
+      $('d-status').textContent = 'Sending…';
+      var r = await post({ action: state.mode, contactId: state.contact.id, message: body, subject: $('d-subject').value.trim() });
+      $('d-status').textContent = r && r.ok ? 'Sent.' : ('Failed: ' + ((r && (r.error || r.detail)) || 'unknown'));
+      if (r && r.ok) { $('d-body').value = ''; setTimeout(load, 800); }
+    });
+
+    $('d-note-save').addEventListener('click', async function () {
+      if (!state.contact) return;
+      var body = $('d-note-input').value.trim();
+      if (!body) return;
+      var r = await post({ action: 'note', contactId: state.contact.id, body: body });
+      if (r && r.ok) { $('d-note-input').value = ''; openContact(state.contact.id); }
+      else $('d-status').textContent = 'Could not save note.';
+    });
+
+    $('d-enrol').addEventListener('click', async function () {
+      if (!state.contact) return;
+      $('d-status').textContent = 'Starting…';
+      var r = await post({ action: 'enrol', contactId: state.contact.id, cadenceId: $('d-cadence').value });
+      $('d-status').textContent = r && r.ok ? 'Follow-up started. It stops automatically if they reply.' : 'Could not start.';
+      if (r && r.ok) load();
+    });
+
+    $('d-unenrol').addEventListener('click', async function () {
+      if (!state.contact) return;
+      var r = await post({ action: 'unenrol', contactId: state.contact.id });
+      $('d-status').textContent = r && r.ok ? 'Follow-up stopped.' : 'Could not stop.';
+      if (r && r.ok) load();
+    });
+
+    setMode('sms');
+    load();
+  })();
+  </script>
+</BaseLayout>

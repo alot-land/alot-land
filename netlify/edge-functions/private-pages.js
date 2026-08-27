@@ -68,5 +68,13 @@ export default async (request, context) => {
 };
 
 export const config = {
-  path: ['/seo', '/seo/', '/seo/*', '/handbook', '/handbook/', '/handbook/*'],
+  // /api/* is gated too, and that is not optional: those endpoints return real
+  // customer names, phone numbers and message history. Gating only the page
+  // would leave the data one fetch away for anyone who guessed the URL.
+  path: [
+    '/seo', '/seo/', '/seo/*',
+    '/handbook', '/handbook/', '/handbook/*',
+    '/crm', '/crm/', '/crm/*',
+    '/api/*',
+  ],
 };

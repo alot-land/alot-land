@@ -1,0 +1,32 @@
+---
+// Shared navigation for the private back-office pages.
+//
+// Every back-office page links to every other one, including the CMS, so there
+// is never a page you can reach but not leave. One component so a new tool is
+// added in one place and appears everywhere.
+interface Props { current?: 'crm' | 'seo' | 'handbook' | 'cms' }
+const { current } = Astro.props as Props;
+
+export const BACKEND_PAGES = [
+  { key: 'crm',      href: '/crm/',      icon: '📇', label: 'Leads',    blurb: 'Who needs a reply today' },
+  { key: 'seo',      href: '/seo/',      icon: '📈', label: 'SEO',      blurb: 'Rankings, queue, approvals' },
+  { key: 'cms',      href: '/admin/',    icon: '✏️', label: 'CMS',      blurb: 'Edit the website' },
+  { key: 'handbook', href: '/handbook/', icon: '📘', label: 'Handbook', blurb: 'How all of it works' },
+];
+---
+<div class="bg-bg-dark border-b border-white/10">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center gap-2">
+    <a href="/" class="text-xs font-bold uppercase tracking-widest text-gold mr-2 hover:text-yellow-300">alot.land</a>
+    {BACKEND_PAGES.map(p => (
+      <a href={p.href}
+         title={p.blurb}
+         aria-current={current === p.key ? 'page' : undefined}
+         class={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+           current === p.key ? 'bg-gold text-bg-dark' : 'bg-white/10 text-white hover:bg-white/20'}`}>
+        <span aria-hidden="true">{p.icon}</span> {p.label}
+      </a>
+    ))}
+    <a href="/" target="_blank" rel="noopener"
+       class="ml-auto text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors">↗ View site</a>
+  </div>
+</div>

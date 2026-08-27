@@ -15,3 +15,6 @@ dist/
 
 # Original screenshot uploads (the optimized .jpg versions are what the site uses)
 public/images/screenshot-*.png
+
+# Local Netlify folder
+.netlify

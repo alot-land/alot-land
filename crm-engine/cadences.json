@@ -1,0 +1,40 @@
+{
+  "_comment": "Follow-up sequences. Nobody is EVER enrolled by a trigger — David enrols a person by hand from the dashboard. That is the whole point: GHL's trigger-based workflows fired at the wrong people and made the business look unprofessional. Steps fire relative to the enrolment date. A 'call' step never dials anyone; it puts a task in Today.",
+  "cadences": [
+    {
+      "id": "seller-followup",
+      "name": "Seller follow-up",
+      "for": "Someone who asked what their land is worth and went quiet",
+      "steps": [
+        { "day": 0, "channel": "sms",   "body": "Hi {{first}} — David with Alot of Land. Just making sure you got my note about your property. Happy to talk whenever suits you." },
+        { "day": 2, "channel": "call",  "note": "First call attempt. If no answer, leave a voicemail saying you'll follow up by text." },
+        { "day": 4, "channel": "email", "subject": "Your land — a couple of quick questions", "body": "Hi {{first}},\n\nI wanted to follow up on your property. To put a real number together I usually need three things: roughly how many acres, the county, and whether there's road frontage.\n\nReply with those and I'll come back with a number and how I got to it.\n\nDavid" },
+        { "day": 9, "channel": "sms",   "body": "Hi {{first}} — still interested in a number on your land? No pressure either way, just don't want to leave you hanging." },
+        { "day": 16, "channel": "call", "note": "Second call attempt. If still nothing, mark the deal lost or park it." },
+        { "day": 30, "channel": "email", "subject": "Closing the file on your land", "body": "Hi {{first}},\n\nI haven't heard back so I'll close this out — no hard feelings. If anything changes, my number is in this thread and I'll pick up.\n\nDavid" }
+      ]
+    },
+    {
+      "id": "buyer-followup",
+      "name": "Buyer follow-up",
+      "for": "Someone who enquired on a lot and went quiet",
+      "steps": [
+        { "day": 0, "channel": "sms",   "body": "Hi {{first}} — David with Alot of Land. Any questions on the lot you were looking at? Happy to walk it with you." },
+        { "day": 3, "channel": "email", "subject": "Want to walk the property?", "body": "Hi {{first}},\n\nEasiest way to know if a piece of land is right is to stand on it. I can meet you out there, or send you the soil map and survey if you'd rather look first.\n\nWhich would you prefer?\n\nDavid" },
+        { "day": 7, "channel": "call",  "note": "Call. Ask what's holding them up — usually access, septic or financing." },
+        { "day": 14, "channel": "sms",  "body": "Hi {{first}} — still looking? If that lot isn't the one, tell me what you're after and I'll keep an eye out." },
+        { "day": 28, "channel": "email", "subject": "Anything else you'd like me to look for?", "body": "Hi {{first}},\n\nI'll stop chasing this particular lot. If you tell me the acreage, county and budget you're after, I'll let you know when something matches.\n\nDavid" }
+      ]
+    },
+    {
+      "id": "showing-noshow",
+      "name": "Missed showing",
+      "for": "Booked a showing and did not turn up",
+      "steps": [
+        { "day": 0, "channel": "sms",   "body": "Hi {{first}} — sorry we missed each other today. Want to pick another time?" },
+        { "day": 2, "channel": "call",  "note": "Call. Something usually came up — worth one human attempt before giving up." },
+        { "day": 6, "channel": "email", "subject": "Still want to see the property?", "body": "Hi {{first}},\n\nHappy to find another time, or send photos and the survey if it's easier.\n\nDavid" }
+      ]
+    }
+  ]
+}

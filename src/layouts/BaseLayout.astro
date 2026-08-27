@@ -13,6 +13,8 @@ interface Props {
   ogType?: string;
   noChat?: boolean;
   noindex?: boolean;
+  /** Back-office pages: no marketing header, footer or customer chat widget. */
+  bare?: boolean;
 }
 
 const {
@@ -24,6 +26,7 @@ const {
   ogType = 'website',
   noChat = false,
   noindex = false,
+  bare = false,
 } = Astro.props;
 
 const pageTitle = title ? `${title} | alot.land` : `alot.land — ${siteConfig.tagline}`;
@@ -165,17 +168,17 @@ const globalSchema = {
     </script>
   </head>
   <body class="font-body bg-bg-light text-bg-dark antialiased">
-    <Header />
+    {!bare && <Header />}
     <main>
       <slot />
     </main>
-    <Footer />
+    {!bare && <Footer />}
 
     <!-- Favorites / Hearts global logic -->
     <HeartScript />
 
     <!-- GHL Chat Widget (hidden on pages with contact forms) -->
-    {!noChat && <script defer src="https://widgets.leadconnectorhq.com/loader.js" data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js" data-widget-id="6a0b46a5c2e5331bb3f4cd6b"></script>}
+    {!noChat && !bare && <script defer src="https://widgets.leadconnectorhq.com/loader.js" data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js" data-widget-id="6a0b46a5c2e5331bb3f4cd6b"></script>}
 
     <script>
       if (window.netlifyIdentity) {

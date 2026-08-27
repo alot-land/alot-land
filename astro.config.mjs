@@ -23,7 +23,8 @@ export default defineConfig({
         !page.includes('/listings/favorites') &&
         !page.includes('/media') &&
         !page.includes('/seo') &&
-        !page.includes('/handbook'),
+        !page.includes('/handbook') &&
+        !page.includes('/crm'),
     }),
   ],
 });
