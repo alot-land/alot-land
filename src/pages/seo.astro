@@ -70,6 +70,7 @@ const fmt = n => n == null ? '—' : n.toLocaleString('en-US');
               <a href={pr.url} target="_blank" rel="noopener"
                  class="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl bg-white px-4 py-3 hover:bg-white/70 transition-colors">
                 <span class="font-semibold text-bg-dark">{pr.title}</span>
+                {pr.isCycle && <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-bg-dark text-gold">cycle</span>}
                 <span class="text-xs text-gray-500 tabular-nums">#{pr.number} · opened {pr.opened}</span>
                 {pr.additions != null && (
                   <span class="text-xs tabular-nums text-gray-400">+{pr.additions} / −{pr.deletions}</span>

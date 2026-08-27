@@ -40,10 +40,14 @@ Stop and report instead of proceeding if any of these fail:
 - `git status` is clean and the branch is `main`, up to date with `origin`.
 - `npm run build` passes **before** any edits. If it is already broken, that is
   the only thing worth fixing this week; say so and stop.
-- `seo-engine/review.json` shows no open pull request. **If something is already
-  waiting on David, do not open a second one.** Report that the queue is
-  blocked and stop. A stack of unreviewed pull requests is how this stops being
-  used.
+- `seo-engine/review.json` lists no open entry with `"isCycle": true`. **If a
+  previous cycle is still waiting on David, do not open a second one.** Report
+  that the queue is blocked and stop. A stack of unreviewed pull requests is
+  how this stops being used.
+
+  Only the cycle's own pull requests gate the run. Unrelated ones — a feature
+  branch, an app someone parked — are listed on the dashboard but must not
+  block the routine, or one forgotten branch stalls it indefinitely.
 
 ---
 
@@ -65,7 +69,10 @@ Stop and report instead of proceeding if any of these fail:
 6. **Verify.** `npm run build` must pass. Check the new or changed page in
    `dist/` actually contains what was intended, and that any new indexable page
    is in the sitemap while private pages are not.
-7. **Open the pull request** from a branch named `seo/cycle-<n>-<slug>`.
+7. **Open the pull request** from a branch named `seo/cycle-<n>-<slug>`, and
+   **label it `seo-cycle`** — that label is what gates the following week's run.
+   An unlabelled pull request will be reviewed but will not stop the next cycle
+   from opening another.
 8. **Update** `state.json`, `log.md` and `queue.md` in the same pull request.
 
 ## Writing the pull request

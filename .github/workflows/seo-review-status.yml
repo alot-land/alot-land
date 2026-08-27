@@ -40,7 +40,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr list --state open --base main --limit 50 \
-            --json number,title,url,createdAt,isDraft,additions,deletions \
+            --json number,title,url,createdAt,isDraft,additions,deletions,labels \
             > /tmp/prs.json
 
           # Drafts are still being worked on — they are not waiting on anyone.
@@ -50,7 +50,10 @@ jobs:
               open: [ .[] | select(.isDraft | not) | {
                 number, title, url,
                 opened: (.createdAt | split("T")[0]),
-                additions, deletions
+                additions, deletions,
+                # The weekly cycle only blocks on its own pull requests, so an
+                # unrelated long-lived one cannot stall the routine forever.
+                isCycle: ([.labels[].name] | index("seo-cycle") != null)
               } ]
             }
           ' /tmp/prs.json > seo-engine/review.json
