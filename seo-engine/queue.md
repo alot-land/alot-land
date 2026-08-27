@@ -14,7 +14,7 @@ this file is for things a machine cannot do.
 | # | Item | Why it matters | Owner | Status |
 |---|------|----------------|-------|--------|
 | 1 | **Record the 5 priority FAQ videos** — how to buy land · how much is my land worth · how do I sell my land · buy land & build a house · buy land with no money | The written pages are live and ranking-ready but generic. A page written from your transcript contains material that exists nowhere else, which is what actually gets cited. Biggest single lever available. | David | todo |
-| 2 | **Paste each YouTube link** into `/admin` → FAQs → *Video Answer URL* | Embeds the clip in the FAQ and emits VideoObject schema, attributing the answer to a named person. | David | todo |
+| 2 | **Paste each YouTube link** into `/admin` → FAQs → *Video Answer URL* | Embeds the clip, emits VideoObject schema attributing the answer to a named person, **and automatically pulls the transcript** — the next cycle then rewrites that answer from what you actually said. Pasting the link is the only manual step. | David | todo |
 | 3 | **Audit GHL workflow triggers** | A seller who used the sell-land form received buyer nurture emails. The website is correct — every form has its own ID. A GHL workflow is firing on "any form submitted" or "contact created". Costing credibility with real sellers now. | David | todo |
 | 4 | **Google Business Profile for Goldstone** at 7301 N 16th St | alot.land is a national play and does not need a GBP; Goldstone is local and does. Use the real office, never the registered-agent address — Google rejects those. | David | todo |
 
@@ -55,3 +55,7 @@ this file is for things a machine cannot do.
 | Operations handbook at `/handbook` | 3 |
 | Open reviews surfaced on the dashboard | 3 |
 | Weekly cycle scheduled, gated behind a pull request | 3 |
+| `/seo` and `/handbook` password-gated at the edge | 3 |
+| YouTube transcript puller merged and verified against live YouTube | 3 |
+| FAQ transcripts pull automatically when a video link is pasted | 3 |
+| Queue surfaced on the dashboard — one place for manual work | 3 |

@@ -1,0 +1,49 @@
+name: Pull FAQ transcripts
+
+# Runs whenever an FAQ changes — which is what happens when David pastes a
+# YouTube link into /admin. The transcript is then already waiting when the
+# weekly cycle goes to rewrite that answer from what he actually said.
+#
+# No loop risk: this triggers on src/content/faqs/** and only ever writes to
+# seo-engine/transcripts/**.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/content/faqs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: faq-transcripts
+  cancel-in-progress: false
+
+jobs:
+  pull:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # No install: the transcript core has no runtime dependencies.
+      - name: Pull transcripts
+        run: node seo-engine/pull-transcripts.mjs
+
+      - name: Commit any new transcripts
+        run: |
+          if git diff --quiet -- seo-engine/transcripts; then
+            echo "No new transcripts."; exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add seo-engine/transcripts
+          git commit -m "Pull FAQ transcripts"
+          git push
