@@ -368,7 +368,7 @@ const drives = [
   .opt-ico{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(245,184,0,.15);margin-bottom:16px}
   .opt-ico svg{width:26px;height:26px;stroke:var(--ink);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
   .opt .body{padding:24px}
-  .opt h4{font-size:1.35rem;margin-bottom:6px}
+  .opt h3{font-size:1.35rem;margin-bottom:6px}
   .opt p{color:var(--ink-soft);font-size:.95rem;margin-bottom:18px}
   @media(max-width:680px){.opt-grid{grid-template-columns:1fr}}
 
@@ -401,7 +401,7 @@ const drives = [
   .lot .statustag.sold{background:#b42318;color:#fff}
   .lot .ph{font-family:"DM Mono";font-size:.66rem;color:rgba(255,255,255,.5);padding:12px}
   .lot .body{padding:18px 20px 22px;display:flex;flex-direction:column;flex:1}
-  .lot h4{font-size:1.22rem;margin-bottom:4px}
+  .lot h3{font-size:1.22rem;margin-bottom:4px}
   .lot .meta{font-family:"DM Mono";font-size:.8rem;color:var(--river)}
   .lot .desc{font-size:.88rem;color:var(--ink-soft);margin-top:9px;line-height:1.5;flex:1}
   .lot .price{font-family:"DM Mono";font-weight:500;font-size:1.35rem;color:var(--pine);margin-top:12px}
@@ -470,7 +470,7 @@ const drives = [
   .purchase h2{font-size:clamp(1.9rem,4.5vw,3rem);color:#fff;margin:8px 0 36px}
   .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
   .step .n{font-family:"DM Mono";font-size:.8rem;color:var(--meadow-soft);letter-spacing:.2em}
-  .step h4{font-size:1.3rem;color:#fff;margin:8px 0 8px}
+  .step h3{font-size:1.3rem;color:#fff;margin:8px 0 8px}
   .step p{color:rgba(255,255,255,.78);font-size:.95rem}
   .step{border-top:2px solid var(--meadow);padding-top:18px}
   @media(max-width:760px){.steps{grid-template-columns:1fr}}
@@ -669,7 +669,7 @@ const drives = [
       <div class="opt">
         <div class="body">
           <div class="opt-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-          <h4 set:html={txt('options','showingHeading','Book a Private Showing')}></h4>
+          <h3 set:html={txt('options','showingHeading','Book a Private Showing')}></h3>
           <p set:html={txt('options','showingBody','Showings are held on our one-day sale Saturdays. Lots go first come, first served &mdash; the earliest slots get the best pick.')}></p>
           {showingCalendarUrl
             ? <a class="btn btn-primary" href={showingCalendarUrl} target="_blank" rel="noopener" set:html={txt('options','showingButton','Check Available Showing Times')}></a>
@@ -679,7 +679,7 @@ const drives = [
       <div class="opt">
         <div class="body">
           <div class="opt-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
-          <h4 set:html={txt('options','consultHeading','Book a 20-Minute Land Call')}></h4>
+          <h3 set:html={txt('options','consultHeading','Book a 20-Minute Land Call')}></h3>
           <p set:html={txt('options','consultBody','Prefer to talk first? Get pricing, lot details, and maps over the phone or a quick Zoom.')}></p>
           {consultCalendarUrl
             ? <a class="btn btn-dark" href={consultCalendarUrl} target="_blank" rel="noopener" set:html={txt('options','consultButton','Schedule a Land Consult')}></a>
@@ -740,7 +740,7 @@ const drives = [
             {!lot.photo && <span class="ph">Photo coming soon</span>}
           </div>
           <div class="body">
-            <h4>{lot.name}</h4>
+            <h3>{lot.name}</h3>
             <div class="meta">{lot.acreage} ACRES</div>
             <p class="desc">{lot.desc}</p>
             <div class="price">{lot.price}</div>
@@ -840,7 +840,7 @@ const drives = [
         {label:'STEP 02',heading:'Walk the land with me',body:"We'll tour the tracts together."},
         {label:'STEP 03',heading:'Reserve &amp; close',body:'Found your lot? Reserve it on the spot.'},
       ]).map((st2: any) => (
-        <div class="step"><div class="n" set:html={st2.label}></div><h4 set:html={st2.heading}></h4><p set:html={st2.body}></p></div>
+        <div class="step"><div class="n" set:html={st2.label}></div><h3 set:html={st2.heading}></h3><p set:html={st2.body}></p></div>
       ))}
     </div>
     {btn('purchase','button','Start With a Showing') && (

@@ -4,9 +4,11 @@ import { getCollection, render } from 'astro:content';
 interface Props {
   variant?: 'dark' | 'light';
   max?: number;
+  /** Question-shaped heading. Each page passes the one that matches its intent. */
+  heading?: string;
 }
 
-const { variant = 'dark', max = 3 } = Astro.props;
+const { variant = 'dark', max = 3, heading } = Astro.props;
 
 const allTestimonials = await getCollection('testimonials', t => t.data.featured);
 const testimonials = allTestimonials
@@ -32,7 +34,7 @@ const isDark = variant === 'dark';
           What Our Clients Say
         </p>
         <h2 class={`font-display font-black text-3xl sm:text-4xl ${isDark ? 'text-white' : 'text-bg-dark'}`}>
-          Real People. Real Land. Real Results.
+          {heading ?? 'What do people say after working with us?'}
         </h2>
       </div>
 

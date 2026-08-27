@@ -59,6 +59,7 @@ const soldSchema = soldCount > 0 ? {
   <!-- Listings grid -->
   {soldCount > 0 ? (
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h2 class="font-display font-black text-2xl sm:text-3xl text-bg-dark mb-8">What land has already sold?</h2>
       <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {soldListings.map(listing => (
           <ListingCard
