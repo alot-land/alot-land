@@ -35,3 +35,20 @@
   for = "/admin/*"
   [headers.values]
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://identity.netlify.com https://*.cloudinary.com; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https://api.github.com https://identity.netlify.com https://api.netlify.com https://*.cloudinary.com https://api.cloudinary.com; frame-src 'self' https://*.cloudinary.com; child-src 'self' blob: https://*.cloudinary.com; worker-src 'self' blob:; base-uri 'self'"
+
+# /seo and /handbook are private working pages, password-gated by the
+# private-pages edge function. This header is a backstop: if that gate is ever
+# removed or misconfigured, the pages still must never enter a search index.
+#
+# Deliberately NOT added to robots.txt. Disallowing a path there stops crawlers
+# reading the noindex, which lets the URL get indexed anyway from a stray link —
+# and it publishes the location of the very pages we are hiding.
+[[headers]]
+  for = "/seo/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet"
+
+[[headers]]
+  for = "/handbook/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive, nosnippet"
