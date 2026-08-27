@@ -51,3 +51,7 @@ this file is for things a machine cannot do.
 | `/listings` retargeted to the Tennessee transactional cluster | 2 |
 | `/guides/how-to-buy-land` published | 2 |
 | Weekly metrics collection automated | 3 |
+| SEO dashboard at `/seo`, linked from `/admin` | 3 |
+| Operations handbook at `/handbook` | 3 |
+| Open reviews surfaced on the dashboard | 3 |
+| Weekly cycle scheduled, gated behind a pull request | 3 |

@@ -159,11 +159,37 @@ const sections = [
         <tr><td><code>seo-engine/history.json</code></td><td>Weekly measurements. Written by the Monday job, never by hand.</td></tr>
         <tr><td><code>seo-engine/queue.md</code></td><td>Everything waiting on a person.</td></tr>
         <tr><td><code>seo-engine/log.md</code></td><td>What each cycle changed, newest first.</td></tr>
+        <tr><td><code>seo-engine/cycle.md</code></td><td>The runbook the weekly job follows. Edit this to change how the routine behaves.</td></tr>
+        <tr><td><code>seo-engine/review.json</code></td><td>Open pull requests. Written by an Action; drives the dashboard banner.</td></tr>
       </tbody>
     </table>
     <p>
       <a href="/seo/">The tracking dashboard</a> reads those files and is the fastest way to see where
       things stand.
+    </p>
+
+    <h3>How a cycle actually runs</h3>
+    <p>
+      A scheduled job runs the cycle every <strong>Monday morning</strong>, following
+      <code>seo-engine/cycle.md</code> in the repo — the rules live there, not inside the job, so
+      changing how the routine behaves is an ordinary edit anyone can review.
+    </p>
+    <ol>
+      <li><strong>5:00 AM</strong> — GitHub Actions collects the week's metrics and commits them.</li>
+      <li><strong>9:00 AM</strong> — the cycle reads that state, picks one move, drafts it, checks the build, and opens <em>one pull request</em>.</li>
+      <li>It appears as a gold banner at the top of <a href="/seo/">the dashboard</a>, and GitHub emails you.</li>
+      <li>Merging publishes it. Closing discards it. Nothing goes live on its own.</li>
+    </ol>
+    <p>
+      Two refusals are built in on purpose. If a pull request is <strong>already waiting</strong>, the
+      next run does not open another — an unreviewed stack is how a queue stops being used. And if the
+      build does not pass, it opens nothing: a bad commit here does not show as a broken site, it shows
+      as a <em>frozen</em> one, because Netlify keeps serving the last good deploy.
+    </p>
+    <p>
+      The scheduled job runs on David's machine and only while the app is open. If it is closed on
+      Monday, the cycle runs at the next launch rather than being skipped. The metrics half runs on
+      GitHub and is unaffected.
     </p>
 
     <h3>Rules that are not negotiable</h3>
