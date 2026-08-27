@@ -11,6 +11,7 @@ const faqs = await getCollection('faqs').catch(() => []);
 const communities = await getCollection('communities').catch(() => []);
 
 const sections = [
+  { id: 'map',         label: 'Where everything lives' },
   { id: 'orientation', label: 'Orientation' },
   { id: 'backend',     label: 'Back end — the CMS' },
   { id: 'frontend',    label: 'Front end — the code' },
@@ -39,6 +40,42 @@ const sections = [
                   prose-h2:font-display prose-h2:font-black prose-h2:text-bg-dark prose-h2:mt-12
                   prose-h3:font-display prose-h3:font-bold prose-h3:text-bg-dark
                   prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded prose-code:text-sm">
+
+    <h2 id="map">Where everything lives</h2>
+    <p>
+      Four back-office pages. Every one links to the other three, so you can never land somewhere with
+      no way out. The first three are password-protected; the CMS uses your Netlify Identity login.
+    </p>
+    <table>
+      <thead><tr><th>Page</th><th>What it is for</th><th>When to open it</th></tr></thead>
+      <tbody>
+        <tr><td><a href="/crm/"><strong>📇 Leads</strong></a><br /><code>/crm</code></td>
+            <td>Every person who has reached out through GoHighLevel: who is waiting on a reply, who is new, who has gone quiet. Call, text, email and take notes without leaving the page.</td>
+            <td><strong>Daily.</strong> Clear the Today list and nobody has been dropped.</td></tr>
+        <tr><td><a href="/seo/"><strong>📈 SEO</strong></a><br /><code>/seo</code></td>
+            <td>AI mentions, tracked keywords, the work queue, and anything the weekly cycle has written that needs approving.</td>
+            <td><strong>Weekly</strong>, or when a pull request lands.</td></tr>
+        <tr><td><a href="/admin/"><strong>✏️ CMS</strong></a><br /><code>/admin</code></td>
+            <td>Edit the public website — listings, FAQs, communities, the Sugar Tree sales page.</td>
+            <td>Whenever the website needs changing.</td></tr>
+        <tr><td><strong>📘 Handbook</strong><br /><code>/handbook</code></td>
+            <td>This page. How all of it works.</td>
+            <td>When something is unclear, or when handing this to someone else.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Behind the scenes</h3>
+    <p>These run without you. You never need to open them, but this is what they are:</p>
+    <table>
+      <thead><tr><th>Job</th><th>Runs</th><th>Does</th></tr></thead>
+      <tbody>
+        <tr><td>Weekly SEO metrics</td><td>Mondays 5:00am</td><td>Measures AI mentions and keywords, commits the record</td></tr>
+        <tr><td>SEO cycle</td><td>Mondays 9:00am</td><td>Drafts one improvement and opens a pull request for you</td></tr>
+        <tr><td>SEO review status</td><td>On any pull request</td><td>Puts waiting approvals on the dashboard</td></tr>
+        <tr><td>FAQ transcripts</td><td>On FAQ change, and every 6 hours</td><td>Pulls the transcript for any FAQ video</td></tr>
+        <tr><td>Daily site refresh</td><td>Daily</td><td>Rebuilds so scheduled content appears</td></tr>
+      </tbody>
+    </table>
 
     <h2 id="orientation">Orientation</h2>
     <p>
