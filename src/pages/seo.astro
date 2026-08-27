@@ -6,6 +6,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import history from '../../seo-engine/history.json';
 import state from '../../seo-engine/state.json';
+import review from '../../seo-engine/review.json';
 
 const records = [...(history.records ?? [])].sort((a, b) => a.date.localeCompare(b.date));
 const latest = records[records.length - 1] ?? null;
@@ -24,6 +25,10 @@ const keywords = [...(latest?.keywords ?? [])]
 const totalVolume = keywords.reduce((s, k) => s + (k.searchVolume ?? 0), 0);
 // What this traffic would cost to buy, if we ranked and took a ~30% click share.
 const trafficValue = keywords.reduce((s, k) => s + ((k.searchVolume ?? 0) * 0.3 * (k.cpc ?? 0)), 0);
+
+// Open pull requests are the only thing that blocks a cycle from shipping,
+// so they go at the top of the page rather than in a list further down.
+const openReviews = review.open ?? [];
 
 const cycles = state.moves_run ?? [];
 const pending = state.pending_from_david ?? [];
@@ -52,6 +57,30 @@ const fmt = n => n == null ? '—' : n.toLocaleString('en-US');
   </div>
 
   <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+    {openReviews.length > 0 && (
+      <div class="rounded-2xl border-2 border-gold bg-gold/10 p-6 mb-8">
+        <p class="text-xs font-bold uppercase tracking-widest text-bg-dark mb-2">
+          {openReviews.length === 1 ? '1 thing is waiting on you' : `${openReviews.length} things are waiting on you`}
+        </p>
+        <p class="text-gray-700 text-sm mb-4">Nothing here is live yet. Each one is written and ready — open it, read it, and merge it to publish or close it to discard.</p>
+        <ul class="space-y-2">
+          {openReviews.map(pr => (
+            <li>
+              <a href={pr.url} target="_blank" rel="noopener"
+                 class="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl bg-white px-4 py-3 hover:bg-white/70 transition-colors">
+                <span class="font-semibold text-bg-dark">{pr.title}</span>
+                <span class="text-xs text-gray-500 tabular-nums">#{pr.number} · opened {pr.opened}</span>
+                {pr.additions != null && (
+                  <span class="text-xs tabular-nums text-gray-400">+{pr.additions} / −{pr.deletions}</span>
+                )}
+                <span class="ml-auto text-sm font-bold text-bg-dark">Review →</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
 
     {!latest && (
       <div class="rounded-2xl border border-gray-200 bg-white p-8 text-center">

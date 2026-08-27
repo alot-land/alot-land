@@ -1,0 +1,77 @@
+name: SEO review status
+
+# Answers one question on the dashboard: is anything waiting on David?
+#
+# GitHub already emails when a pull request opens, but email is easy to miss and
+# David's actual habit is /admin, which links to /seo. So open pull requests are
+# written into seo-engine/review.json, committed to main, and surfaced as a
+# banner on that dashboard. Runs in Actions rather than on his laptop so it does
+# not depend on any app being open.
+
+on:
+  pull_request:
+    types: [opened, reopened, closed, ready_for_review, converted_to_draft]
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 13 * * *' # daily safety net, in case an event is missed
+
+permissions:
+  contents: write
+  pull-requests: read
+
+# Never let two runs race to commit the same file.
+concurrency:
+  group: seo-review-status
+  cancel-in-progress: false
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      # Check out main explicitly: on a pull_request event the default ref is
+      # the merge commit, which cannot be pushed to.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Write the open-review list
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr list --state open --base main --limit 50 \
+            --json number,title,url,createdAt,isDraft,additions,deletions \
+            > /tmp/prs.json
+
+          # Drafts are still being worked on — they are not waiting on anyone.
+          jq --arg now "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
+            {
+              updated: $now,
+              open: [ .[] | select(.isDraft | not) | {
+                number, title, url,
+                opened: (.createdAt | split("T")[0]),
+                additions, deletions
+              } ]
+            }
+          ' /tmp/prs.json > seo-engine/review.json
+
+          echo "Open, non-draft pull requests: $(jq '.open | length' seo-engine/review.json)"
+
+      - name: Commit if the list changed
+        run: |
+          # `updated` changes every run, so compare only the list itself —
+          # otherwise this commits daily and rebuilds the site for nothing.
+          if git diff --quiet -- seo-engine/review.json; then
+            echo "No change."; exit 0
+          fi
+          if [ "$(git show HEAD:seo-engine/review.json | jq -c '.open')" \
+             = "$(jq -c '.open' seo-engine/review.json)" ]; then
+            echo "Only the timestamp changed — not committing."
+            git checkout -- seo-engine/review.json
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add seo-engine/review.json
+          git commit -m "SEO review status: $(jq '.open | length' seo-engine/review.json) waiting"
+          git push
