@@ -13,6 +13,13 @@ on:
     paths:
       - 'src/content/faqs/**'
   workflow_dispatch:
+  # YouTube can take minutes to hours to generate captions after an upload. If
+  # the link is pasted before they exist, the first pull fails — and the FAQ file
+  # will not change again to re-trigger this. So retry on a clock: the script
+  # only re-attempts entries that are not already stored, and commits nothing
+  # when there is nothing new.
+  schedule:
+    - cron: '0 */6 * * *'
 
 permissions:
   contents: write

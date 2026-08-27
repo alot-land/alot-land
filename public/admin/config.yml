@@ -74,6 +74,7 @@ collections:
     create: true
     slug: "{{slug}}"
     fields:
+      - { label: "Order", name: "order", widget: "number", value_type: "int", default: 99, hint: "Display position, low to high. This field must exist here — saving without it resets the order." }
       - { label: "Name", name: "name", widget: "string", hint: "e.g. Allan R. Koepsell" }
       - { label: "Location", name: "location", widget: "string", required: false, hint: "e.g. Knoxville, TN" }
       - { label: "Role / Title", name: "role", widget: "string", required: false, hint: "e.g. Former Real Estate Broker, Land Investor" }
@@ -171,11 +172,13 @@ collections:
     folder: "src/content/faqs"
     create: true
     slug: "{{slug}}"
+    sortable_fields: ["order", "question", "category"]
     fields:
       - { label: "Question", name: "question", widget: "string", hint: "The question as it appears in the accordion" }
       - { label: "Category", name: "category", widget: "select", options: [{label: "Buying Land (from us)", value: "buying"}, {label: "Selling Land (to us)", value: "selling"}, {label: "General", value: "general"}] }
+      - { label: "Order", name: "order", widget: "number", value_type: "int", default: 99, hint: "Position in the accordion, low to high. This field must exist here — saving an FAQ without it resets the order of every FAQ you edit." }
       - { label: "Show on Site", name: "active", widget: "boolean", default: true, hint: "Toggle off to hide this FAQ without deleting it" }
-      - { label: "Video Answer URL (YouTube)", name: "videoUrl", widget: "string", required: false, hint: "Paste the YouTube link of you answering this question. It plays inside the FAQ and tells Google a real person answered it." }
+      - { label: "Video Answer URL (YouTube)", name: "videoUrl", widget: "string", required: false, hint: "Paste the YouTube link of you answering this question. It plays inside the FAQ, tells Google a real person answered it, and the transcript is pulled automatically. Video must be Public or Unlisted (not Private). Captions can take up to a few hours after upload — the transcript retries on its own until they exist." }
       - { label: "Video Recorded On", name: "videoDate", widget: "datetime", required: false, hint: "Optional. Used in the video markup." }
       - { label: "Answer", name: "body", widget: "markdown", hint: "Full answer — supports bold, lists, and links" }
 
@@ -185,6 +188,7 @@ collections:
     create: true
     slug: "{{slug}}"
     fields:
+      - { label: "Order", name: "order", widget: "number", value_type: "int", default: 99, hint: "Display position, low to high. This field must exist here — saving without it resets the order." }
       - { label: "Full Name", name: "name", widget: "string" }
       - { label: "Role / Title", name: "role", widget: "string", hint: "e.g. Founder & CEO, Operations, Transaction Coordinator" }
       - { label: "Photo", name: "photo", widget: "image", required: false, hint: "Headshot or professional photo" }
@@ -197,6 +201,7 @@ collections:
     create: true
     slug: "{{slug}}"
     fields:
+      - { label: "Order", name: "order", widget: "number", value_type: "int", default: 99, hint: "Display position, low to high. This field must exist here — saving without it resets the order." }
       - { label: "Business Name", name: "name", widget: "string" }
       - { label: "Category", name: "category", widget: "select", options: [{label: "Excavation & Septic", value: "excavation-septic"}, {label: "Preferred Builders", value: "builders"}, {label: "Preferred Lenders", value: "lenders"}] }
       - { label: "State", name: "state", widget: "select", options: [{label: "Arizona", value: "Arizona"}, {label: "Tennessee", value: "Tennessee"}, {label: "Both (AZ + TN)", value: "Both"}] }
