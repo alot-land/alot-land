@@ -1,23 +1,46 @@
 name: Daily site refresh
 
-# Rebuilds the site once a day so new YouTube uploads show up on /videos
-# (and the Sugar Tree strip) without anyone touching the CMS.
-# The Netlify build hook lives in the NETLIFY_BUILD_HOOK repo secret — never in this file.
+# The /videos page reads David's YouTube feed at build time, so a rebuild is how
+# a new upload shows up. This used to rebuild unconditionally — 27 builds in one
+# billing cycle for, as far as anyone can tell, zero new videos. Now it asks
+# YouTube for the newest video and only rebuilds if the live site doesn't have
+# it yet. No state to keep: the live page itself is the record of what shipped.
 
 on:
   schedule:
     - cron: '0 11 * * *' # 11:00 UTC ≈ 6:00 AM Central
-  workflow_dispatch: # lets you run it on demand from the Actions tab
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Rebuild even if nothing changed'
+        type: boolean
+        default: false
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Netlify rebuild
+      - name: Rebuild only if YouTube has something the site does not
+        env:
+          HOOK: ${{ secrets.NETLIFY_BUILD_HOOK }}
+          FORCE: ${{ inputs.force }}
+          CHANNEL: UCuVnF2Prq1w5FF5ypLuTFnQ
         run: |
-          if [ -z "${{ secrets.NETLIFY_BUILD_HOOK }}" ]; then
-            echo "NETLIFY_BUILD_HOOK secret is not set — skipping."
-            exit 1
+          set -e
+          if [ -z "$HOOK" ]; then echo "NETLIFY_BUILD_HOOK secret is not set — skipping."; exit 1; fi
+
+          newest=$(curl -fsSL "https://www.youtube.com/feeds/videos.xml?channel_id=$CHANNEL" \
+                   | grep -o '<yt:videoId>[^<]*' | head -1 | sed 's/<yt:videoId>//')
+          if [ -z "$newest" ]; then
+            # Can't read the feed — do NOT rebuild on a guess. A missed day costs
+            # nothing; a needless build costs credits.
+            echo "Could not read the YouTube feed; skipping."; exit 0
           fi
-          curl -fsSL -X POST -d '{}' "${{ secrets.NETLIFY_BUILD_HOOK }}" > /dev/null
-          echo "Netlify rebuild triggered."
+          echo "Newest video on YouTube: $newest"
+
+          if [ "$FORCE" != "true" ] && curl -fsSL https://alot.land/videos/ | grep -q "$newest"; then
+            echo "Already on the live site — nothing to rebuild."; exit 0
+          fi
+
+          curl -fsSL -X POST -d '{}' "$HOOK" > /dev/null
+          echo "New video found (or forced) — Netlify rebuild triggered."
