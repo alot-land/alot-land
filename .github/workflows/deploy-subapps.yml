@@ -1,0 +1,66 @@
+name: Deploy sub-apps
+
+# time-audit and mission-control build from their own branches, not main —
+# the same pattern mfda already used. This is the only thing that moves those
+# branches, and it only runs when files inside the app's folder change.
+#
+# Why: Netlify bills 15 credits per production deploy whether or not anything
+# builds. With both apps watching main, every CMS save fired three deploys —
+# one real, two that cancelled for "no content change" and were billed anyway.
+# That was 158 deploys and 79% of the monthly allowance in one cycle.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'time-audit/**'
+      - 'mission-control/**'
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Force-deploy one app'
+        type: choice
+        options: [time-audit, mission-control]
+
+permissions:
+  contents: write
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      time_audit: ${{ steps.f.outputs.time_audit }}
+      mission_control: ${{ steps.f.outputs.mission_control }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - id: f
+        env:
+          FORCED: ${{ inputs.app }}
+        run: |
+          changed() { git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -q "^$1/" && echo true || echo false; }
+          ta=$(changed time-audit);      [ "$FORCED" = "time-audit" ]      && ta=true
+          mc=$(changed mission-control); [ "$FORCED" = "mission-control" ] && mc=true
+          echo "time_audit=$ta"      >> "$GITHUB_OUTPUT"
+          echo "mission_control=$mc" >> "$GITHUB_OUTPUT"
+          echo "time-audit: $ta · mission-control: $mc"
+
+  time-audit:
+    needs: detect
+    if: needs.detect.outputs.time_audit == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Fast-forward deploy/time-audit to main
+        run: git push origin main:deploy/time-audit
+
+  mission-control:
+    needs: detect
+    if: needs.detect.outputs.mission_control == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Fast-forward deploy/mission-control to main
+        run: git push origin main:deploy/mission-control
