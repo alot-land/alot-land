@@ -1,4 +1,5 @@
 ---
+visible: true
 title: Lot 9 — Grand Ridge I
 status: coming-soon
 featured: true
@@ -7,8 +8,8 @@ county: Decatur
 acreage: "10.24"
 price: $89,900
 hidePrice: true
-listedBy: "Tony Alcott, II"
-listedByCompany: "United Country Real Estate — River City Realty"
+listedBy: Tony Alcott, II
+listedByCompany: United Country Real Estate — River City Realty
 address: 1884 Low Gap Road, Sugar Tree, TN 38380
 zoning: Unrestricted / No HOA
 roadAccess: Graded driveway installed
