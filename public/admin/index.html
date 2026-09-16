@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Content Manager — alot.land</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   </head>
   <body>
@@ -24,10 +25,23 @@
     <!-- Fixed helper bar. Decap owns the rest of this page, so this sits on top
          of it rather than inside it and survives CMS version changes. -->
     <style>
+      /* ── Login screen branding ──────────────────────────────────────────
+         logo_url in config.yml swaps the Decap mark for ours; this hides the
+         Decap credit badge and puts the screen in the site's dark + gold.
+         Selectors match the stable name segment Decap embeds in its generated
+         class names (pinned 3.14.1 — re-check these if that version changes). */
+      [class*="NetlifyCreditIcon"]{display:none !important}
+      section[class*="StyledAuthenticationPage"]{background:#0A0A0A;min-height:100vh}
+      section[class*="StyledAuthenticationPage"] [class*="CustomIconWrapper"] img{max-width:320px;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))}
+      section[class*="StyledAuthenticationPage"] [class*="LoginButton"]{background:#F5B800;color:#0A0A0A;font-weight:700;border-radius:10px;padding:13px 24px;font-size:15px}
+      section[class*="StyledAuthenticationPage"] [class*="LoginButton"]:hover{background:#ffc61a}
+      section[class*="StyledAuthenticationPage"] [class*="GoBackButton"]{color:#9a9a9a}
+      section[class*="StyledAuthenticationPage"] [class*="GoBackButton"]:hover{color:#fff}
+
       #alot-bar{position:fixed;right:14px;bottom:14px;z-index:9999;display:flex;gap:8px;
         font:500 13px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
       #alot-bar a{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;
-        background:#0A0A0A;color:#fff;text-decoration:none;box-shadow:0 2px 10px rgba(0,0,0,.22)}
+        background:#1c1c1c;color:#fff;text-decoration:none;border:1px solid #3a3a3a;box-shadow:0 2px 10px rgba(0,0,0,.22)}
       #alot-bar a:hover{background:#222}
       #alot-bar a.gold{background:#F5B800;color:#0A0A0A}
       #alot-bar a.gold:hover{background:#ffc61a}

@@ -2,6 +2,12 @@ backend:
   name: git-gateway
   branch: main
 
+# Branding. logo_url replaces the Decap logo on the login screen; site_url adds
+# a "View site" link in the editor's top bar.
+logo_url: /images/alotdotland_hzLogo.png
+site_url: https://alot.land
+display_url: https://alot.land
+
 # Fallback (default) media library — used only if Cloudinary fails to load
 media_folder: "public/images"
 public_folder: "/images"
