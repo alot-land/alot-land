@@ -5,7 +5,7 @@ featured: true
 state: Tennessee
 county: Decatur
 acreage: "5.38"
-price: $69,000
+price: $69,900
 hidePrice: true
 address: 2128 Low Gap Road, Sugar Tree, TN, 38380
 zoning: Unrestricted / No HOA
