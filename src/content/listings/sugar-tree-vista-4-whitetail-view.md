@@ -1,11 +1,11 @@
 ---
 title: Lot 4 — Whitetail Ridge
-status: coming-soon
+status: available
 featured: true
 state: Tennessee
 county: Decatur
 acreage: "5.47"
-price: $49,000
+price: $49,900
 address: 1526 Ray Miller Road, Sugar Tree, TN 38380
 zoning: Unrestricted / No HOA
 roadAccess: Graded driveway installed
