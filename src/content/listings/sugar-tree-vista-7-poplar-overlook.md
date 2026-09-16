@@ -1,11 +1,11 @@
 ---
 title: Lot 7 — Poplar Overlook
-status: coming-soon
+status: available
 featured: true
 state: Tennessee
 county: Decatur
 acreage: "5.94"
-price: $69,000
+price: $59,000
 address: 2026 Low Gap Road, Sugar Tree, TN 38380
 zoning: Unrestricted / No HOA
 roadAccess: Graded driveway installed
