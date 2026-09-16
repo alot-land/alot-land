@@ -1,11 +1,11 @@
 ---
 title: 5.5 Acres - Chapel Hill, TN
 status: available
-featured: true
+featured: false
 state: Tennessee
 county: Marshall
 acreage: "5.5"
-price: "$159,900"
+price: $159,900
 zoning: Residential
 roadAccess: 457 ft
 water: Available
