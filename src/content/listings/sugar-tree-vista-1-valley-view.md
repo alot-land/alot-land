@@ -1,4 +1,5 @@
 ---
+visible: true
 title: Lot 1 — Valley View
 status: coming-soon
 featured: true
@@ -7,8 +8,8 @@ county: Decatur
 acreage: "5.66"
 price: $59,900
 hidePrice: true
-listedBy: "Tony Alcott, II"
-listedByCompany: "United Country Real Estate — River City Realty"
+listedBy: Tony Alcott, II
+listedByCompany: United Country Real Estate — River City Realty
 address: 1783 Ray Miller Road, Sugar Tree, TN 38380
 showAddress: false
 zoning: Unrestricted / No HOA
