@@ -45,6 +45,8 @@ collections:
       - { label: "Acreage", name: "acreage", widget: "string" }
       - { label: "Price", name: "price", widget: "string", required: false, hint: "e.g. $45,000 or leave blank for 'Contact for Price'" }
       - { label: "Hide price on the website", name: "hidePrice", widget: "boolean", default: false, required: false, hint: "Keeps the price recorded here but shows 'Call for pricing and availability' on the listing, the cards, and the Sugar Tree sales page." }
+      - { label: "Listed by (realtor)", name: "listedBy", widget: "string", required: false, default: "Tony Alcott, II", hint: "Shown on the listing page under Listed by." }
+      - { label: "Brokerage / company", name: "listedByCompany", widget: "string", required: false, default: "United Country Real Estate — River City Realty" }
       - { label: "Address (optional)", name: "address", widget: "string", required: false, hint: "Street address or 911 address if the parcel has one. Shows at the top of Property Details. Leave blank if there's no address." }
       - { label: "Show Address on Listing", name: "showAddress", widget: "boolean", default: true, required: false, hint: "Toggle off to keep the address saved here but hide it from the public listing page." }
       - { label: "Zoning", name: "zoning", widget: "string", required: false }

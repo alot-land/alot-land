@@ -6,6 +6,8 @@ state: Tennessee
 county: Wayne
 acreage: "1.59"
 price: "$21,000"
+listedBy: "Tony Alcott, II"
+listedByCompany: "United Country Real Estate — River City Realty"
 zoning: Residential
 roadAccess: 191 ft of Road Frontage
 water: "-"

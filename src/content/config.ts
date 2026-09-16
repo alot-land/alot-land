@@ -14,6 +14,9 @@ const listings = defineCollection({
     // everywhere the site would print it — cards, the listing page, the sales
     // page, schema and the share text.
     hidePrice: z.boolean().default(false),
+    // Who has it listed. Shown on the listing page as "Listed by".
+    listedBy: z.string().optional(),
+    listedByCompany: z.string().optional(),
     address: z.string().optional(),
     showAddress: z.boolean().optional().default(true),
     zoning: z.string().optional(),

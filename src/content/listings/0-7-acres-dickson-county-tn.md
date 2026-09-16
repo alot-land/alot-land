@@ -6,6 +6,8 @@ state: Tennessee
 county: Dickson
 acreage: ".7"
 price: "$72,000"
+listedBy: "Tony Alcott, II"
+listedByCompany: "United Country Real Estate — River City Realty"
 zoning: Residential
 roadAccess: 168 ft Road Frontage - Corner Lot
 water: City Water

@@ -18,7 +18,7 @@ export async function getStaticPaths() {
 
 const { listing } = Astro.props;
 const { Content } = await render(listing);
-const { title, status, acreage, county, state, price: recordedPrice, hidePrice, address, showAddress, zoning, roadAccess, water, power, gps, videoUrl, showVideo, zillowUrl, showZillow, showSellerFinance, photos, amenityPhotos, date, dateSold, showDaysOnMarket, buyerTestimonial, buyerName } = listing.data;
+const { title, status, acreage, county, state, price: recordedPrice, hidePrice, listedBy, listedByCompany, address, showAddress, zoning, roadAccess, water, power, gps, videoUrl, showVideo, zillowUrl, showZillow, showSellerFinance, photos, amenityPhotos, date, dateSold, showDaysOnMarket, buyerTestimonial, buyerName } = listing.data;
 // hidePrice keeps the number on record but removes it from the page, the
 // title, the description, the schema and the share text in one move.
 const price = hidePrice ? undefined : recordedPrice;
@@ -82,6 +82,7 @@ const details = [
   { label: 'Road Access', value: roadAccess },
   { label: 'Water', value: water },
   { label: 'Power/Utilities', value: power },
+  { label: 'Listed by', value: [listedBy, listedByCompany].filter(Boolean).join(' · ') || undefined },
 ];
 
 let mapsUrl: string | undefined;

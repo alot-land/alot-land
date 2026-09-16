@@ -6,6 +6,8 @@ state: Tennessee
 county: Marshall
 acreage: "5.5"
 price: $159,900
+listedBy: "Tony Alcott, II"
+listedByCompany: "United Country Real Estate — River City Realty"
 zoning: Residential
 roadAccess: 457 ft
 water: Available

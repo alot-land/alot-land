@@ -6,6 +6,8 @@ state: Tennessee
 county: Decatur
 acreage: "5.47"
 price: $49,900
+listedBy: "Tony Alcott, II"
+listedByCompany: "United Country Real Estate — River City Realty"
 address: 1526 Ray Miller Road, Sugar Tree, TN 38380
 zoning: Unrestricted / No HOA
 roadAccess: Graded driveway installed

@@ -6,6 +6,8 @@ state: Arizona
 county: Yavapai
 acreage: "160"
 price: $79,990
+listedBy: "Tony Alcott, II"
+listedByCompany: "United Country Real Estate — River City Realty"
 zoning: Rural Residential
 roadAccess: 2647ft of Dirt road access along the eastern property line
 water: No
