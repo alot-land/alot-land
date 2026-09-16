@@ -18,7 +18,7 @@ const { community } = Astro.props;
 const { Content } = await render(community);
 const { title, location, state: communityState, status, image, ctaLabel, ctaUrl, videoUrl, showVideo, amenityPhotos } = community.data;
 
-const allListings = await getCollection('listings');
+const allListings = await getCollection('listings', l => l.data.visible !== false);
 const lots = allListings
   .filter(l => l.data.community === community.slug)
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());

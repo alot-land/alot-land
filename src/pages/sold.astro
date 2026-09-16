@@ -4,7 +4,7 @@ import ListingCard from '../components/ListingCard.astro';
 import { getCollection } from 'astro:content';
 import { siteConfig } from '../config/site.js';
 
-const allListings = await getCollection('listings');
+const allListings = await getCollection('listings', l => l.data.visible !== false);
 const soldListings = allListings
   .filter(l => l.data.status === 'sold')
   .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());

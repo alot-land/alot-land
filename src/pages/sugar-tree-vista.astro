@@ -129,7 +129,7 @@ const ogImageUrl = ogImageRaw
 
 // ── Lots (from the backend, filtered to this community) ──────────────────────
 const lotNum = (l: any) => { const m = l.data.title.match(/Lot\s+(\d+)/i); return m ? +m[1] : 999; };
-const lotEntries = (await getCollection('listings'))
+const lotEntries = (await getCollection('listings', l => l.data.visible !== false))
   .filter(l => l.data.community === 'sugar-tree-vista')
   .sort((a, b) => lotNum(a) - lotNum(b));
 

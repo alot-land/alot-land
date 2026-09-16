@@ -9,7 +9,7 @@ export const prerender = true;
 const W = 1200, H = 630;
 
 export async function getStaticPaths() {
-  const listings = await getCollection('listings');
+  const listings = await getCollection('listings', l => l.data.visible !== false);
   return listings.map(l => ({ params: { slug: l.slug }, props: { listing: l } }));
 }
 

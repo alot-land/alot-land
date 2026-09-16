@@ -21,7 +21,7 @@ const communitiesSchema = sorted.length > 0 ? {
   })),
 } : null;
 
-const allListings = await getCollection('listings');
+const allListings = await getCollection('listings', l => l.data.visible !== false);
 
 function getStats(communitySlug: string) {
   const lots = allListings.filter(l => l.data.community === communitySlug);

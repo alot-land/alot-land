@@ -4,6 +4,10 @@ const listings = defineCollection({
   type: 'content',
   schema: z.object({
     title: z.string(),
+    // Off = the listing disappears from the website entirely: no page, no card,
+    // no sitemap entry, no share image, no slot on the sales page. Every query
+    // filters on it, so there is no place a hidden listing can leak through.
+    visible: z.boolean().default(true),
     status: z.enum(['available', 'sold', 'coming-soon', 'under-contract']),
     featured: z.boolean().default(false),
     state: z.enum(['Arizona', 'Tennessee']),

@@ -12,7 +12,7 @@ const phoneRaw = '6155386878';
 const phoneDisp = '(615) 538-6878';
 
 const lotNum = (l: any) => { const m = l.data.title.match(/Lot\s+(\d+)/i); return m ? +m[1] : 999; };
-const calcLots = (await getCollection('listings'))
+const calcLots = (await getCollection('listings', l => l.data.visible !== false))
   .filter(l => l.data.community === 'sugar-tree-vista')
   .sort((a, b) => lotNum(a) - lotNum(b))
   .map(l => ({

@@ -9,7 +9,7 @@ import { getCollection, render, getEntry } from 'astro:content';
 import { siteConfig } from '../../config/site.js';
 
 export async function getStaticPaths() {
-  const listings = await getCollection('listings');
+  const listings = await getCollection('listings', l => l.data.visible !== false);
   return listings.map(listing => ({
     params: { slug: listing.slug },
     props: { listing },

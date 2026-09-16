@@ -37,6 +37,7 @@ collections:
     create: true
     slug: "{{slug}}"
     fields:
+      - { label: "Show listing on the website", name: "visible", widget: "boolean", default: true, hint: "Off hides this listing everywhere — the listings page, the homepage, the sales page, and its own page. Nothing is deleted; turn it back on any time." }
       - { label: "Title", name: "title", widget: "string" }
       - { label: "Status", name: "status", widget: "select", options: [{label: "Available", value: "available"}, {label: "Coming Soon", value: "coming-soon"}, {label: "Under Contract", value: "under-contract"}, {label: "Sold", value: "sold"}] }
       - { label: "Featured on Homepage", name: "featured", widget: "boolean", default: false }

@@ -6,7 +6,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import BackendNav from '../components/BackendNav.astro';
 import { getCollection } from 'astro:content';
 
-const listings = await getCollection('listings').catch(() => []);
+const listings = await getCollection('listings', l => l.data.visible !== false).catch(() => []);
 const faqs = await getCollection('faqs').catch(() => []);
 const communities = await getCollection('communities').catch(() => []);
 

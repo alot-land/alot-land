@@ -14,7 +14,7 @@ const phoneRaw        = contactSettings?.data.phoneRaw        ?? siteConfig.phon
 const homepageVideoId = homepageSettings?.data.homepageVideoId ?? siteConfig.homepageVideoId;
 const heroTagline     = homepageSettings?.data.heroTagline     ?? siteConfig.tagline;
 
-const allListings = await getCollection('listings');
+const allListings = await getCollection('listings', l => l.data.visible !== false);
 // Homepage box = every listing with the "Show on home page" toggle (featured) on,
 // regardless of status. Ordered by status (Available first, then Coming Soon,
 // Under Contract, Sold), newest-first within each group. No cap — all toggled show.
