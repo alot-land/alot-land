@@ -1,11 +1,11 @@
 ---
 title: Lot 8 — Sugar Tree Summit
-status: coming-soon
+status: available
 featured: true
 state: Tennessee
 county: Decatur
 acreage: "11.41"
-price: $129,000
+price: $124,900
 address: 1960 Low Gap Road, Sugar Tree, TN 38380
 zoning: Unrestricted / No HOA
 roadAccess: Graded driveway installed
