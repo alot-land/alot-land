@@ -1,4 +1,5 @@
 ---
+visible: true
 title: Lot 2 — Hickory Ridge
 status: coming-soon
 featured: true
@@ -7,8 +8,8 @@ county: Decatur
 acreage: "6.22"
 price: $79,900
 hidePrice: true
-listedBy: "Tony Alcott, II"
-listedByCompany: "United Country Real Estate — River City Realty"
+listedBy: Tony Alcott, II
+listedByCompany: United Country Real Estate — River City Realty
 address: 1767 Ray Miller Road, Sugar Tree, TN 38380
 zoning: Unrestricted / No HOA
 roadAccess: Graded driveway installed
