@@ -10,6 +10,10 @@ const listings = defineCollection({
     county: z.string(),
     acreage: z.string(),
     price: z.string().optional(),
+    // Keeps the price on file but shows "Call for pricing and availability"
+    // everywhere the site would print it — cards, the listing page, the sales
+    // page, schema and the share text.
+    hidePrice: z.boolean().default(false),
     address: z.string().optional(),
     showAddress: z.boolean().optional().default(true),
     zoning: z.string().optional(),
@@ -217,6 +221,19 @@ const settings = defineCollection({
       drives: z.array(z.object({ time: z.string(), place: z.string() })).optional(),
       steps: z.array(z.object({ label: z.string(), heading: z.string(), body: z.string() })).optional(),
       rows: z.array(z.object({ label: z.string(), value: z.string() })).optional(),
+      // Paired Lot Packages
+      intro: z.string().optional(),
+      discountLine: z.string().optional(),
+      pairs: z.array(z.object({
+        lotA: z.string(), lotB: z.string(),
+        title: z.string().optional(), description: z.string().optional(),
+      })).optional(),
+      // The Team
+      members: z.array(z.object({
+        photo: z.string().optional(), name: z.string(),
+        title: z.string().optional(), bio: z.string().optional(),
+        phone: z.string().optional(), email: z.string().optional(),
+      })).optional(),
     }), z.any()])).optional().default({}),
   }),
 });

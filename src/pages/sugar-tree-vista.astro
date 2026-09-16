@@ -61,12 +61,14 @@ const anchorLive: Record<string, boolean> = {
   '#flybuy': on('flyBuy'),
   '#ridgeline': on('pitch'),
   '#lots': on('lots'),
+  '#pairs': on('pairs'),
   '#highlights': on('highlights'),
   '#location': on('location'),
   '#explore': on('explore'),
   '#map': on('lotMap'),
   '#purchase': on('purchase'),
   '#financing': on('financing'),
+  '#team': on('team'),
   '#developer': on('developer'),
   '#area-guide': on('guideCta'),
   '#gallery': on('gallery'),
@@ -100,8 +102,8 @@ const btnP = (k: string, f: string, d: string) =>
 // Order comes from the CMS "Section Order" drag list. Sections left out of the
 // list keep their built-in position, so a partial list can't scramble the page.
 const DEFAULT_ORDER: string[] = [
-  'hero','options','flyBuy','pitch','lots','highlights','location','explore',
-  'lotMap','purchase','financing','developer','guideCta','gallery','videos','final','guide',
+  'hero','options','flyBuy','pitch','lots','pairs','highlights','location','explore',
+  'lotMap','purchase','financing','team','developer','guideCta','gallery','videos','final','guide',
 ];
 const savedOrder: string[] = (st?.data.sectionOrder ?? []).filter(
   (k: string) => DEFAULT_ORDER.includes(k)
@@ -136,11 +138,30 @@ const lots = lotEntries.map(l => ({
   num: lotNum(l),
   name: l.data.title.replace(/^Lot\s+\d+\s*[—-]\s*/i, '').trim(),
   acreage: l.data.acreage,
-  price: l.data.price || 'Contact for Price',
+  // A hidden price still exists on the listing — it just never prints.
+  price: l.data.hidePrice ? 'Call for pricing and availability' : (l.data.price || 'Contact for Price'),
+  rawPrice: l.data.hidePrice ? '' : (l.data.price || ''),
   status: l.data.status,
   photo: l.data.photos[0] || '',
-  desc: (l.body.split('\n').map(s => s.trim()).find(Boolean) || ''),
+  // First line of the body is bold-italic markdown; strip the markers or they print raw.
+  desc: (l.body.split('\n').map(s => s.trim()).find(Boolean) || '').replace(/[*_]{1,3}/g, ''),
 }));
+
+// ── Paired lot packages ────────────────────────────────────────────────────
+// Each pair names two lot numbers; everything else (acreage, status, photo,
+// price) comes from the listings, so a pair can never go stale.
+const byNum = new Map(lots.map(l => [String(l.num), l]));
+const pairPackages = (list('pairs','pairs',[]) as any[])
+  .map(p => ({ a: byNum.get(String(p.lotA)), b: byNum.get(String(p.lotB)), title: p.title || '', description: p.description || '' }))
+  .filter(p => p.a && p.b && p.a !== p.b)
+  .map(p => ({
+    ...p,
+    title: p.title || `Lots ${p.a.num} + ${p.b.num}`,
+    acres: (parseFloat(String(p.a.acreage)) + parseFloat(String(p.b.acreage))).toFixed(2).replace(/\.?0+$/, ''),
+  }));
+
+// ── The team ───────────────────────────────────────────────────────────────
+const teamMembers = (list('team','members',[]) as any[]).filter(m => m && m.name);
 
 // ── Shared images ────────────────────────────────────────────────────────────
 // The community entry supplies the "selected" community image; fall back so
@@ -175,7 +196,7 @@ const plain = (t: string) => t
   .replace(/#{1,6}\s+/g, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1')
   .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim();
 
-const priced = lots.map(l => parseInt(String(l.price).replace(/[^0-9]/g, ''), 10)).filter(n => n > 0);
+const priced = lots.map(l => parseInt(String(l.rawPrice).replace(/[^0-9]/g, ''), 10)).filter(n => n > 0);
 const stvSchema = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -228,8 +249,9 @@ const stvSchema = {
   ],
 };
 
-const statusPill: Record<string, string> = {
-  'available': 'Available', 'coming-soon': 'Coming Soon', 'under-contract': 'Under Contract', 'sold': 'Sold',
+// Rendered as a rubber stamp across the lot photo, not a pill in the corner.
+const statusStamp: Record<string, string> = {
+  'available': 'For Sale', 'coming-soon': 'Coming Soon', 'under-contract': 'Under Contract', 'sold': 'Sold',
 };
 
 // ── Drive times — PLACEHOLDERS (David verifying; he drove Parsons = 22 min) ──
@@ -405,6 +427,70 @@ const drives = [
   .lot .meta{font-family:"DM Mono";font-size:.8rem;color:var(--river)}
   .lot .desc{font-size:.88rem;color:var(--ink-soft);margin-top:9px;line-height:1.5;flex:1}
   .lot .price{font-family:"DM Mono";font-weight:500;font-size:1.35rem;color:var(--pine);margin-top:12px}
+
+  /* ── Rubber-stamp status, across the photo ───────────────────────────── */
+  .stamp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:2}
+  .stamp>span{display:inline-block;transform:rotate(-14deg);font-family:"DM Mono",monospace;font-weight:700;text-transform:uppercase;letter-spacing:.16em;font-size:1.15rem;line-height:1;padding:9px 16px;border:3px solid currentColor;border-radius:8px;color:#2e6b34;background:rgba(255,255,255,.82);box-shadow:0 2px 10px rgba(0,0,0,.25)}
+  .stamp.available>span{color:#2e6b34}
+  .stamp.coming-soon>span{color:var(--gold-ink)}
+  .stamp.under-contract>span{color:var(--river)}
+  .stamp.sold>span{color:#b42318;font-size:1.5rem;padding:11px 22px;border-width:4px}
+  .lot.sold .img{filter:saturate(.35)}
+  .mini .stamp>span{font-size:.82rem;padding:6px 11px;border-width:2px}
+  .mini .stamp.sold>span{font-size:1rem;padding:7px 14px;border-width:3px}
+  .lot .statustag{display:none}
+
+  /* ── Paired lot packages ─────────────────────────────────────────────── */
+  .pairs{padding:74px 0;background:#fff;border-top:1px solid var(--line)}
+  .pairs .head{text-align:center;max-width:720px;margin:0 auto 38px}
+  .pairs .eyebrow{display:block;margin-bottom:8px}
+  .pairs h2{font-size:clamp(2rem,4vw,3rem);margin:0}
+  .pairs .intro{color:var(--ink-soft);margin:12px auto 0;line-height:1.6}
+  .pairs .discount{display:inline-block;margin-top:16px;font-family:"DM Mono",monospace;font-size:.74rem;font-weight:500;text-transform:uppercase;letter-spacing:.14em;color:var(--pine);background:var(--meadow);padding:8px 16px;border-radius:99px}
+  .pair-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+  .pair{border:2px solid var(--pine);border-radius:var(--r);padding:22px 22px 20px;background:var(--paper);display:flex;flex-direction:column;gap:14px}
+  .pair-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+  .pair-lots{font-family:"DM Mono",monospace;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-ink);margin-bottom:4px}
+  .pair h3{font-size:1.45rem;margin:0}
+  .pair-acres{text-align:right;flex-shrink:0;font-family:"DM Mono",monospace}
+  .pair-acres strong{display:block;font-size:1.6rem;font-weight:500;color:var(--pine);line-height:1}
+  .pair-acres span{font-size:.66rem;text-transform:uppercase;letter-spacing:.14em;color:var(--river)}
+  .pair-desc{font-size:.92rem;color:var(--ink-soft);line-height:1.55;margin:0}
+  .pair-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+  .mini{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;text-decoration:none;color:inherit;transition:transform .2s,box-shadow .2s}
+  .mini:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(10,22,40,.12)}
+  .mini .img{aspect-ratio:4/3;background:linear-gradient(135deg,#13294d,#2e4a86);background-size:cover;background-position:center;position:relative}
+  .mini .num{position:absolute;top:8px;right:10px;font-family:"DM Mono";font-size:.66rem;color:var(--meadow-soft);background:rgba(0,0,0,.32);padding:2px 7px;border-radius:99px}
+  .mini.sold .img{filter:saturate(.35)}
+  .mini .body{padding:12px 14px 14px}
+  .mini h4{font-size:1rem;margin:0 0 4px;font-weight:600}
+  .mini .meta{font-family:"DM Mono";font-size:.72rem;color:var(--river)}
+  .mini .meta .p{color:var(--pine);font-weight:500}
+
+  /* ── The team ────────────────────────────────────────────────────────── */
+  .team{padding:74px 0;background:#fff;border-top:1px solid var(--line)}
+  .team .head{text-align:center;max-width:720px;margin:0 auto 38px}
+  .team .eyebrow{display:block;margin-bottom:8px}
+  .team h2{font-size:clamp(2rem,4vw,3rem);margin:0}
+  .team .intro{color:var(--ink-soft);margin:12px auto 0;line-height:1.6}
+  .team-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:26px;max-width:920px;margin:0 auto}
+  .member{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--paper);display:flex;flex-direction:column}
+  .member .photo{aspect-ratio:4/5;background:linear-gradient(135deg,#13294d,#2e4a86);background-size:cover;background-position:center top;display:flex;align-items:center;justify-content:center}
+  .member .initials{font-family:"Fraunces",Georgia,serif;font-size:4rem;color:rgba(255,255,255,.35);font-weight:600}
+  .member .body{padding:22px 24px 26px}
+  .member h3{font-size:1.5rem;margin:0 0 4px}
+  .member .role{font-family:"DM Mono",monospace;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-ink);margin-bottom:12px}
+  .member .bio{font-size:.92rem;color:var(--ink-soft);line-height:1.6;margin:0}
+  .member .contact{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;font-family:"DM Mono",monospace;font-size:.8rem}
+  .member .contact a{color:var(--river);text-decoration:none;border-bottom:1px solid var(--line)}
+  .member .contact a:hover{color:var(--pine);border-color:var(--pine)}
+
+  @media(max-width:760px){
+    .pair-grid,.team-grid{grid-template-columns:1fr}
+    .pair-pair{grid-template-columns:1fr 1fr}
+    .stamp>span{font-size:.95rem;padding:7px 12px}
+    .stamp.sold>span{font-size:1.2rem}
+  }
   .lot .viewlink{margin-top:12px;font-family:"DM Mono";font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--river);font-weight:500}
   .lot.sold{opacity:.6}
   @media(max-width:920px){.lot-grid{grid-template-columns:repeat(2,1fr)}}
@@ -736,7 +822,7 @@ const drives = [
         <a class={`lot ${lot.status === 'sold' ? 'sold' : ''}`} href={`/listings/${lot.slug}`} target="_blank" rel="noopener">
           <div class="img" style={lot.photo ? `background-image:url('${lot.photo}')` : ''}>
             <span class="num">{`LOT ${String(lot.num).padStart(2, '0')}`}</span>
-            {lot.status !== 'available' && <span class={`statustag ${lot.status}`}>{statusPill[lot.status]}</span>}
+            <span class={`stamp ${lot.status}`} aria-label={statusStamp[lot.status]}><span>{statusStamp[lot.status]}</span></span>
             {!lot.photo && <span class="ph">Photo coming soon</span>}
           </div>
           <div class="body">
@@ -750,6 +836,49 @@ const drives = [
       ))}
     </div>
     <p class="note" style="margin-top:24px;text-align:center;max-width:none" set:html={txt('lots','footnote','Lots are reserved on a first-come, first-served basis by private showing. <b>Prices subject to change without notice.</b>')}></p>
+  </div>
+</section>
+)}
+
+{on('pairs') && pairPackages.length > 0 && (
+<section class="pairs" id="pairs" style={`order:${ord('pairs')}`}>
+  <div class="wrap">
+    <div class="head">
+      <span class="eyebrow" set:html={txt('pairs','eyebrow','Want More Acreage?')}></span>
+      <h2 set:html={txt('pairs','heading','Paired Lot <em>Packages</em>')}></h2>
+      <p class="intro" set:html={txt('pairs','intro','If you want to combine lots and secure more acreage, these lots go very well together.')}></p>
+      {txt('pairs','discountLine','Discounts available for paired lot purchases') && (
+        <span class="discount" set:html={txt('pairs','discountLine','Discounts available for paired lot purchases')}></span>
+      )}
+    </div>
+    <div class="pair-grid">
+      {pairPackages.map(pk => (
+        <article class="pair">
+          <div class="pair-top">
+            <div>
+              <div class="pair-lots">Lots {pk.a.num} + {pk.b.num}</div>
+              <h3 set:html={pk.title}></h3>
+            </div>
+            <div class="pair-acres"><strong>{pk.acres}</strong><span>combined acres</span></div>
+          </div>
+          {pk.description && <p class="pair-desc" set:html={pk.description}></p>}
+          <div class="pair-pair">
+            {[pk.a, pk.b].map(lot => (
+              <a class={`mini ${lot.status}`} href={`/listings/${lot.slug}`} target="_blank" rel="noopener">
+                <div class="img" style={lot.photo ? `background-image:url('${lot.photo}')` : ''}>
+                  <span class="num">{`LOT ${String(lot.num).padStart(2, '0')}`}</span>
+                  <span class={`stamp ${lot.status}`} aria-label={statusStamp[lot.status]}><span>{statusStamp[lot.status]}</span></span>
+                </div>
+                <div class="body">
+                  <h4>{lot.name}</h4>
+                  <div class="meta">{lot.acreage} ACRES · <span class="p">{lot.price}</span></div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </article>
+      ))}
+    </div>
   </div>
 </section>
 )}
@@ -873,6 +1002,38 @@ const drives = [
           {label:'Land Loans',value:'Supported'},{label:'Down Payment',value:'By Agreement'},
         ]).map((r: any) => (<li><span set:html={r.label}></span><b set:html={r.value}></b></li>))}
       </ul>
+    </div>
+  </div>
+</section>
+)}
+
+{on('team') && teamMembers.length > 0 && (
+<section class="team" id="team" style={`order:${ord('team')}`}>
+  <div class="wrap">
+    <div class="head">
+      <span class="eyebrow" set:html={txt('team','eyebrow','Your Showing Team')}></span>
+      <h2 set:html={txt('team','heading','The <em>Team</em>')}></h2>
+      {txt('team','intro','') && <p class="intro" set:html={txt('team','intro','')}></p>}
+    </div>
+    <div class="team-grid">
+      {teamMembers.map(m => (
+        <article class="member">
+          <div class="photo" style={m.photo ? `background-image:url('${m.photo}')` : ''}>
+            {!m.photo && <span class="initials">{m.name.split(/\s+/).map((w: string) => w[0]).join('').replace(/[^A-Z]/g,'').slice(0,2)}</span>}
+          </div>
+          <div class="body">
+            <h3>{m.name}</h3>
+            {m.title && <div class="role">{m.title}</div>}
+            {m.bio && <p class="bio">{m.bio}</p>}
+            {(m.phone || m.email) && (
+              <div class="contact">
+                {m.phone && <a href={`tel:${m.phone.replace(/[^0-9+]/g,'')}`}>{m.phone}</a>}
+                {m.email && <a href={`mailto:${m.email}`}>{m.email}</a>}
+              </div>
+            )}
+          </div>
+        </article>
+      ))}
     </div>
   </div>
 </section>

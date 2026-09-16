@@ -7,11 +7,14 @@ interface Props {
   county: string;
   state: string;
   price?: string;
+  hidePrice?: boolean;
   photos: string[];
   description: string;
 }
 
-const { slug, title, status, acreage, county, state, price, photos, description } = Astro.props;
+const { slug, title, status, acreage, county, state, price, hidePrice, photos, description } = Astro.props;
+// A hidden price stays on the listing record; the card just never prints it.
+const priceLabel = hidePrice ? 'Call for pricing and availability' : (price || 'Contact for Price');
 const firstPhoto = photos[0] || '/images/hero-land.jpg';
 // Strip markdown so raw syntax (##, **, links) never shows in the card preview
 const plain = description.replace(/[#*_`[\]()>~]/g, '').replace(/\s+/g, ' ').trim();
@@ -68,7 +71,7 @@ const excerpt = plain.slice(0, 120) + (plain.length > 120 ? '…' : '');
 
     <div class="flex items-center justify-between mb-3">
       <span class="text-sm font-medium text-gray-700">{acreage} acres</span>
-      <span class="text-gold font-bold text-lg">{price || 'Contact for Price'}</span>
+      <span class={`text-gold font-bold ${hidePrice ? 'text-sm' : 'text-lg'}`}>{priceLabel}</span>
     </div>
 
     <p class="text-sm text-gray-600 leading-relaxed flex-1 mb-4">{excerpt}</p>

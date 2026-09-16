@@ -11,11 +11,13 @@
     "highlights",
     "pitch",
     "lots",
+    "pairs",
     "location",
     "explore",
     "lotMap",
     "purchase",
     "financing",
+    "team",
     "developer",
     "guideCta",
     "gallery",
@@ -256,6 +258,69 @@
         "Warranty Deed &amp; clear title",
         "No time limit to build",
         "Perfect for cabins, homes, RVs &amp; travel trailers"
+      ]
+    },
+    "pairs": {
+      "show": true,
+      "eyebrow": "Want More Acreage?",
+      "heading": "Paired Lot <em>Packages</em>",
+      "intro": "If you want to combine lots and secure more acreage, these lots go very well together. Each pair adjoins, so you get one larger piece of the ridge with two surveys, two deeds, and twice the options.",
+      "discountLine": "Discounts available for paired lot purchases",
+      "pairs": [
+        {
+          "lotA": "1",
+          "lotB": "2",
+          "title": "The Front of the Ridge",
+          "description": "Valley View gives you the first look over the valley; Hickory Ridge is the lot people reach for first. Together they hold the front of the ridgeline — the widest outlook in the community, with room for a home on one and a barn, guest cabin or pasture on the other."
+        },
+        {
+          "lotA": "3",
+          "lotB": "4",
+          "title": "The Quiet Corner",
+          "description": "Hidden Meadow is tucked away and up high; Whitetail Ridge is where the deer come out at dusk. Paired, you own the most private stretch of Sugar Tree Vista — a homesite nobody drives past, and a wildlife corridor you can watch from the porch."
+        },
+        {
+          "lotA": "5",
+          "lotB": "6",
+          "title": "Build Big, Keep a Retreat",
+          "description": "Eagle's Landing is the wide, level lot with room to spread out — the easiest build site on the ridge. Pocket Ridge is the private ridge tucked behind it. One lot for the house and everything that goes with it; one kept wild."
+        },
+        {
+          "lotA": "7",
+          "lotB": "8",
+          "title": "The Overlook and the Crown",
+          "description": "Poplar Overlook is ready to build and built for the view. Sugar Tree Summit is the crown of the whole community — eleven-plus acres at the top. Together they're the largest package here: a build-ready homesite with the summit as your back yard."
+        },
+        {
+          "lotA": "9",
+          "lotB": "10",
+          "title": "The Whole Grand Ridge",
+          "description": "Grand Ridge I and II are two seats on the same dramatic ridgeline — the grandest in Sugar Tree Vista. Buying both means the entire ridge is yours, end to end, with no neighbor on the high ground and nearly eighteen acres to do it on."
+        }
+      ]
+    },
+    "team": {
+      "show": true,
+      "eyebrow": "Your Showing Team",
+      "heading": "The <em>Team</em>",
+      "intro": "The people who will walk the ridge with you. Both are Realtree® Land Pros with United Country Real Estate — River City Realty, and both live and hunt in this part of Tennessee.",
+      "members": [
+        {
+          "photo": "",
+          "name": "Tony Alcott, II",
+          "title": "Principal Broker / Owner / Realtree® Land Pro",
+          "bio": "A Hardin County native licensed since 2002, Tony has been a top United Country agent in Tennessee since 2004 and the #1 listing agent in the entire United Country family six times over. He specializes in rural real estate — land, farms, hunting and recreational property, river and lake frontage — across West Tennessee, north Mississippi and north Alabama, including Decatur County. Away from work: deer and turkey hunting, coaching, and twelve years teaching a youth class at church.",
+          "phone": "",
+          "email": ""
+        },
+        {
+          "photo": "",
+          "name": "Ryan Schuler",
+          "title": "Affiliate Broker / Realtree® Land Pro",
+          "bio": "A 24-year Army veteran — infantryman and OH-58D Kiowa Warrior pilot — Ryan retired to McNairy County and flew helicopter EMS out of Selmer before earning his Affiliate Broker license in 2024. He lives in Adamsville, scouts public land for hunting, fishes the Phoenix Bass Fishing League, and hikes the Natchez Trace with his two Labs. He knows buying land is a big decision and treats it that way.",
+          "phone": "731-412-7303",
+          "email": "ryan.schuler216@outlook.com"
+        }
       ]
     }
   },
