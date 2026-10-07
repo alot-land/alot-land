@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '../lib/tenant-query';
 import { filterNearby, compsStats } from '@alot/mf-calc';
 import { listCompsForState } from '../lib/queries';
 import { usd, num } from '../lib/format';

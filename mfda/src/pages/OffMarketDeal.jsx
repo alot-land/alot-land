@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '../lib/tenant-query';
 import { useOrg } from '../lib/org';
 import { useAuth } from '../lib/auth';
 import {
@@ -41,7 +41,7 @@ export default function OffMarketDeal() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
 
-  const parcel = useQuery({ queryKey: ['parcel', id], queryFn: () => getParcel(id) });
+  const parcel = useQuery({ queryKey: ['parcel', id], queryFn: () => getParcel(id, org.id) });
   const bands = useQuery({
     queryKey: ['rent-bands-all', org?.id],
     queryFn: () => listAllRentBands(org.id),

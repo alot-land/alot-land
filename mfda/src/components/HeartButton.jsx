@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '../lib/tenant-query';
 import { setDealFavorite } from '../lib/queries';
 
 /** Org-wide favorite toggle for a deal. Optimistic; syncs every deal list. */

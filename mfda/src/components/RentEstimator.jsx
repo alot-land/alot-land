@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '../lib/tenant-query';
 import * as mf from '@alot/mf-calc';
 import {
   listAllRentBands,

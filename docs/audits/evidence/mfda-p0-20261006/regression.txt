@@ -1,0 +1,399 @@
+
+> alot-mfda@0.1.0 test:security
+> node --test --test-concurrency=1 security/*.test.mjs
+
+TAP version 13
+# Subtest: baseline controls reproduce the original P0s in isolated source/SQL
+    # Subtest: original migration chain grants expired invitation administration
+    ok 1 - original migration chain grants expired invitation administration
+      ---
+      duration_ms: 62.784459
+      type: 'test'
+      ...
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-XHZmDq/vite-cache/deps/react-dom_client.js?v=b8f724b7 as it exceeds the max of 500KB.
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-XHZmDq/vite-cache/deps/@react-pdf_renderer.js?v=571c1d13 as it exceeds the max of 500KB.
+    # Subtest: original SPA displays cached A deal under B while actual PostgreSQL denies B
+    ok 2 - original SPA displays cached A deal under B while actual PostgreSQL denies B
+      ---
+      duration_ms: 16668.399291
+      type: 'test'
+      ...
+    1..2
+ok 1 - baseline controls reproduce the original P0s in isolated source/SQL
+  ---
+  duration_ms: 20152.093125
+  type: 'test'
+  ...
+# Subtest: invitation authorization at the trusted database boundary
+    # Subtest: expired invitation rejected; gate and bootstrap agree
+    ok 1 - expired invitation rejected; gate and bootstrap agree
+      ---
+      duration_ms: 60.356667
+      type: 'test'
+      ...
+    # Subtest: deleted/revoked invitation rejected
+    ok 2 - deleted/revoked invitation rejected
+      ---
+      duration_ms: 41.795125
+      type: 'test'
+      ...
+    # Subtest: invalid token and row ID rejected
+    ok 3 - invalid token and row ID rejected
+      ---
+      duration_ms: 76.707459
+      type: 'test'
+      ...
+    # Subtest: wrong user and client-supplied identity cannot redeem
+    ok 4 - wrong user and client-supplied identity cannot redeem
+      ---
+      duration_ms: 52.5285
+      type: 'test'
+      ...
+    # Subtest: unconfirmed email cannot consume invitation; confirmation grants member only
+    ok 5 - unconfirmed email cannot consume invitation; confirmation grants member only
+      ---
+      duration_ms: 92.655375
+      type: 'test'
+      ...
+    # Subtest: expiration at exact boundary rejected in either timezone
+    ok 6 - expiration at exact boundary rejected in either timezone
+      ---
+      duration_ms: 42.774583
+      type: 'test'
+      ...
+    # Subtest: transaction started before expiry cannot redeem after expiry
+    ok 7 - transaction started before expiry cannot redeem after expiry
+      ---
+      duration_ms: 292.919667
+      type: 'test'
+      ...
+    # Subtest: expiration while waiting for validation lock creates no membership
+    ok 8 - expiration while waiting for validation lock creates no membership
+      ---
+      duration_ms: 599.254291
+      type: 'test'
+      ...
+    # Subtest: member cannot forge org, role, invitation record or membership
+    ok 9 - member cannot forge org, role, invitation record or membership
+      ---
+      duration_ms: 90.339416
+      type: 'test'
+      ...
+    # Subtest: already-consumed invitation cannot be reset, retargeted or reused
+    ok 10 - already-consumed invitation cannot be reset, retargeted or reused
+      ---
+      duration_ms: 50.453917
+      type: 'test'
+      ...
+    # Subtest: fresh valid admin invitation cannot upgrade existing member
+    ok 11 - fresh valid admin invitation cannot upgrade existing member
+      ---
+      duration_ms: 24.625541
+      type: 'test'
+      ...
+    # Subtest: concurrent redemption grants exactly one membership and one consumption
+    ok 12 - concurrent redemption grants exactly one membership and one consumption
+      ---
+      duration_ms: 68.253542
+      type: 'test'
+      ...
+    # Subtest: revocation lock completes before waiting redemption
+    ok 13 - revocation lock completes before waiting redemption
+      ---
+      duration_ms: 348.832
+      type: 'test'
+      ...
+    # Subtest: membership remains absent while invitation validation waits for its lock
+    ok 14 - membership remains absent while invitation validation waits for its lock
+      ---
+      duration_ms: 568.606667
+      type: 'test'
+      ...
+    # Subtest: membership failure rolls back consumption atomically
+    ok 15 - membership failure rolls back consumption atomically
+      ---
+      duration_ms: 98.964834
+      type: 'test'
+      ...
+    # Subtest: uninvited user has no default administrative membership
+    ok 16 - uninvited user has no default administrative membership
+      ---
+      duration_ms: 22.437917
+      type: 'test'
+      ...
+    # Subtest: valid new-user admin invitation still works explicitly
+    ok 17 - valid new-user admin invitation still works explicitly
+      ---
+      duration_ms: 64.12075
+      type: 'test'
+      ...
+    # Subtest: valid returning-user invitation works through session RPC
+    ok 18 - valid returning-user invitation works through session RPC
+      ---
+      duration_ms: 58.192041
+      type: 'test'
+      ...
+    # Subtest: RLS denies B reads and foreign insert/update/delete after rejection
+    ok 19 - RLS denies B reads and foreign insert/update/delete after rejection
+      ---
+      duration_ms: 51.339167
+      type: 'test'
+      ...
+    # Subtest: all tenant tables retain RLS and private redemption helper permissions
+    ok 20 - all tenant tables retain RLS and private redemption helper permissions
+      ---
+      duration_ms: 25.294834
+      type: 'test'
+      ...
+    # Subtest: forward migration reapplies without losing memberships or reopening consumption
+    ok 21 - forward migration reapplies without losing memberships or reopening consumption
+      ---
+      duration_ms: 25.679792
+      type: 'test'
+      ...
+    1..21
+ok 2 - invitation authorization at the trusted database boundary
+  ---
+  duration_ms: 3620.712292
+  type: 'test'
+  ...
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-xm6FIl/vite-cache/deps/react-dom_client.js?v=de4715f1 as it exceeds the max of 500KB.
+# Subtest: tenant isolation in the actual MFDA SPA with PostgreSQL-backed synthetic API
+    # Subtest: A logout → B; cached /deals unavailable throughout delay/error/retry
+    ok 1 - A logout → B; cached /deals unavailable throughout delay/error/retry
+      ---
+      duration_ms: 1891.841583
+      type: 'test'
+      ...
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-xm6FIl/vite-cache/deps/@react-pdf_renderer.js?v=3fdbb471 as it exceeds the max of 500KB.
+    # Subtest: A logout → B; cached /deals/30000000-0000-0000-0000-000000000001 unavailable throughout delay/error/retry
+    ok 2 - A logout → B; cached /deals/30000000-0000-0000-0000-000000000001 unavailable throughout delay/error/retry
+      ---
+      duration_ms: 2762.148709
+      type: 'test'
+      ...
+    # Subtest: A logout → B; cached /deals/30000000-0000-0000-0000-000000000001/compare unavailable throughout delay/error/retry
+    ok 3 - A logout → B; cached /deals/30000000-0000-0000-0000-000000000001/compare unavailable throughout delay/error/retry
+      ---
+      duration_ms: 991.015166
+      type: 'test'
+      ...
+    # Subtest: A logout → B; cached /deals/30000000-0000-0000-0000-000000000001/edit unavailable throughout delay/error/retry
+    ok 4 - A logout → B; cached /deals/30000000-0000-0000-0000-000000000001/edit unavailable throughout delay/error/retry
+      ---
+      duration_ms: 1048.499
+      type: 'test'
+      ...
+    # Subtest: A logout → B; cached /on-market unavailable throughout delay/error/retry
+    ok 5 - A logout → B; cached /on-market unavailable throughout delay/error/retry
+      ---
+      duration_ms: 937.3705
+      type: 'test'
+      ...
+    # Subtest: A logout → B; cached /off-market unavailable throughout delay/error/retry
+    ok 6 - A logout → B; cached /off-market unavailable throughout delay/error/retry
+      ---
+      duration_ms: 976.622
+      type: 'test'
+      ...
+    # Subtest: A logout → B; cached /off-market/40000000-0000-0000-0000-000000000001 unavailable throughout delay/error/retry
+    ok 7 - A logout → B; cached /off-market/40000000-0000-0000-0000-000000000001 unavailable throughout delay/error/retry
+      ---
+      duration_ms: 981.190834
+      type: 'test'
+      ...
+    # Subtest: A logout → B; cached /goals unavailable throughout delay/error/retry
+    ok 8 - A logout → B; cached /goals unavailable throughout delay/error/retry
+      ---
+      duration_ms: 954.006417
+      type: 'test'
+      ...
+    # Subtest: A logout → B; cached /settings unavailable throughout delay/error/retry
+    ok 9 - A logout → B; cached /settings unavailable throughout delay/error/retry
+      ---
+      duration_ms: 988.980833
+      type: 'test'
+      ...
+    # Subtest: A logout → B; cached /markets unavailable throughout delay/error/retry
+    ok 10 - A logout → B; cached /markets unavailable throughout delay/error/retry
+      ---
+      duration_ms: 1019.470458
+      type: 'test'
+      ...
+    # Subtest: direct token replacement on an open deal clears A before B renders
+    ok 11 - direct token replacement on an open deal clears A before B renders
+      ---
+      duration_ms: 1077.852625
+      type: 'test'
+      ...
+    # Subtest: delayed failing logout hides A immediately and clears persisted session
+    ok 12 - delayed failing logout hides A immediately and clears persisted session
+      ---
+      duration_ms: 1192.832791
+      type: 'test'
+      ...
+    # Subtest: browser back/forward, route changes, refresh and persisted storage cannot restore A
+    ok 13 - browser back/forward, route changes, refresh and persisted storage cannot restore A
+      ---
+      duration_ms: 1688.924667
+      type: 'test'
+      ...
+    # Subtest: A → B → A → B organization switches reauthorize known IDs and reset forms
+    ok 14 - A → B → A → B organization switches reauthorize known IDs and reset forms
+      ---
+      duration_ms: 1155.399333
+      type: 'test'
+      ...
+    # Subtest: active-org A → B scopes shared screen /deals for multi-org user
+    ok 15 - active-org A → B scopes shared screen /deals for multi-org user
+      ---
+      duration_ms: 617.221542
+      type: 'test'
+      ...
+    # Subtest: active-org A → B scopes shared screen /deals/30000000-0000-0000-0000-000000000001 for multi-org user
+    ok 16 - active-org A → B scopes shared screen /deals/30000000-0000-0000-0000-000000000001 for multi-org user
+      ---
+      duration_ms: 638.294042
+      type: 'test'
+      ...
+    # Subtest: active-org A → B scopes shared screen /deals/30000000-0000-0000-0000-000000000001/compare for multi-org user
+    ok 17 - active-org A → B scopes shared screen /deals/30000000-0000-0000-0000-000000000001/compare for multi-org user
+      ---
+      duration_ms: 553.160625
+      type: 'test'
+      ...
+    # Subtest: active-org A → B scopes shared screen /on-market for multi-org user
+    ok 18 - active-org A → B scopes shared screen /on-market for multi-org user
+      ---
+      duration_ms: 592.161917
+      type: 'test'
+      ...
+    # Subtest: active-org A → B scopes shared screen /off-market for multi-org user
+    ok 19 - active-org A → B scopes shared screen /off-market for multi-org user
+      ---
+      duration_ms: 566.857167
+      type: 'test'
+      ...
+    # Subtest: active-org A → B scopes shared screen /off-market/40000000-0000-0000-0000-000000000001 for multi-org user
+    ok 20 - active-org A → B scopes shared screen /off-market/40000000-0000-0000-0000-000000000001 for multi-org user
+      ---
+      duration_ms: 545.586791
+      type: 'test'
+      ...
+    # Subtest: active-org A → B scopes shared screen /goals for multi-org user
+    ok 21 - active-org A → B scopes shared screen /goals for multi-org user
+      ---
+      duration_ms: 571.425792
+      type: 'test'
+      ...
+    # Subtest: active-org A → B scopes shared screen /settings for multi-org user
+    ok 22 - active-org A → B scopes shared screen /settings for multi-org user
+      ---
+      duration_ms: 559.416583
+      type: 'test'
+      ...
+    # Subtest: active-org A → B scopes shared screen /markets for multi-org user
+    ok 23 - active-org A → B scopes shared screen /markets for multi-org user
+      ---
+      duration_ms: 595.308833
+      type: 'test'
+      ...
+    # Subtest: repeated authenticated A → B → A → B replacements stay isolated
+    ok 24 - repeated authenticated A → B → A → B replacements stay isolated
+      ---
+      duration_ms: 1184.746
+      type: 'test'
+      ...
+    # Subtest: same-identity token renewal preserves an unsaved form
+    ok 25 - same-identity token renewal preserves an unsaved form
+      ---
+      duration_ms: 627.098125
+      type: 'test'
+      ...
+    # Subtest: unchanged background membership polling preserves an unsaved form
+    ok 26 - unchanged background membership polling preserves an unsaved form
+      ---
+      duration_ms: 584.666292
+      type: 'test'
+      ...
+    # Subtest: fresh B session rejects persisted A organization IDs
+    ok 27 - fresh B session rejects persisted A organization IDs
+      ---
+      duration_ms: 622.970667
+      type: 'test'
+      ...
+    # Subtest: membership removal hides cached data before revalidation completes
+    ok 28 - membership removal hides cached data before revalidation completes
+      ---
+      duration_ms: 1138.599875
+      type: 'test'
+      ...
+    # Subtest: role downgrade clears privileged invite cache and corrects own role
+    ok 29 - role downgrade clears privileged invite cache and corrects own role
+      ---
+      duration_ms: 833.108667
+      type: 'test'
+      ...
+    # Subtest: delayed A query completion cannot populate B cache or component state
+    ok 30 - delayed A query completion cannot populate B cache or component state
+      ---
+      duration_ms: 690.145667
+      type: 'test'
+      ...
+    # Subtest: failed requests and retries cannot revive A cached responses
+    ok 31 - failed requests and retries cannot revive A cached responses
+      ---
+      duration_ms: 1999.882875
+      type: 'test'
+      ...
+    # Subtest: session expiration hides private state without a successful remote logout
+    ok 32 - session expiration hides private state without a successful remote logout
+      ---
+      duration_ms: 1756.256
+      type: 'test'
+      ...
+    # Subtest: query keys contain user, organization and role; identity replacement creates fresh cache
+    ok 33 - query keys contain user, organization and role; identity replacement creates fresh cache
+      ---
+      duration_ms: 393.0435
+      type: 'test'
+      ...
+    # Subtest: cross-tab signout and login propagate identity isolation
+    ok 34 - cross-tab signout and login propagate identity isolation
+      ---
+      duration_ms: 855.246375
+      type: 'test'
+      ...
+    # Subtest: late A membership response cannot restore A organization under B
+    ok 35 - late A membership response cannot restore A organization under B
+      ---
+      duration_ms: 1844.064167
+      type: 'test'
+      ...
+    # Subtest: polling detects removal when realtime and focus events are absent
+    ok 36 - polling detects removal when realtime and focus events are absent
+      ---
+      duration_ms: 405.963917
+      type: 'test'
+      ...
+    # Subtest: background polling clears admin-only data on role downgrade
+    ok 37 - background polling clears admin-only data on role downgrade
+      ---
+      duration_ms: 305.671041
+      type: 'test'
+      ...
+    1..37
+ok 3 - tenant isolation in the actual MFDA SPA with PostgreSQL-backed synthetic API
+  ---
+  duration_ms: 37248.204291
+  type: 'test'
+  ...
+1..3
+# tests 63
+# suites 0
+# pass 63
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61609.033375

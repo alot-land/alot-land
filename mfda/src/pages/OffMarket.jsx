@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { lazyReload } from '../lib/lazyReload';
-import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '../lib/tenant-query';
 import { useOrg } from '../lib/org';
 import { useAuth } from '../lib/auth';
 import {
@@ -187,7 +187,7 @@ export default function OffMarket() {
   }
 
   async function exportSavedList(list) {
-    const items = await listParcelsForMailList(list.id);
+    const items = await listParcelsForMailList(list.id, org.id);
     exportCSV(items, list.name, list.id);
   }
 

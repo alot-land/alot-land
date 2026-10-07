@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '../lib/tenant-query';
 import { useAuth } from '../lib/auth';
 import { useOrg } from '../lib/org';
 import { underwrite } from '../lib/underwrite';
@@ -72,7 +72,7 @@ export default function DealNew() {
   const [hydrated, setHydrated] = useState(!editing);
 
   const markets = useQuery({ queryKey: ['markets', org?.id], queryFn: () => listMarkets(org.id), enabled: !!org });
-  const agent = useQuery({ queryKey: ['listing-contact', id], queryFn: () => getListingContact(id), enabled: editing });
+  const agent = useQuery({ queryKey: ['listing-contact', id], queryFn: () => getListingContact(id, org.id), enabled: editing });
   // Same cache key the rent estimator uses, so this costs no extra request.
   const bands = useQuery({
     queryKey: ['rent-bands-all', org?.id],
@@ -91,8 +91,10 @@ export default function DealNew() {
   // Load existing deal (edit mode): deal + units + latest scenario inputs.
   useEffect(() => {
     if (!editing) return;
+    let active = true;
     (async () => {
-      const [deal, units, scenarios] = await Promise.all([getDeal(id), getUnits(id), listScenarios(id)]);
+      const [deal, units, scenarios] = await Promise.all([getDeal(id, org.id), getUnits(id, org.id), listScenarios(id, org.id)]);
+      if (!active) return;
       hadSavedUnitsRef.current = units.length > 0;
       const base = scenarios[0]?.inputs || {};
       setF((prev) => ({
@@ -106,8 +108,9 @@ export default function DealNew() {
         units: units.length ? units.map((u) => ({ type: u.type, count: u.count, sqft: u.sqft, actual_rent: Number(u.actual_rent), market_rent: Number(u.market_rent) })) : prev.units,
       }));
       setHydrated(true);
-    })().catch((e) => setErr(e.message));
-  }, [editing, id]);
+    })().catch((e) => { if (active) setErr(e.message); });
+    return () => { active = false; };
+  }, [editing, id, org.id]);
 
   // Auto-select the market matching the deal's state (e.g. a scraped AZ deal
   // picks Phoenix/Maricopa) and apply its smart defaults — unless a market was

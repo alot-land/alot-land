@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '../lib/tenant-query';
 import { useOrg } from '../lib/org';
 import { listGoals, assignDealGoal, updateDealTracking } from '../lib/queries';
 import { usd } from '../lib/format';

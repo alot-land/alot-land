@@ -1,5 +1,5 @@
 import { Suspense, useCallback, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '../lib/tenant-query';
 import { useOrg } from '../lib/org';
 import { listMarketStats, listTargetGeoIds, addMarketTarget, listParcelCoverage } from '../lib/queries';
 import { usd, pct, num } from '../lib/format';

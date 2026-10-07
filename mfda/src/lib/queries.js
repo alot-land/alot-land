@@ -39,7 +39,7 @@ export async function listDeals(orgId) {
     .neq('status', 'lead')
     .order('updated_at', { ascending: false });
   if (error) throw error;
-  return attachLatestScenario(data);
+  return attachLatestScenario(data, orgId);
 }
 
 /**
@@ -47,7 +47,7 @@ export async function listDeals(orgId) {
  * can show real underwritten cash flow instead of a re-estimate. Paged: a few
  * deals with many revisions can blow past the 1000-row cap.
  */
-async function attachLatestScenario(deals) {
+async function attachLatestScenario(deals, orgId) {
   if (!deals?.length) return deals || [];
   const ids = deals.map((d) => d.id);
   const { rows } = await fetchPaged(
@@ -56,6 +56,7 @@ async function attachLatestScenario(deals) {
         .from('scenarios')
         .select('deal_id, outputs, calc_version, created_at')
         .in('deal_id', ids)
+        .eq('org_id', orgId)
         .order('created_at', { ascending: false }),
     20000,
   );
@@ -159,6 +160,7 @@ export async function listGoalDeals(orgId) {
     .from('scenarios')
     .select('deal_id, outputs, created_at')
     .in('deal_id', deals.map((d) => d.id))
+    .eq('org_id', orgId)
     .order('created_at', { ascending: false });
   if (e2) throw e2;
   const latest = new Map();
@@ -191,11 +193,12 @@ export async function getRentBands(orgId, zip) {
   return data;
 }
 
-export async function getListingContact(dealId) {
+export async function getListingContact(dealId, orgId) {
+  if (!orgId) throw new Error("Organization required");
   const { data, error } = await supabase
     .from('contacts')
     .select('owner_name, brokerage, phone, dnc_exempt, source')
-    .eq('deal_id', dealId)
+    .eq('deal_id', dealId).eq('org_id', orgId)
     .eq('source', 'listing')
     .limit(1)
     .maybeSingle();
@@ -226,8 +229,9 @@ export async function findDealByDedupeKey(orgId, key) {
   return data;
 }
 
-export async function getDeal(id) {
-  const { data, error } = await supabase.from('deals').select('*').eq('id', id).single();
+export async function getDeal(id, orgId) {
+  if (!orgId) throw new Error("Organization required");
+  const { data, error } = await supabase.from('deals').select('*').eq('id', id).eq('org_id', orgId).single();
   if (error) throw error;
   return data;
 }
@@ -287,11 +291,12 @@ function friendlyDedupeError(error) {
 }
 
 // ---- Units ----------------------------------------------------------------
-export async function getUnits(dealId) {
+export async function getUnits(dealId, orgId) {
+  if (!orgId) throw new Error("Organization required");
   const { data, error } = await supabase
     .from('units')
     .select('*')
-    .eq('deal_id', dealId)
+    .eq('deal_id', dealId).eq('org_id', orgId)
     .order('sort_order', { ascending: true });
   if (error) throw error;
   return data;
@@ -316,11 +321,12 @@ export async function replaceUnits(orgId, dealId, units) {
 }
 
 // ---- Scenarios (immutable) ------------------------------------------------
-export async function listScenarios(dealId) {
+export async function listScenarios(dealId, orgId) {
+  if (!orgId) throw new Error("Organization required");
   const { data, error } = await supabase
     .from('scenarios')
     .select('*')
-    .eq('deal_id', dealId)
+    .eq('deal_id', dealId).eq('org_id', orgId)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data;
@@ -381,8 +387,9 @@ export async function listParcelCounties(orgId) {
   return [...seen.values()].sort((a, b) => `${a.state}${a.county_fips}`.localeCompare(`${b.state}${b.county_fips}`));
 }
 
-export async function getParcel(id) {
-  const { data, error } = await supabase.from('parcels').select('*').eq('id', id).single();
+export async function getParcel(id, orgId) {
+  if (!orgId) throw new Error("Organization required");
+  const { data, error } = await supabase.from('parcels').select('*').eq('id', id).eq('org_id', orgId).single();
   if (error) throw error;
   return data;
 }
@@ -577,9 +584,10 @@ export async function deleteMailList(id) {
   if (error) throw error;
 }
 
-export async function listParcelsForMailList(listId) {
+export async function listParcelsForMailList(listId, orgId) {
+  if (!orgId) throw new Error("Organization required");
   const { rows } = await fetchPaged(
-    () => supabase.from('mail_list_items').select('parcels(*)').eq('list_id', listId).order('parcel_id'),
+    () => supabase.from('mail_list_items').select('parcels(*)').eq('list_id', listId).eq('org_id', orgId).order('parcel_id'),
     10000,
   );
   return rows.map((r) => r.parcels).filter(Boolean);

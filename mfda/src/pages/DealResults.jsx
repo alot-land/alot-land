@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '../lib/tenant-query';
+import { useOrg } from '../lib/org';
 import { getDeal, listScenarios, getListingContact } from '../lib/queries';
 import { Suspense, useState } from 'react';
 import { lazyReload } from '../lib/lazyReload';
@@ -18,9 +19,10 @@ const ReportButton = lazyReload(() => import('../pdf/ReportButton'));
 
 export default function DealResults() {
   const { id } = useParams();
-  const deal = useQuery({ queryKey: ['deal', id], queryFn: () => getDeal(id) });
-  const scenarios = useQuery({ queryKey: ['scenarios', id], queryFn: () => listScenarios(id) });
-  const agent = useQuery({ queryKey: ['listing-contact', id], queryFn: () => getListingContact(id) });
+  const { org } = useOrg();
+  const deal = useQuery({ queryKey: ['deal', id], queryFn: () => getDeal(id, org.id) });
+  const scenarios = useQuery({ queryKey: ['scenarios', id], queryFn: () => listScenarios(id, org.id) });
+  const agent = useQuery({ queryKey: ['listing-contact', id], queryFn: () => getListingContact(id, org.id) });
   const [selected, setSelected] = useState(0);
 
   if (deal.isLoading || scenarios.isLoading) return <div className="p-10 text-center text-muted">Loading…</div>;

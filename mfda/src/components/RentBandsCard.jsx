@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '../lib/tenant-query';
 import { getRentBands } from '../lib/queries';
 import { usd } from '../lib/format';
 

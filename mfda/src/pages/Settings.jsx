@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '../lib/tenant-query';
 import { useAuth } from '../lib/auth';
 import { useOrg } from '../lib/org';
 import { listInvites, createInvite, revokeInvite, listMembers, listMarkets } from '../lib/queries';

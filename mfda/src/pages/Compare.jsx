@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '../lib/tenant-query';
+import { useOrg } from '../lib/org';
 import { getDeal, listScenarios } from '../lib/queries';
 import { usd, pct, ratio } from '../lib/format';
 
@@ -62,8 +63,9 @@ const SKIP = /^(market_id|status|apn|county_fips|address|city|state|zip|lat|lng|
 
 export default function Compare() {
   const { id } = useParams();
-  const deal = useQuery({ queryKey: ['deal', id], queryFn: () => getDeal(id) });
-  const scenarios = useQuery({ queryKey: ['scenarios', id], queryFn: () => listScenarios(id) });
+  const { org } = useOrg();
+  const deal = useQuery({ queryKey: ['deal', id], queryFn: () => getDeal(id, org.id) });
+  const scenarios = useQuery({ queryKey: ['scenarios', id], queryFn: () => listScenarios(id, org.id) });
   const [picked, setPicked] = useState(null); // null = default latest 2
   const [showAllInputs, setShowAllInputs] = useState(false);
 
