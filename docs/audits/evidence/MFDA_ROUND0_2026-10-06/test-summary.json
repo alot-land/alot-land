@@ -1,0 +1,217 @@
+{
+  "calc": {
+    "passed": 244,
+    "failed": 0,
+    "skipped": 0,
+    "files": [
+      {
+        "name": "comps.test.ts",
+        "tests": 14,
+        "status": "passed"
+      },
+      {
+        "name": "finance.test.ts",
+        "tests": 30,
+        "status": "passed"
+      },
+      {
+        "name": "financing.test.ts",
+        "tests": 15,
+        "status": "passed"
+      },
+      {
+        "name": "goals.test.ts",
+        "tests": 26,
+        "status": "passed"
+      },
+      {
+        "name": "markets.test.ts",
+        "tests": 21,
+        "status": "passed"
+      },
+      {
+        "name": "offmarket.test.ts",
+        "tests": 12,
+        "status": "passed"
+      },
+      {
+        "name": "plausibility.test.ts",
+        "tests": 11,
+        "status": "passed"
+      },
+      {
+        "name": "prescreen.test.ts",
+        "tests": 8,
+        "status": "passed"
+      },
+      {
+        "name": "proforma.test.ts",
+        "tests": 14,
+        "status": "passed"
+      },
+      {
+        "name": "referenceDeals.test.ts",
+        "tests": 17,
+        "status": "passed"
+      },
+      {
+        "name": "rents.test.ts",
+        "tests": 16,
+        "status": "passed"
+      },
+      {
+        "name": "scoring.test.ts",
+        "tests": 5,
+        "status": "passed"
+      },
+      {
+        "name": "str.test.ts",
+        "tests": 11,
+        "status": "passed"
+      },
+      {
+        "name": "stress.test.ts",
+        "tests": 6,
+        "status": "passed"
+      },
+      {
+        "name": "tax.test.ts",
+        "tests": 22,
+        "status": "passed"
+      },
+      {
+        "name": "unitMix.test.ts",
+        "tests": 7,
+        "status": "passed"
+      },
+      {
+        "name": "valuation.test.ts",
+        "tests": 9,
+        "status": "passed"
+      }
+    ]
+  },
+  "worker": {
+    "passed": 186,
+    "failed": 0,
+    "skipped": 0,
+    "files": [
+      {
+        "name": "assessor.test.js",
+        "tests": 41,
+        "status": "passed"
+      },
+      {
+        "name": "bands.test.js",
+        "tests": 5,
+        "status": "passed"
+      },
+      {
+        "name": "csv.test.js",
+        "tests": 14,
+        "status": "passed"
+      },
+      {
+        "name": "digest.test.js",
+        "tests": 7,
+        "status": "passed"
+      },
+      {
+        "name": "env.test.js",
+        "tests": 7,
+        "status": "passed"
+      },
+      {
+        "name": "hudfmr.test.js",
+        "tests": 17,
+        "status": "passed"
+      },
+      {
+        "name": "parcelimport.test.js",
+        "tests": 7,
+        "status": "passed"
+      },
+      {
+        "name": "parcelsources.test.js",
+        "tests": 52,
+        "status": "passed"
+      },
+      {
+        "name": "photos.test.js",
+        "tests": 10,
+        "status": "passed"
+      },
+      {
+        "name": "rents.test.js",
+        "tests": 9,
+        "status": "passed"
+      },
+      {
+        "name": "urls.test.js",
+        "tests": 7,
+        "status": "passed"
+      },
+      {
+        "name": "usmarkets.test.js",
+        "tests": 10,
+        "status": "passed"
+      }
+    ]
+  },
+  "dependency_audit": {
+    "calc": {
+      "all": {
+        "info": 0,
+        "low": 0,
+        "moderate": 3,
+        "high": 3,
+        "critical": 2,
+        "total": 8
+      },
+      "production": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    },
+    "worker": {
+      "all": {
+        "info": 0,
+        "low": 0,
+        "moderate": 3,
+        "high": 3,
+        "critical": 2,
+        "total": 8
+      },
+      "production": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      }
+    },
+    "frontend": {
+      "all": {
+        "info": 0,
+        "low": 0,
+        "moderate": 5,
+        "high": 7,
+        "critical": 0,
+        "total": 12
+      },
+      "production": {
+        "info": 0,
+        "low": 0,
+        "moderate": 2,
+        "high": 0,
+        "critical": 0,
+        "total": 2
+      }
+    }
+  }
+}

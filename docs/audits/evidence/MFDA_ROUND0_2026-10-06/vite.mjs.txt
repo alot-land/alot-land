@@ -1,0 +1,7 @@
+process.chdir('/Users/davidastone/code/alot-land/alot-land/mfda');
+process.env.VITE_SUPABASE_URL='https://mfda-round0.invalid';
+process.env.VITE_SUPABASE_ANON_KEY='SYNTHETIC_AUDIT_ANON_KEY';
+const {createServer}=await import('/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/index.js');
+const server=await createServer({root:'/Users/davidastone/code/alot-land/alot-land/mfda',configFile:'/Users/davidastone/code/alot-land/alot-land/mfda/vite.config.js',server:{host:'127.0.0.1',port:5175,strictPort:true,open:false}});
+await server.listen();
+server.printUrls();

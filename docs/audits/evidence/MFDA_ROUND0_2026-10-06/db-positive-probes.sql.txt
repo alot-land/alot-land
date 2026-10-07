@@ -1,0 +1,25 @@
+\set ON_ERROR_STOP on
+begin;
+select org_id as org_a from public.org_members where user_id='00000000-0000-0000-0000-000000000001' \gset
+select org_id as org_b from public.org_members where user_id='00000000-0000-0000-0000-000000000002' \gset
+insert into public.deals(id,org_id,dedupe_key,address) values ('00000000-0000-0000-0000-000000000102',:'org_a','audit:own','Synthetic own deal');
+insert into public.scenarios(id,org_id,deal_id,inputs,outputs,calc_version) values ('00000000-0000-0000-0000-000000000202',:'org_a','00000000-0000-0000-0000-000000000102','{}','{}','audit');
+select set_config('audit.uid','00000000-0000-0000-0000-000000000001',false);
+select set_config('audit.org_b',:'org_b',false);
+set role authenticated;
+do $$ begin
+ begin
+   insert into public.deals(org_id,dedupe_key) values (current_setting('audit.org_b')::uuid,'audit:forged');
+   raise exception 'Unexpected forged-org insertion';
+ exception when insufficient_privilege then raise notice 'PASS forged org_id insert denied by RLS';
+ end;
+end $$;
+with attempted as (update public.scenarios set outputs='{"forged":true}' where id='00000000-0000-0000-0000-000000000202' returning id)
+select count(*) as scenario_updates_permitted from attempted;
+select count(*) as own_deal_visible_before_removal from public.deals where id='00000000-0000-0000-0000-000000000102';
+reset role;
+delete from public.org_members where org_id=:'org_a' and user_id='00000000-0000-0000-0000-000000000001';
+set role authenticated;
+select count(*) as own_deal_visible_after_removal from public.deals where id='00000000-0000-0000-0000-000000000102';
+reset role;
+rollback;

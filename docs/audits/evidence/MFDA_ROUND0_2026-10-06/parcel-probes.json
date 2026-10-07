@@ -1,0 +1,14 @@
+{
+  "arcgis": {
+    "rows": 1000,
+    "requests": 1,
+    "exceededTransferLimit": true,
+    "expected": "continue paging until provider declares completion"
+  },
+  "allRowsRejected": {
+    "imported": 0,
+    "failed": 10,
+    "threw": false,
+    "queueWouldRecordOk": true
+  }
+}

@@ -1,0 +1,11 @@
+import {writeFileSync} from 'node:fs';
+import {queryArcgisLayer} from '/Users/davidastone/code/alot-land/alot-land/workers/scan/lib/countylane.js';
+import {importParcels} from '/Users/davidastone/code/alot-land/alot-land/workers/scan/lib/parcelimport.js';
+let requests=0;
+globalThis.fetch=async()=>{requests++;return new Response(JSON.stringify({features:Array.from({length:1000},(_,i)=>({attributes:{APN:'SYNTHETIC-'+i}})),exceededTransferLimit:true}),{status:200});};
+const rows=await queryArcgisLayer('https://synthetic.invalid/FeatureServer/0','1=1');
+const fakeDb={supabase:{from:()=>({upsert:async()=>({error:{message:'synthetic rejection'}})})}};
+const stats=await importParcels(fakeDb,'SYNTHETIC_ORG',Array.from({length:10},(_,i)=>({apn:'SYNTHETIC-'+i,dedupe_key:'audit:'+i,county_fips:'04013',state:'AZ'})));
+const out={arcgis:{rows:rows.length,requests,exceededTransferLimit:true,expected:'continue paging until provider declares completion'},allRowsRejected:{imported:stats.imported,failed:stats.failed.length,threw:false,queueWouldRecordOk:true}};
+writeFileSync('/private/tmp/mfda-round0-20261006.GF9GLQ/parcel-probes.json',JSON.stringify(out,null,2));
+console.log(JSON.stringify(out,null,2));

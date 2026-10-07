@@ -1,0 +1,79 @@
+import { chromium } from './browser/node_modules/playwright/index.mjs';
+import { writeFileSync } from 'node:fs';
+import { underwrite } from './underwrite.mjs';
+const dir='/private/tmp/mfda-round0-20261006.GF9GLQ';
+const user={id:'00000000-0000-0000-0000-000000000001',email:'synthetic@example.invalid',aud:'authenticated',role:'authenticated'};
+const org={id:'00000000-0000-0000-0000-000000000010',name:'Synthetic audit organization',plan:'internal',status:'active'};
+const id='00000000-0000-0000-0000-000000000101';
+const inputs={price:500000,land_value:100000,year_built:1960,units:[{type:'2BR/1BA',count:4,sqft:850,actual_rent:1500,market_rent:1500}],expenses:{insurance:3500,management:5000,utilities:2400,repairs_maintenance:3000,capex_reserve:1200},property_tax_rate:0.009};
+const deal={id,org_id:org.id,address:'42 Synthetic Audit Street',city:'Synthetic City',state:'AZ',zip:'85001',units_count:12,price:500000,year_built:1960,status:'analyzing',photo_url:'https://images.example.invalid/broken.jpg',photos:[],created_at:'2026-10-06T00:00:00Z'};
+const scenario={id:'00000000-0000-0000-0000-000000000201',org_id:org.id,deal_id:id,label:'Synthetic audit',calc_version:'1.14.0',inputs,outputs:underwrite(inputs),created_at:'2026-10-06T00:00:00Z'};
+const token=[{alg:'HS256',typ:'JWT'},{sub:user.id,exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'},'SYNTHETIC'].map(x=>typeof x==='string'?x:Buffer.from(JSON.stringify(x)).toString('base64url')).join('.');
+const session={access_token:token,refresh_token:'SYNTHETIC',expires_in:3600,expires_at:Math.floor(Date.now()/1000)+3600,token_type:'bearer',user};
+const browser=await chromium.launch({headless:true,executablePath:'/Users/davidastone/Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell'});
+const context=await browser.newContext({viewport:{width:1440,height:1000}});
+await context.addInitScript(({session,org})=>{localStorage.setItem('sb-mfda-round0-auth-token',JSON.stringify(session));localStorage.setItem('mfda.activeOrg',org.id);},{session,org});
+const writes=[];const orgRequests=[];const errors=[];
+const userB={...user,id:'00000000-0000-0000-0000-000000000002',email:'tenant-b@example.invalid'};
+const orgB={...org,id:'00000000-0000-0000-0000-000000000020',name:'Synthetic tenant B'};
+const tokenB=[{alg:'HS256',typ:'JWT'},{sub:userB.id,exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'},'SYNTHETIC'].map(x=>Buffer.from(typeof x==='string'?x:JSON.stringify(x)).toString('base64url')).join('.');
+await context.route('**/*',async route=>{
+ const req=route.request(),url=new URL(req.url());
+ if(url.hostname==='127.0.0.1')return route.continue();
+ if(url.hostname!=='mfda-round0.invalid')return route.abort();
+ const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','content-type':'application/json'};
+ if(req.method()==='OPTIONS')return route.fulfill({status:200,headers,body:''});
+ const isB=req.headers()['authorization']==='Bearer '+tokenB;
+ if(url.pathname.startsWith('/auth/'))return route.fulfill({status:200,headers,body:JSON.stringify(isB?userB:user)});
+ const table=url.pathname.split('/').at(-1);
+ if(table==='org_members')orgRequests.push(url.search);
+ if(isB&&(table==='deals'||table==='scenarios')){
+  await new Promise(r=>setTimeout(r,1500));
+  if(table==='deals'&&url.searchParams.has('id'))return route.fulfill({status:406,headers,body:JSON.stringify({message:'Synthetic tenant B cannot read tenant A deal'})});
+  return route.fulfill({status:200,headers,body:'[]'});
+ }
+ let data=table==='org_members'?[{role:'admin',org},{role:'member',org}]:table==='deals'?[deal]:table==='scenarios'?[scenario]:[];
+ if(isB&&table==='org_members')data=[{role:'member',org:orgB}];
+ if(req.method()!=='GET'){
+   const body=req.postDataJSON();writes.push({method:req.method(),table,body});
+   if(table==='scenarios')data=[{...scenario,...body}];
+   else if(table==='units')data=body;
+   else if(table==='deals')data=[{...deal,...body}];
+   else data=[];
+ }
+ if(req.headers()['accept']?.includes('vnd.pgrst.object'))data=data[0]??null;
+ return route.fulfill({status:200,headers,body:JSON.stringify(data)});
+});
+const page=await context.newPage();page.on('pageerror',e=>errors.push(String(e)));
+await page.goto('http://127.0.0.1:5175/deals/'+id);await page.getByRole('heading',{name:/42 Synthetic Audit Street/}).waitFor();
+await page.screenshot({path:dir+'/results-desktop.png',fullPage:true});
+const photoOnlyImages=await page.locator('img').count();
+const roleBadge=await page.getByText('admin',{exact:true}).count();
+const widths={};
+for(const width of [1440,768,390]){
+ await page.setViewportSize({width,height:1000});
+ widths[width]=await page.evaluate(()=>({viewport:innerWidth,document:document.documentElement.scrollWidth,body:document.body.scrollWidth,header:document.querySelector('header').scrollWidth}));
+ if(width===390)await page.screenshot({path:dir+'/results-mobile.png',fullPage:true});
+}
+await page.setViewportSize({width:1440,height:1000});
+await page.goto('http://127.0.0.1:5175/deals/'+id+'/edit');
+await page.getByRole('heading',{name:'Edit deal'}).waitFor();
+await page.screenshot({path:dir+'/edit-desktop.png',fullPage:true});
+const unitCount=await page.locator('input[type=number]').evaluateAll(xs=>xs.map(x=>({value:x.value,label:x.closest('label')?.innerText??x.closest('tr')?.innerText??''})));
+await page.getByRole('button',{name:'Save revision & underwrite'}).click();
+await page.waitForURL('**/deals/'+id);
+const savedUnits=writes.find(x=>x.method==='POST'&&x.table==='units')?.body;
+const savedScenario=writes.find(x=>x.method==='POST'&&x.table==='scenarios')?.body;
+await page.getByRole('button',{name:'Sign out',exact:true}).click();
+await page.waitForURL('**/signin');
+const newSession=await page.evaluate(async token=>{const {supabase}=await import('/src/lib/supabase.js');const r=await supabase.auth.setSession({access_token:token,refresh_token:'SYNTHETIC_B'});return {error:r.error?.message,user:r.data?.user?.id};},tokenB);
+console.log({newSession});
+await page.getByText('Synthetic tenant B',{exact:true}).waitFor();
+await page.evaluate(path=>{history.pushState(null,'',path);window.dispatchEvent(new PopStateEvent('popstate'));},'/deals/'+id);
+const cachedLeak=await page.getByRole('heading',{name:/42 Synthetic Audit Street/}).isVisible();
+const leakContext=await page.locator('header').innerText();
+if(cachedLeak)await page.screenshot({path:dir+'/cached-tenant-leak.png',fullPage:false});
+await page.getByText('Synthetic tenant B cannot read tenant A deal',{exact:true}).waitFor({timeout:15000});
+writeFileSync(dir+'/browser-probes.json',JSON.stringify({environment:'local Vite; synthetic session and mocked Supabase; all external requests blocked',orgRequests,adminBadgeForMemberRow:roleBadge,photoUrlWithoutPhotosArrayImages:photoOnlyImages,widths,originalDealUnits:12,savedUnits,savedScenarioUnitCount:savedScenario?.inputs?.units?.reduce((n,u)=>n+u.count,0),unitCount,cachedTenantLeak:{visible:cachedLeak,header:leakContext,eventuallyDenied:true},errors},null,2));
+console.log(JSON.stringify({orgRequests,roleBadge,photoOnlyImages,widths,savedUnits,savedScenarioUnitCount:savedScenario?.inputs?.units?.reduce((n,u)=>n+u.count,0),cachedTenantLeak:cachedLeak,leakContext,errors},null,2));
+await browser.close();

@@ -1,0 +1,53 @@
+import { build } from '/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/esbuild/lib/main.js';
+import { writeFileSync, readFileSync } from 'node:fs';
+const root = '/Users/davidastone/code/alot-land/alot-land';
+const temp = '/private/tmp/mfda-round0-20261006.GF9GLQ';
+for (const [entry,file] of [['packages/mf-calc/src/index.ts','engine.mjs'],['mfda/src/lib/underwrite.js','underwrite.mjs'],['mfda/src/lib/parcelscreen.js','parcelscreen.mjs']]) {
+  await build({entryPoints:[root+'/'+entry],bundle:true,platform:'node',format:'esm',alias:{'@alot/mf-calc':root+'/packages/mf-calc/src/index.ts'},outfile:temp+'/'+file});
+}
+const mf=await import('./engine.mjs');
+const {underwrite}=await import('./underwrite.mjs');
+const {buildZipRents}=await import('./parcelscreen.mjs');
+const {unitsFromClass,assessorToParcels,PRESETS}=await import(root+'/workers/scan/lib/assessor.js');
+const {extractPhotoUrls}=await import(root+'/workers/scan/lib/photos.js');
+const {pullWithBands}=await import(root+'/workers/scan/lib/bands.js');
+const {freedomsoftCSV}=await import(root+'/mfda/src/lib/freedomsoft.js');
+const {ratio}=await import(root+'/mfda/src/lib/format.js');
+const base={price:500000,land_value:100000,units:[{type:'2BR/1BA',count:4,sqft:850,actual_rent:1500,market_rent:1500}],expenses:{insurance:3500,management:5000,utilities:2400,repairs_maintenance:3000,capex_reserve:1200},property_tax_rate:0.009};
+const good=underwrite(base);
+const a=underwrite({...base,hold_years:10,financing:{seller:{balloon_years:3}}});
+const b=underwrite({...base,hold_years:10,financing:{seller:{balloon_years:9}}});
+const pf=mf.buildProforma({gross_potential_rent:24000,other_income:0,vacancy_rate:0,operating_expenses:0,growth_rate:0,loan_amount:12000,annual_rate:0,amort_years:1,hold_years:2,exit_cap_rate:0.1,selling_cost_rate:0,cash_invested:10000});
+const frac=mf.forward({price:100000,noi:12000,gross_potential_income:12000,operating_expenses:0,loan_amount:0,annual_rate:0,amort_years:30,cash_invested:100000,hold_years:2.5,exit_cap_rate:0.1,noi_growth_rate:0,selling_cost_rate:0});
+const dep=mf.depreciation({purchase_price:1000000,land_value:0,cost_seg_pct:0.3,bonus_rate:0.4});
+const invalid=underwrite({...base,financing:{dscr:{ltv:1.2}},vacancy_rate:1.5,exit_cap_rate:0});
+const asJSON=JSON.parse(JSON.stringify(good));
+const saw=await pullWithBands(async()=>({ok:false,blocked:false,listings:[]}));
+const parsed=assessorToParcels('APN,Owner,Mailing Address,Property Class,Units,Bedrooms,Bathrooms,Actual Rent,Market Rent\nA1,Synthetic owner,42 Synthetic St,APARTMENTS 25 - 99 UNITS,,12,6,1500,2000',PRESETS.custom,{state:'AZ',countyFips:'04013'});
+let requested=0;
+process.env.RENTCAST_API_KEY='SYNTHETIC_AUDIT_KEY';
+globalThis.fetch=async()=>{requested++;return new Response(JSON.stringify({rent:1234}),{status:200,headers:{'content-type':'application/json'}})};
+const {default:rentHandler}=await import(root+'/mfda/netlify/functions/rent-estimate.mjs');
+const rentResponses=[];
+for(const method of ['GET','POST'])rentResponses.push({method,status:(await rentHandler(new Request('https://audit.invalid/.netlify/functions/rent-estimate?address=42%20Synthetic%20Street',{method}))).status});
+delete process.env.RENTCAST_API_KEY;
+const report={
+calc_version:mf.CALC_VERSION,
+unauthenticated_rentcast:{responses:rentResponses,mocked_upstream_requests:requested},
+paid_off_loan:{year1:pf.years[0],year2:pf.years[1],expected_year2_debt:0,expected_year2_cfbt:24000},
+fractional_hold:{hold_years:2.5,exit_value:frac.exit_value,net_sale_proceeds:frac.net_sale_proceeds,irr:String(frac.irr),equity_multiple:frac.equity_multiple,explanation:'2 integer cash distributions; none receives sale proceeds because y === 2.5 is never true'},
+seller_balloon:{same_forward_result:JSON.stringify(a.financing.seller_forward)===JSON.stringify(b.financing.seller_forward),balloon_options:[3,9],hold_years:10},
+depreciation_partial_bonus:{...dep,unmodeled_short_life_basis:dep.reclassified_basis-dep.first_year_bonus},
+rehab_tax_basis:{without_rehab:good.tax.depreciation.depreciable_basis,with_100000_rehab:underwrite({...base,rehab:100000}).tax.depreciation.depreciable_basis},
+prescreen_year_built:{year_built:1960,flags:underwrite({...base,year_built:1960}).prescreen},
+serialization:{all_cash_dscr_before:String(good.financing.all_cash.dscr),all_cash_dscr_after:asJSON.financing.all_cash.dscr,ratio_nan:ratio(NaN)},
+validation:{accepted_invalid_inputs:true,ltv:1.2,vacancy:1.5,exit_cap:0,noi:invalid.derived.noi,exit_value:invalid.financing.dscr.exit_value},
+unit_range:{class:'APARTMENTS 25 - 99 UNITS',normalized_units:unitsFromClass('APARTMENTS 25 - 99 UNITS'),normalized_row:parsed.parcels[0]},
+photo_extraction:{meta_encoded_query:extractPhotoUrls('<meta property="og:image" content="https://example.invalid/photo.jpg?a=1&amp;b=2">'),escaped_state:extractPhotoUrls(String.raw`{"url":"https:\/\/ssl.cdn-redfin.com\/photo\/1\/bigphoto\/photo.jpg"}`)},
+stale_rent_selection:{old_first:buildZipRents([{zip:'85001',source:'zori',bedrooms:-1,period:'2025-01',rent:1200},{zip:'85001',source:'zori',bedrooms:-1,period:'2026-09',rent:2000}]).get('85001'),new_first:buildZipRents([{zip:'85001',source:'zori',bedrooms:-1,period:'2026-09',rent:2000},{zip:'85001',source:'zori',bedrooms:-1,period:'2025-01',rent:1200}]).get('85001')},
+all_scan_bands_failed:{...saw,caller_records_ok:!saw.blocked},
+csv_formula:freedomsoftCSV([{owner_name:'=1+1',owner_is_entity:true,apn:'SYNTHETIC'}],'Synthetic audit').split('\r\n')[1]
+};
+writeFileSync(temp+'/diagnostics.json',JSON.stringify(report,null,2));
+console.log(JSON.stringify(report,null,2));
+

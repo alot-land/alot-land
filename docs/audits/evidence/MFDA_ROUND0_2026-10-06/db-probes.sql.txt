@@ -1,0 +1,26 @@
+\set ON_ERROR_STOP on
+insert into auth.users values ('00000000-0000-0000-0000-000000000001','tenant-a@example.invalid'),('00000000-0000-0000-0000-000000000002','tenant-b@example.invalid');
+select org_id as org_a from public.org_members where user_id='00000000-0000-0000-0000-000000000001' \gset
+select org_id as org_b from public.org_members where user_id='00000000-0000-0000-0000-000000000002' \gset
+insert into public.deals(id,org_id,dedupe_key,address,price) values ('00000000-0000-0000-0000-000000000101',:'org_b','audit:b','Synthetic B property',500000);
+grant select,insert,update,delete on all tables in schema public to authenticated;
+set role authenticated;
+select set_config('audit.uid','00000000-0000-0000-0000-000000000001',false);
+select count(*) as b_deals_visible_to_a from public.deals where id='00000000-0000-0000-0000-000000000101';
+insert into public.scenarios(id,org_id,deal_id,inputs,outputs,calc_version) values ('00000000-0000-0000-0000-000000000201',:'org_a','00000000-0000-0000-0000-000000000101','{}','{"irr":99}','forged-audit-version');
+select count(*) as a_scenario_referencing_b_parent from public.scenarios where id='00000000-0000-0000-0000-000000000201';
+reset role;
+select set_config('audit.uid','00000000-0000-0000-0000-000000000002',false);
+set role authenticated;
+select count(*) as a_scenarios_visible_to_b from public.scenarios where id='00000000-0000-0000-0000-000000000201';
+delete from public.deals where id='00000000-0000-0000-0000-000000000101';
+reset role;
+select count(*) as a_scenario_after_b_deletes_parent from public.scenarios where id='00000000-0000-0000-0000-000000000201';
+insert into public.invites(org_id,email,role,expires_at) values (:'org_a','expired@example.invalid','admin',now()-interval '1 day');
+select public.is_email_allowed('expired@example.invalid') as expired_invite_email_gate;
+insert into auth.users values ('00000000-0000-0000-0000-000000000003','expired@example.invalid');
+select count(*) as expired_invite_became_admin from public.org_members where user_id='00000000-0000-0000-0000-000000000003' and org_id=:'org_a' and role='admin';
+select count(*) as public_tables_without_rls from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and not c.relrowsecurity;
+select count(*) as rls_tables from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity;
+select count(*) as policies from pg_policies where schemaname='public';
+

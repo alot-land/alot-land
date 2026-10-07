@@ -1,0 +1,120 @@
+{
+  "environment": "local Vite; synthetic session and mocked Supabase; all external requests blocked",
+  "orgRequests": [
+    "?select=role%2Corg%3Aorgs%28id%2Cname%2Cplan%2Cstatus%29&order=created_at.asc",
+    "?select=role%2Corg%3Aorgs%28id%2Cname%2Cplan%2Cstatus%29&order=created_at.asc",
+    "?select=role%2Corg%3Aorgs%28id%2Cname%2Cplan%2Cstatus%29&order=created_at.asc"
+  ],
+  "adminBadgeForMemberRow": 1,
+  "photoUrlWithoutPhotosArrayImages": 0,
+  "widths": {
+    "390": {
+      "viewport": 390,
+      "document": 983,
+      "body": 983,
+      "header": 983
+    },
+    "768": {
+      "viewport": 768,
+      "document": 1166,
+      "body": 1166,
+      "header": 1166
+    },
+    "1440": {
+      "viewport": 1440,
+      "document": 1440,
+      "body": 1440,
+      "header": 1440
+    }
+  },
+  "originalDealUnits": 12,
+  "savedUnits": [
+    {
+      "org_id": "00000000-0000-0000-0000-000000000010",
+      "deal_id": "00000000-0000-0000-0000-000000000101",
+      "type": "2BR/1BA",
+      "count": 4,
+      "sqft": 850,
+      "actual_rent": 1200,
+      "market_rent": 1400,
+      "sort_order": 0
+    }
+  ],
+  "savedScenarioUnitCount": 4,
+  "unitCount": [
+    {
+      "value": "1960",
+      "label": "YEAR BUILTI"
+    },
+    {
+      "value": "500000",
+      "label": "ASKING PRICEI\n$"
+    },
+    {
+      "value": "4",
+      "label": "\t\n\t\n\t\n/mo\n\t\n/mo\n\t×"
+    },
+    {
+      "value": "850",
+      "label": "\t\n\t\n\t\n/mo\n\t\n/mo\n\t×"
+    },
+    {
+      "value": "1200",
+      "label": "\t\n\t\n\t\n/mo\n\t\n/mo\n\t×"
+    },
+    {
+      "value": "1400",
+      "label": "\t\n\t\n\t\n/mo\n\t\n/mo\n\t×"
+    },
+    {
+      "value": "0",
+      "label": "OTHER INCOMEI\n$\nannual (laundry, parking, RUBS)"
+    },
+    {
+      "value": "5",
+      "label": "VACANCYI\n%"
+    },
+    {
+      "value": "0.9",
+      "label": "PROPERTY TAX RATEI\n%\neffective rate applied to purchase price"
+    },
+    {
+      "value": "1",
+      "label": "ASSESSMENT RATIOI\n1 = rate on full market value"
+    },
+    {
+      "value": "100000",
+      "label": "LAND VALUEI\n$\nexcluded from depreciation basis"
+    },
+    {
+      "value": "3500",
+      "label": "INSURANCEI\n$\nannual $ (est. ~$700/unit)"
+    },
+    {
+      "value": "5000",
+      "label": "MANAGEMENTI\n$\nannual $ (≈10% of income)"
+    },
+    {
+      "value": "2400",
+      "label": "UTILITIESI\n$\nannual $ (owner-paid)"
+    },
+    {
+      "value": "3000",
+      "label": "REPAIRS & MAINTENANCEI\n$\nannual $ (~8% of rent)"
+    },
+    {
+      "value": "1200",
+      "label": "CAPEX RESERVEI\n$\nannual $ (~$300/unit)"
+    },
+    {
+      "value": "",
+      "label": "PAYROLLI\n$\nannual $ (if ≥ 20 units)"
+    }
+  ],
+  "cachedTenantLeak": {
+    "visible": true,
+    "header": "MFDA.\nMarkets\nOn-Market\nOff-Market\nDeals\nGoals\nGuide\nSettings\nSynthetic tenant B\n🌙\ntenant-b@example.invalid\nSign out",
+    "eventuallyDenied": true
+  },
+  "errors": []
+}

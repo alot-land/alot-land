@@ -1,0 +1,172 @@
+{
+  "calc_version": "1.14.0",
+  "unauthenticated_rentcast": {
+    "responses": [
+      {
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "method": "POST",
+        "status": 200
+      }
+    ],
+    "mocked_upstream_requests": 2
+  },
+  "paid_off_loan": {
+    "year1": {
+      "year": 1,
+      "gpr": 24000,
+      "vacancy_loss": 0,
+      "other_income": 0,
+      "egi": 24000,
+      "operating_expenses": 0,
+      "noi": 24000,
+      "debt_service": 12000,
+      "interest": 0,
+      "principal": 12000,
+      "cfbt": 12000,
+      "cumulative_cfbt": 12000,
+      "loan_balance_end": 0,
+      "cash_on_cash": 1.2
+    },
+    "year2": {
+      "year": 2,
+      "gpr": 24000,
+      "vacancy_loss": 0,
+      "other_income": 0,
+      "egi": 24000,
+      "operating_expenses": 0,
+      "noi": 24000,
+      "debt_service": 12000,
+      "interest": 0,
+      "principal": 12000,
+      "cfbt": 12000,
+      "cumulative_cfbt": 24000,
+      "loan_balance_end": 0,
+      "cash_on_cash": 1.2
+    },
+    "expected_year2_debt": 0,
+    "expected_year2_cfbt": 24000
+  },
+  "fractional_hold": {
+    "hold_years": 2.5,
+    "exit_value": 120000,
+    "net_sale_proceeds": 120000,
+    "irr": "-0.5884320833750074",
+    "equity_multiple": 1.44,
+    "explanation": "2 integer cash distributions; none receives sale proceeds because y === 2.5 is never true"
+  },
+  "seller_balloon": {
+    "same_forward_result": true,
+    "balloon_options": [
+      3,
+      9
+    ],
+    "hold_years": 10
+  },
+  "depreciation_partial_bonus": {
+    "depreciable_basis": 1000000,
+    "reclassified_basis": 300000,
+    "remaining_basis": 700000,
+    "first_year_bonus": 120000,
+    "annual_straight_line": 25454.545454545456,
+    "first_year_total": 145454.54545454547,
+    "unmodeled_short_life_basis": 180000
+  },
+  "rehab_tax_basis": {
+    "without_rehab": 400000,
+    "with_100000_rehab": 400000
+  },
+  "prescreen_year_built": {
+    "year_built": 1960,
+    "flags": []
+  },
+  "serialization": {
+    "all_cash_dscr_before": "Infinity",
+    "all_cash_dscr_after": null,
+    "ratio_nan": "∞"
+  },
+  "validation": {
+    "accepted_invalid_inputs": true,
+    "ltv": 1.2,
+    "vacancy": 1.5,
+    "exit_cap": 0,
+    "noi": -55600,
+    "exit_value": 0
+  },
+  "unit_range": {
+    "class": "APARTMENTS 25 - 99 UNITS",
+    "normalized_units": 25,
+    "normalized_row": {
+      "apn": "A1",
+      "state": "AZ",
+      "county_fips": "04013",
+      "situs_address": null,
+      "situs_city": null,
+      "situs_zip": null,
+      "owner_name": "Synthetic owner",
+      "owner_is_entity": false,
+      "mailing_address": "42 Synthetic St",
+      "mailing_city": null,
+      "mailing_state": null,
+      "mailing_zip": null,
+      "absentee": false,
+      "property_class": "APARTMENTS 25 - 99 UNITS",
+      "units": 25,
+      "year_built": null,
+      "building_sqft": null,
+      "lot_sqft": null,
+      "last_sale_date": null,
+      "last_sale_price": null,
+      "assessed_value": null,
+      "lat": null,
+      "lng": null
+    }
+  },
+  "photo_extraction": {
+    "meta_encoded_query": [
+      "https://example.invalid/photo.jpg?a=1&amp;b=2"
+    ],
+    "escaped_state": []
+  },
+  "stale_rent_selection": {
+    "old_first": 1200,
+    "new_first": 2000
+  },
+  "all_scan_bands_failed": {
+    "listings": [],
+    "requests": 1,
+    "cappedBands": 0,
+    "blocked": false,
+    "bands": [
+      {
+        "min": 0,
+        "max": 200000000,
+        "rows": -1,
+        "capped": false
+      }
+    ],
+    "caller_records_ok": true
+  },
+  "csv_formula": "=1+1,,=1+1,,,,,,,,,,,,,,SYNTHETIC,,mfda;multifamily;entity-owned,Synthetic audit",
+  "additional_financial_probes": {
+    "invalid_flow_irr": {
+      "flows": [
+        "-100",
+        "NaN",
+        "200"
+      ],
+      "returned": 10,
+      "expected": "reject invalid flows or return explicit unavailable status"
+    },
+    "break_even_with_other_income": {
+      "gpr": 60000,
+      "other_income": 12000,
+      "opex_plus_debt": 36000,
+      "returned": 0.5,
+      "expected": 0.4,
+      "convention": "vacancy applies to rent only in NOI model"
+    }
+  }
+}
