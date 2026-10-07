@@ -1,0 +1,78 @@
+mfda/supabase/migration_004_rent_bands.sql:13:  org_id       uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_006_offmarket.sql:12:  org_id          uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_006_offmarket.sql:53:  org_id      uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_006_offmarket.sql:71:  org_id     uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_006_offmarket.sql:74:  created_by uuid references auth.users(id) on delete set null,
+mfda/supabase/migration_006_offmarket.sql:78:  list_id   uuid not null references public.mail_lists(id) on delete cascade,
+mfda/supabase/migration_006_offmarket.sql:79:  parcel_id uuid not null references public.parcels(id) on delete cascade,
+mfda/supabase/migration_006_offmarket.sql:80:  org_id    uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_006_offmarket.sql:86:  org_id     uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_006_offmarket.sql:87:  list_id    uuid references public.mail_lists(id) on delete set null,
+mfda/supabase/migration_006_offmarket.sql:90:  created_by uuid references auth.users(id) on delete set null,
+mfda/supabase/migration_006_offmarket.sql:110:  org_id     uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_002_sourcing.sql:32:  org_id       uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_002_sourcing.sql:68:  org_id         uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_014_parcel_coverage.sql:19:  org_id       uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_007_usmarkets.sql:13:  org_id        uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_009_ratings_notes.sql:26:  org_id       uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_009_ratings_notes.sql:31:  created_by   uuid references auth.users(id) on delete set null,
+mfda/supabase/migration_013_rent_estimates.sql:20:  org_id       uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_013_rent_estimates.sql:35:  created_by   uuid references auth.users(id)
+mfda/supabase/migration_010_goals.sql:8:  org_id         uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/migration_010_goals.sql:14:  created_by     uuid references auth.users(id) on delete set null,
+mfda/supabase/migration_012_tax_presets.sql:49:create or replace function public.bootstrap_new_user()
+mfda/supabase/migration_012_tax_presets.sql:50:returns trigger
+mfda/supabase/migration_011_deal_tracking.sql:12:alter table public.deals add column if not exists goal_id uuid references public.goals(id) on delete set null;
+mfda/supabase/migration_015_p0_invitation_authorization.sql:8:create or replace function public.accept_mfda_invite(p_token uuid, p_user uuid)
+mfda/supabase/migration_015_p0_invitation_authorization.sql:34:revoke all on function public.accept_mfda_invite(uuid, uuid) from public, anon, authenticated;
+mfda/supabase/migration_015_p0_invitation_authorization.sql:36:create or replace function public.redeem_invite(p_token uuid)
+mfda/supabase/migration_015_p0_invitation_authorization.sql:45:revoke all on function public.redeem_invite(uuid) from public, anon;
+mfda/supabase/migration_015_p0_invitation_authorization.sql:46:grant execute on function public.redeem_invite(uuid) to authenticated;
+mfda/supabase/migration_015_p0_invitation_authorization.sql:50:create or replace function public.accept_pending_mfda_invites()
+mfda/supabase/migration_015_p0_invitation_authorization.sql:66:    exception when insufficient_privilege then
+mfda/supabase/migration_015_p0_invitation_authorization.sql:73:revoke all on function public.accept_pending_mfda_invites() from public, anon;
+mfda/supabase/migration_015_p0_invitation_authorization.sql:74:grant execute on function public.accept_pending_mfda_invites() to authenticated;
+mfda/supabase/migration_015_p0_invitation_authorization.sql:76:create or replace function public.bootstrap_new_user()
+mfda/supabase/migration_015_p0_invitation_authorization.sql:77:returns trigger language plpgsql security definer set search_path = '' as $$
+mfda/supabase/migration_015_p0_invitation_authorization.sql:89:    exception when insufficient_privilege then null;
+mfda/supabase/migration_015_p0_invitation_authorization.sql:92:  -- The existing founder allowlist is the only explicit personal-org grant.
+mfda/supabase/migration_015_p0_invitation_authorization.sql:108:revoke all on function public.bootstrap_new_user() from public, anon, authenticated;
+mfda/supabase/migration_015_p0_invitation_authorization.sql:109:drop trigger if exists on_auth_user_confirmed_mfda on auth.users;
+mfda/supabase/migration_015_p0_invitation_authorization.sql:110:create trigger on_auth_user_confirmed_mfda after update of email_confirmed_at on auth.users
+mfda/supabase/migration_015_p0_invitation_authorization.sql:119:create or replace function public.protect_consumed_mfda_invite()
+mfda/supabase/migration_015_p0_invitation_authorization.sql:120:returns trigger language plpgsql security definer set search_path = '' as $$
+mfda/supabase/migration_015_p0_invitation_authorization.sql:133:revoke all on function public.protect_consumed_mfda_invite() from public, anon, authenticated;
+mfda/supabase/migration_015_p0_invitation_authorization.sql:134:drop trigger if exists protect_consumed_mfda_invite on public.invites;
+mfda/supabase/migration_015_p0_invitation_authorization.sql:135:create trigger protect_consumed_mfda_invite before update on public.invites
+mfda/supabase/schema.sql:24:  org_id     uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/schema.sql:25:  user_id    uuid not null references auth.users(id) on delete cascade,
+mfda/supabase/schema.sql:34:  org_id      uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/schema.sql:38:  invited_by  uuid references auth.users(id) on delete set null,
+mfda/supabase/schema.sql:51:create or replace function public.jwt_email()
+mfda/supabase/schema.sql:56:create or replace function public.is_org_member(p_org uuid)
+mfda/supabase/schema.sql:64:create or replace function public.is_org_admin(p_org uuid)
+mfda/supabase/schema.sql:72:grant execute on function public.is_org_member(uuid) to authenticated;
+mfda/supabase/schema.sql:73:grant execute on function public.is_org_admin(uuid) to authenticated;
+mfda/supabase/schema.sql:77:create or replace function public.is_email_allowed(p_email text)
+mfda/supabase/schema.sql:93:grant execute on function public.is_email_allowed(text) to anon, authenticated;
+mfda/supabase/schema.sql:124:  org_id            uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/schema.sql:153:  org_id       uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/schema.sql:167:  created_by   uuid references auth.users(id) on delete set null,
+mfda/supabase/schema.sql:174:create or replace function public.touch_updated_at()
+mfda/supabase/schema.sql:175:returns trigger language plpgsql as $$
+mfda/supabase/schema.sql:177:drop trigger if exists deals_touch on public.deals;
+mfda/supabase/schema.sql:178:create trigger deals_touch before update on public.deals
+mfda/supabase/schema.sql:188:  deal_id      uuid not null references public.deals(id) on delete cascade,
+mfda/supabase/schema.sql:189:  org_id       uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/schema.sql:210:  deal_id      uuid not null references public.deals(id) on delete cascade,
+mfda/supabase/schema.sql:211:  org_id       uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/schema.sql:216:  created_by   uuid references auth.users(id) on delete set null,
+mfda/supabase/schema.sql:235:  org_id         uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/schema.sql:236:  deal_id        uuid references public.deals(id) on delete set null,
+mfda/supabase/schema.sql:263:  org_id      uuid not null references public.orgs(id) on delete cascade,
+mfda/supabase/schema.sql:264:  deal_id     uuid references public.deals(id) on delete set null,
+mfda/supabase/schema.sql:269:  created_by  uuid references auth.users(id) on delete set null,
+mfda/supabase/schema.sql:286:create or replace function public.bootstrap_new_user()
+mfda/supabase/schema.sql:287:returns trigger language plpgsql security definer set search_path = public as $$
+mfda/supabase/schema.sql:321:drop trigger if exists on_auth_user_created_mfda on auth.users;
+mfda/supabase/schema.sql:322:create trigger on_auth_user_created_mfda

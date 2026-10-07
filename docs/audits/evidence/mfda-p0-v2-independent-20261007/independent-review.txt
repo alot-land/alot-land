@@ -1,0 +1,185 @@
+TAP version 13
+# Subtest: independent SQL lifecycle probes (actual migrations, FK and transaction behavior)
+    # Subtest: populated upgrade and repeat change no historical rows or FK definitions
+    ok 1 - populated upgrade and repeat change no historical rows or FK definitions
+      ---
+      duration_ms: 80.902625
+      type: 'test'
+      ...
+    # Subtest: living-author nulling and combined security edits fail, including a future column
+    ok 2 - living-author nulling and combined security edits fail, including a future column
+      ---
+      duration_ms: 236.72275
+      type: 'test'
+      ...
+    # Subtest: restricted writer SERIALIZABLE deletion preserves consumed microsecond timestamp, other histories and memberships
+    ok 3 - restricted writer SERIALIZABLE deletion preserves consumed microsecond timestamp, other histories and memberships
+      ---
+      duration_ms: 256.924667
+      type: 'test'
+      ...
+    # Subtest: invalid, wrong recipient/org/role, unverified, expired and consumed invitations never authorize
+    ok 4 - invalid, wrong recipient/org/role, unverified, expired and consumed invitations never authorize
+      ---
+      duration_ms: 158.386292
+      type: 'test'
+      ...
+    # Subtest: post-deletion valid redemption and simultaneous replay yield one success with no member upgrade
+    ok 5 - post-deletion valid redemption and simultaneous replay yield one success with no member upgrade
+      ---
+      duration_ms: 62.384834
+      type: 'test'
+      ...
+    # Subtest: NEW EDGE: pre-existing rent-estimate author FK still blocks deletion and rolls back inviter cleanup
+    ok 6 - NEW EDGE: pre-existing rent-estimate author FK still blocks deletion and rolls back inviter cleanup
+      ---
+      duration_ms: 1656.922458
+      type: 'test'
+      ...
+    1..6
+ok 1 - independent SQL lifecycle probes (actual migrations, FK and transaction behavior)
+  ---
+  duration_ms: 3819.448125
+  type: 'test'
+  ...
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-XnUhKz/vite-cache/deps/react-dom_client.js?v=000a95f3 as it exceeds the max of 500KB.
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-XnUhKz/vite-cache/deps/@react-pdf_renderer.js?v=b8770e6d as it exceeds the max of 500KB.
+# Subtest: independent actual SPA completion and output probes
+    # Subtest: real delayed PDF positive control releases valid bytes under unchanged A
+    not ok 1 - real delayed PDF positive control releases valid bytes under unchanged A
+      ---
+      duration_ms: 18834.620333
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:169:11'
+      failureType: 'testCodeFailure'
+      error: |-
+        locator.waitFor: Timeout 15000ms exceeded.
+        Call log:
+        [2m  - waiting for getByRole('link', { name: 'Building PDF…', exact: true }) to be visible[22m
+        
+      code: 'ERR_TEST_FAILURE'
+      name: 'TimeoutError'
+      stack: |-
+        pdfFixture (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:163:76)
+        async TestContext.<anonymous> (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:170:15)
+        async TestContext.<anonymous> (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:169:3)
+      ...
+    # Subtest: held renderer promise after auth transition cannot publish URL/link/download
+    not ok 2 - held renderer promise after auth transition cannot publish URL/link/download
+      ---
+      duration_ms: 15585.202
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:180:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        locator.waitFor: Timeout 15000ms exceeded.
+        Call log:
+        [2m  - waiting for getByRole('link', { name: 'Building PDF…', exact: true }) to be visible[22m
+        
+      code: 'ERR_TEST_FAILURE'
+      name: 'TimeoutError'
+      stack: |-
+        pdfFixture (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:163:76)
+        async TestContext.<anonymous> (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:181:17)
+        async TestContext.<anonymous> (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:180:5)
+      ...
+    # Subtest: held renderer promise after org transition cannot publish URL/link/download
+    not ok 3 - held renderer promise after org transition cannot publish URL/link/download
+      ---
+      duration_ms: 15365.821458
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:180:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        locator.waitFor: Timeout 15000ms exceeded.
+        Call log:
+        [2m  - waiting for getByRole('link', { name: 'Building PDF…', exact: true }) to be visible[22m
+        
+      code: 'ERR_TEST_FAILURE'
+      name: 'TimeoutError'
+      stack: |-
+        pdfFixture (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:163:76)
+        async TestContext.<anonymous> (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:181:17)
+        async TestContext.<anonymous> (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:180:5)
+      ...
+    # Subtest: held renderer promise after auth-roundtrip transition cannot publish URL/link/download
+    not ok 4 - held renderer promise after auth-roundtrip transition cannot publish URL/link/download
+      ---
+      duration_ms: 15452.214958
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:180:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        locator.waitFor: Timeout 15000ms exceeded.
+        Call log:
+        [2m  - waiting for getByRole('link', { name: 'Building PDF…', exact: true }) to be visible[22m
+        
+      code: 'ERR_TEST_FAILURE'
+      name: 'TimeoutError'
+      stack: |-
+        pdfFixture (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:163:76)
+        async TestContext.<anonymous> (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:181:17)
+        async TestContext.<anonymous> (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:180:5)
+      ...
+    # Subtest: ready A PDF URL is revoked on auth replacement and cannot be fetched afterward
+    not ok 5 - ready A PDF URL is revoked on auth replacement and cannot be fetched afterward
+      ---
+      duration_ms: 15450.924417
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:210:11'
+      failureType: 'testCodeFailure'
+      error: |-
+        locator.waitFor: Timeout 15000ms exceeded.
+        Call log:
+        [2m  - waiting for getByRole('link', { name: 'Building PDF…', exact: true }) to be visible[22m
+        
+      code: 'ERR_TEST_FAILURE'
+      name: 'TimeoutError'
+      stack: |-
+        pdfFixture (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:163:76)
+        async TestContext.<anonymous> (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:211:15)
+        async TestContext.<anonymous> (/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:210:3)
+      ...
+    # Subtest: completion predicate rejects B inside the auth subscriber before React commits
+    ok 6 - completion predicate rejects B inside the auth subscriber before React commits
+      ---
+      duration_ms: 1583.523417
+      type: 'test'
+      ...
+    # Subtest: DealNew delayed edit response cannot issue units/scenario/log follow-ons or navigate B
+    ok 7 - DealNew delayed edit response cannot issue units/scenario/log follow-ons or navigate B
+      ---
+      duration_ms: 2153.358417
+      type: 'test'
+      ...
+    # Subtest: OffMarketDeal held existing-deal lookup cannot navigate B to A edit
+    ok 8 - OffMarketDeal held existing-deal lookup cannot navigate B to A edit
+      ---
+      duration_ms: 1170.878458
+      type: 'test'
+      ...
+    # Subtest: NEW LIFECYCLE GAP: A cache miss completed under B initiates A-address RentCast proxy request
+    ok 9 - NEW LIFECYCLE GAP: A cache miss completed under B initiates A-address RentCast proxy request
+      ---
+      duration_ms: 944.965875
+      type: 'test'
+      ...
+    1..9
+not ok 2 - independent actual SPA completion and output probes
+  ---
+  duration_ms: 88884.047542
+  type: 'test'
+  location: '/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v2-independent-20261007/independent.test.mjs:133:1'
+  failureType: 'subtestsFailed'
+  error: '5 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..2
+# tests 17
+# suites 0
+# pass 11
+# fail 6
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 93276.565875

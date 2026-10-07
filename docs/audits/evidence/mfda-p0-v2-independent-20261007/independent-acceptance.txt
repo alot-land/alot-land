@@ -1,0 +1,148 @@
+TAP version 13
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-nP9kAh/vite-cache/deps/react-dom_client.js?v=19cc7911 as it exceeds the max of 500KB.
+# Subtest: independent paged CSV tests exercise actual 1000-row boundary and final browser output
+    # Subtest: unchanged A exports all 1001 authorized parcel rows with actual CSV bytes
+    ok 1 - unchanged A exports all 1001 authorized parcel rows with actual CSV bytes
+      ---
+      duration_ms: 1687.194625
+      type: 'test'
+      ...
+    # Subtest: A first page held across org A → B → A cannot release obsolete two-page CSV or filename
+    ok 2 - A first page held across org A → B → A cannot release obsolete two-page CSV or filename
+      ---
+      duration_ms: 942.687625
+      type: 'test'
+      ...
+    1..2
+ok 1 - independent paged CSV tests exercise actual 1000-row boundary and final browser output
+  ---
+  duration_ms: 3916.5535
+  type: 'test'
+  ...
+# Subtest: independent SQL lifecycle probes (actual migrations, FK and transaction behavior)
+    # Subtest: populated upgrade and repeat change no historical rows or FK definitions
+    ok 1 - populated upgrade and repeat change no historical rows or FK definitions
+      ---
+      duration_ms: 63.561166
+      type: 'test'
+      ...
+    # Subtest: living-author nulling and combined security edits fail, including a future column
+    ok 2 - living-author nulling and combined security edits fail, including a future column
+      ---
+      duration_ms: 113.742833
+      type: 'test'
+      ...
+    # Subtest: restricted writer SERIALIZABLE deletion preserves consumed microsecond timestamp, other histories and memberships
+    ok 3 - restricted writer SERIALIZABLE deletion preserves consumed microsecond timestamp, other histories and memberships
+      ---
+      duration_ms: 119.320333
+      type: 'test'
+      ...
+    # Subtest: invalid, wrong recipient/org/role, unverified, expired and consumed invitations never authorize
+    ok 4 - invalid, wrong recipient/org/role, unverified, expired and consumed invitations never authorize
+      ---
+      duration_ms: 129.343
+      type: 'test'
+      ...
+    # Subtest: post-deletion valid redemption and simultaneous replay yield one success with no member upgrade
+    ok 5 - post-deletion valid redemption and simultaneous replay yield one success with no member upgrade
+      ---
+      duration_ms: 52.334834
+      type: 'test'
+      ...
+    # Subtest: NEW EDGE: pre-existing rent-estimate author FK still blocks deletion and rolls back inviter cleanup
+    ok 6 - NEW EDGE: pre-existing rent-estimate author FK still blocks deletion and rolls back inviter cleanup
+      ---
+      duration_ms: 1128.703708
+      type: 'test'
+      ...
+    1..6
+ok 2 - independent SQL lifecycle probes (actual migrations, FK and transaction behavior)
+  ---
+  duration_ms: 2520.752167
+  type: 'test'
+  ...
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-vF3DQZ/vite-cache/deps/react-dom_client.js?v=6ff53e0c as it exceeds the max of 500KB.
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-vF3DQZ/vite-cache/deps/@react-pdf_renderer.js?v=6007b7e4 as it exceeds the max of 500KB.
+# Subtest: independent actual SPA completion and output probes
+    # Subtest: real delayed PDF positive control releases valid bytes under unchanged A
+    ok 1 - real delayed PDF positive control releases valid bytes under unchanged A
+      ---
+      duration_ms: 4208.014
+      type: 'test'
+      ...
+    # Subtest: held renderer promise after auth transition cannot publish URL/link/download
+    ok 2 - held renderer promise after auth transition cannot publish URL/link/download
+      ---
+      duration_ms: 1475.180416
+      type: 'test'
+      ...
+    # Subtest: held renderer promise after org transition cannot publish URL/link/download
+    ok 3 - held renderer promise after org transition cannot publish URL/link/download
+      ---
+      duration_ms: 1403.495667
+      type: 'test'
+      ...
+    # Subtest: held renderer promise after auth-roundtrip transition cannot publish URL/link/download
+    ok 4 - held renderer promise after auth-roundtrip transition cannot publish URL/link/download
+      ---
+      duration_ms: 1612.771958
+      type: 'test'
+      ...
+    # Subtest: ready A PDF URL is revoked on auth replacement and cannot be fetched afterward
+    ok 5 - ready A PDF URL is revoked on auth replacement and cannot be fetched afterward
+      ---
+      duration_ms: 1482.158625
+      type: 'test'
+      ...
+    # Subtest: PDF promise resumed inside B auth publication cannot publish a pre-commit A URL
+    ok 6 - PDF promise resumed inside B auth publication cannot publish a pre-commit A URL
+      ---
+      duration_ms: 1199.271083
+      type: 'test'
+      ...
+    # Subtest: completion predicate rejects B inside the auth subscriber before React commits
+    ok 7 - completion predicate rejects B inside the auth subscriber before React commits
+      ---
+      duration_ms: 393.157583
+      type: 'test'
+      ...
+    # Subtest: DealNew delayed edit response cannot issue units/scenario/log follow-ons or navigate B
+    ok 8 - DealNew delayed edit response cannot issue units/scenario/log follow-ons or navigate B
+      ---
+      duration_ms: 524.074792
+      type: 'test'
+      ...
+    # Subtest: OffMarketDeal held existing-deal lookup cannot navigate B to A edit
+    ok 9 - OffMarketDeal held existing-deal lookup cannot navigate B to A edit
+      ---
+      duration_ms: 421.808375
+      type: 'test'
+      ...
+    # Subtest: NEW LIFECYCLE GAP: A cache miss completed under B initiates A-address RentCast proxy request
+    ok 10 - NEW LIFECYCLE GAP: A cache miss completed under B initiates A-address RentCast proxy request
+      ---
+      duration_ms: 573.663666
+      type: 'test'
+      ...
+    1..10
+ok 3 - independent actual SPA completion and output probes
+  ---
+  duration_ms: 14797.845459
+  type: 'test'
+  ...
+# Subtest: NEW SERVER GAP: real RentCast handler forwards an unauthenticated request (synthetic upstream only)
+ok 4 - NEW SERVER GAP: real RentCast handler forwards an unauthenticated request (synthetic upstream only)
+  ---
+  duration_ms: 3.538417
+  type: 'test'
+  ...
+1..4
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21834.361333

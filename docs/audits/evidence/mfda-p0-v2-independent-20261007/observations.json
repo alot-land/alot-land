@@ -1,0 +1,125 @@
+[
+  {
+    "probe": "populated-upgrade",
+    "preserved": true,
+    "foreignKeysAltered": false
+  },
+  {
+    "probe": "author-deletion",
+    "consumed": {
+      "id": "ca023b8e-b624-4299-b83d-1fcf814fcba7",
+      "role": "member",
+      "email": "a@example.invalid",
+      "token": "c0a51933-01c5-4016-9fe5-75a5701496cd",
+      "org_id": "20000000-0000-0000-0000-000000000001",
+      "created_at": "2026-10-07T11:58:49.929605-07:00",
+      "expires_at": "2026-10-21T11:58:49.929605-07:00",
+      "invited_by": null,
+      "accepted_at": "2025-12-31T20:04:05.123456-07:00"
+    },
+    "membershipChanges": "deleted author only"
+  },
+  {
+    "probe": "rent-estimate-deletion",
+    "vulnerableBefore015": true,
+    "vulnerableInV2": true,
+    "invitationOnlyDeletionFixed": true
+  },
+  {
+    "probe": "delayed-pdf-positive",
+    "bytes": 7036,
+    "filename": "a-only-security-canary-report.pdf"
+  },
+  {
+    "probe": "delayed-pdf-auth",
+    "downloads": 0,
+    "publishedUrls": []
+  },
+  {
+    "probe": "pdf-b-positive-after-suppression",
+    "filename": "b-only-independent-positive-report.pdf",
+    "bytes": 6990
+  },
+  {
+    "probe": "delayed-pdf-org",
+    "downloads": 0,
+    "publishedUrls": []
+  },
+  {
+    "probe": "delayed-pdf-auth-roundtrip",
+    "downloads": 0,
+    "publishedUrls": [
+      {
+        "url": "blob:http://127.0.0.1:5173/9f27ea53-1832-4cf3-975a-695e1fbe4a0f",
+        "startedEpoch": 2,
+        "publishedEpoch": 2
+      },
+      {
+        "url": "blob:http://127.0.0.1:5173/79690e38-f83b-467d-84a4-21f09de469e2",
+        "startedEpoch": 2,
+        "publishedEpoch": 2
+      }
+    ]
+  },
+  {
+    "probe": "pdf-auth-publication-race",
+    "publishedUrls": [],
+    "downloads": 0
+  },
+  {
+    "probe": "auth-synchronous-guard",
+    "checks": [
+      {
+        "allowed": false,
+        "body": "MFDA.\nMarkets\nOn-Market\nOff-Market\nDeals\nGoals\nGuide\nSettings\nSynthetic Tenant A\n🌙\na@example.invalid\nSign out\nDeals\n\nUnderwrite, compare scenarios, and pursue the good ones.\n\n+ New deal\n♥ Hearted\n\t\tPROPERTY\tMARKET\tSOURCEI\tUNITS\tPRICE\tNET / MOI\tSTATUS\tUPDATED\n\t♡\tA ONLY SECURITY CANARY\tAZ\tManual\t4\t$500,000\t$1,445\tanalyzing\t10/7/2026"
+      }
+    ]
+  },
+  {
+    "probe": "stale-rentcast",
+    "outbound": [
+      {
+        "address": "A ONLY SECURITY CANARY, AZ, 85001",
+        "authorization": null,
+        "header": "MFDA.\nMarkets\nOn-Market\nOff-Market\nDeals\nGoals\nGuide\nSettings\nSynthetic Tenant B\n🌙\nb@example.invalid\nSign out"
+      }
+    ],
+    "writes": [
+      {
+        "table": "cost_ledger",
+        "uid": "10000000-0000-0000-0000-000000000002",
+        "row": {
+          "org_id": "20000000-0000-0000-0000-000000000001",
+          "deal_id": null,
+          "kind": "api",
+          "provider": "rentcast",
+          "description": "rent estimate · A ONLY SECURITY CANARY, AZ, 85001",
+          "amount_usd": 0,
+          "created_by": "10000000-0000-0000-0000-000000000001"
+        }
+      },
+      {
+        "table": "rent_estimates",
+        "uid": "10000000-0000-0000-0000-000000000002",
+        "row": {
+          "org_id": "20000000-0000-0000-0000-000000000001",
+          "created_by": "10000000-0000-0000-0000-000000000001",
+          "addr_key": "a only security canary:85001",
+          "address": "A ONLY SECURITY CANARY, AZ, 85001",
+          "bedrooms": 2,
+          "rent": 9876,
+          "source": "rentcast",
+          "fetched_at": "2026-10-07T18:59:06.339Z"
+        }
+      }
+    ],
+    "visibleTenantLeak": false,
+    "externalCallInitiatedAfterB": true
+  },
+  {
+    "probe": "rentcast-handler-no-auth",
+    "status": 200,
+    "upstreamCalls": 1,
+    "synthetic": true
+  }
+]

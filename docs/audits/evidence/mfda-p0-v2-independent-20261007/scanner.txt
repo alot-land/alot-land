@@ -1,0 +1,25 @@
+
+> @alot/mfda-scan@0.1.0 test
+> vitest run
+
+
+ RUN  v1.6.1 /Users/davidastone/code/alot-land/alot-land/workers/scan
+
+ ✓ test/rents.test.js  (9 tests) 6ms
+ ✓ test/csv.test.js  (14 tests) 144ms
+ ✓ test/parcelimport.test.js  (7 tests) 24ms
+ ✓ test/usmarkets.test.js  (10 tests) 8ms
+ ✓ test/photos.test.js  (10 tests) 6ms
+ ✓ test/assessor.test.js  (41 tests) 33ms
+ ✓ test/bands.test.js  (5 tests) 7ms
+ ✓ test/hudfmr.test.js  (17 tests) 11ms
+ ✓ test/parcelsources.test.js  (52 tests) 39ms
+ ✓ test/env.test.js  (7 tests) 6ms
+ ✓ test/urls.test.js  (7 tests) 46ms
+ ✓ test/digest.test.js  (7 tests) 4ms
+
+ Test Files  12 passed (12)
+      Tests  186 passed (186)
+   Start at  11:30:28
+   Duration  1.78s (transform 1.08s, setup 1ms, collect 3.17s, tests 334ms, environment 2ms, prepare 4.76s)
+

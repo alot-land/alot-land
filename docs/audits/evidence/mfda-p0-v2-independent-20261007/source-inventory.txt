@@ -1,0 +1,25 @@
+mfda/src/pages/OnMarket.jsx:151:    nav(`/deals/${deal.id}/edit`);
+mfda/src/lib/lazyReload.js:13:      const last = Number(sessionStorage.getItem(KEY) || 0);
+mfda/src/lib/lazyReload.js:15:        sessionStorage.setItem(KEY, String(Date.now()));
+mfda/src/pdf/ReportButton.jsx:1:import { PDFDownloadLink } from '@react-pdf/renderer';
+mfda/src/pdf/ReportButton.jsx:9:    <PDFDownloadLink
+mfda/src/pdf/ReportButton.jsx:18:    </PDFDownloadLink>
+mfda/src/pages/DealNew.jsx:277:      nav(`/deals/${deal.id}`);
+mfda/src/pages/DealNew.jsx:465:        <button type="button" className="btn-ghost" onClick={() => nav(-1)}>Cancel</button>
+mfda/src/lib/tenant-query.jsx:2:import { QueryClient, QueryClientProvider, useQuery as useBaseQuery, useQueryClient as useBaseClient } from '@tanstack/react-query';
+mfda/src/lib/tenant-query.jsx:6:export { keepPreviousData } from '@tanstack/react-query';
+mfda/src/lib/theme.js:11:    const saved = localStorage.getItem(KEY);
+mfda/src/lib/theme.js:25:    localStorage.setItem(KEY, theme);
+mfda/src/pages/OffMarketDeal.jsx:113:        nav(`/deals/${existing.id}/edit`);
+mfda/src/pages/OffMarketDeal.jsx:142:      nav(`/deals/${deal.id}/edit`);
+mfda/src/lib/freedomsoft.js:98:  const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+mfda/src/lib/freedomsoft.js:99:  const url = URL.createObjectURL(blob);
+mfda/src/lib/org.jsx:53:      const preferred = localStorage.getItem(key);
+mfda/src/lib/org.jsx:80:    const timer = setInterval(() => void load({ background: true }), 30000);
+mfda/src/lib/org.jsx:94:    localStorage.setItem(key, id);
+mfda/src/pages/OffMarket.jsx:148:  const mapOpen = useCallback((p) => nav(`/off-market/${p.id}`), [nav]);
+mfda/src/pages/OffMarket.jsx:451:                  onClick={() => nav(`/off-market/${p.id}`)}
+mfda/src/lib/auth.jsx:24:    for (const key of Object.keys(localStorage)) {
+mfda/src/lib/auth.jsx:25:      if (key === 'mfda.activeOrg' || key.startsWith('mfda.activeOrg:')) localStorage.removeItem(key);
+mfda/src/lib/auth.jsx:42:    supabase.auth.getSession().then(({ data, error }) => {
+mfda/src/lib/auth.jsx:51:    const timer = setTimeout(() => {
