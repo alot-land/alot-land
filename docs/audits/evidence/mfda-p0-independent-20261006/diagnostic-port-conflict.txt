@@ -1,0 +1,48 @@
+TAP version 13
+# R-1 confirmed: FK ON DELETE SET NULL is rejected by migration 015 trigger; entire auth-user deletion rolls back.
+# Subtest: independent database review
+    # Subtest: REGRESSION reproduction: deleting consumed invitation author succeeds before 015 and fails after
+    ok 1 - REGRESSION reproduction: deleting consumed invitation author succeeds before 015 and fails after
+      ---
+      duration_ms: 80.390791
+      type: 'test'
+      ...
+    # Subtest: populated forward upgrade preserves existing memberships and consumed invitations
+    ok 2 - populated forward upgrade preserves existing memberships and consumed invitations
+      ---
+      duration_ms: 52.100667
+      type: 'test'
+      ...
+    # Subtest: unconfirmed existing recipient, multiple conflicting invitations and replay stay at member
+    ok 3 - unconfirmed existing recipient, multiple conflicting invitations and replay stay at member
+      ---
+      duration_ms: 92.040708
+      type: 'test'
+      ...
+    # Subtest: private helper cannot be exposed through role inheritance or public/anonymous execution
+    ok 4 - private helper cannot be exposed through role inheritance or public/anonymous execution
+      ---
+      duration_ms: 46.938375
+      type: 'test'
+      ...
+    1..4
+ok 1 - independent database review
+  ---
+  duration_ms: 3008.71775
+  type: 'test'
+  ...
+# Subtest: independent browser review
+not ok 2 - independent browser review
+  ---
+  duration_ms: 994.014333
+  type: 'test'
+  location: '/private/tmp/mfda-reaudit-extra.test.mjs:72:1'
+  failureType: 'testCodeFailure'
+  error: 'Port 5173 is already in use'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    Server.onError (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:25119:18)
+    Server.emit (node:events:518:28)
+    emitErrorNT (node:net:1976:8)
+    process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+  ...

@@ -1,0 +1,107 @@
+TAP version 13
+# R-1 confirmed: FK ON DELETE SET NULL is rejected by migration 015 trigger; entire auth-user deletion rolls back.
+# Subtest: independent database review
+    # Subtest: REGRESSION reproduction: deleting consumed invitation author succeeds before 015 and fails after
+    ok 1 - REGRESSION reproduction: deleting consumed invitation author succeeds before 015 and fails after
+      ---
+      duration_ms: 62.141459
+      type: 'test'
+      ...
+    # Subtest: populated forward upgrade preserves existing memberships and consumed invitations
+    ok 2 - populated forward upgrade preserves existing memberships and consumed invitations
+      ---
+      duration_ms: 42.031875
+      type: 'test'
+      ...
+    # Subtest: unconfirmed existing recipient, multiple conflicting invitations and replay stay at member
+    ok 3 - unconfirmed existing recipient, multiple conflicting invitations and replay stay at member
+      ---
+      duration_ms: 78.694709
+      type: 'test'
+      ...
+    # Subtest: private helper cannot be exposed through role inheritance or public/anonymous execution
+    ok 4 - private helper cannot be exposed through role inheritance or public/anonymous execution
+      ---
+      duration_ms: 40.111792
+      type: 'test'
+      ...
+    1..4
+ok 1 - independent database review
+  ---
+  duration_ms: 2024.370458
+  type: 'test'
+  ...
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-qQVv3L/vite-cache/deps/react-dom_client.js?v=f17747d5 as it exceeds the max of 500KB.
+# 9:37:33 PM [vite] Internal server error: [postcss] /Users/davidastone/code/alot-land/alot-land/mfda/src/index.css:65:5: The `bg-surface` class does not exist. If `bg-surface` is a custom class, make sure it is defined within a `@layer` directive.
+#   Plugin: vite:css
+#   File: /Users/davidastone/code/alot-land/alot-land/mfda/src/index.css:65:4
+#   63 |  @layer components {
+#   64 |    .card {
+#   65 |      @apply bg-surface border border-border rounded-xl;
+#      |      ^
+#   66 |    }
+#   67 |    .label {
+#       at Input.error (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/postcss/lib/input.js:135:16)
+#       at AtRule.error (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/postcss/lib/node.js:166:32)
+#       at processApply (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/tailwindcss/lib/lib/expandApplyAtRules.js:380:29)
+#       at /Users/davidastone/code/alot-land/alot-land/mfda/node_modules/tailwindcss/lib/lib/expandApplyAtRules.js:551:9
+#       at /Users/davidastone/code/alot-land/alot-land/mfda/node_modules/tailwindcss/lib/processTailwindFeatures.js:55:50
+#       at async plugins (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/tailwindcss/lib/plugin.js:38:17)
+#       at async LazyResult.runAsync (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/postcss/lib/lazy-result.js:299:11)
+#       at async runPostCSS (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43983:21)
+#       at async compilePostCSS (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43953:18)
+#       at async compileCSS (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43808:27)
+#       at async TransformPluginContext.handler (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43124:11)
+#       at async EnvironmentPluginContainer.transform (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+#       at async loadAndTransform (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+# 9:37:33 PM [vite] (client) Pre-transform error: [postcss] /Users/davidastone/code/alot-land/alot-land/mfda/src/index.css:65:5: The `bg-surface` class does not exist. If `bg-surface` is a custom class, make sure it is defined within a `@layer` directive.
+#   Plugin: vite:css
+#   File: /Users/davidastone/code/alot-land/alot-land/mfda/src/index.css:65:4
+#   63 |  @layer components {
+#   64 |    .card {
+#   65 |      @apply bg-surface border border-border rounded-xl;
+#      |      ^
+#   66 |    }
+#   67 |    .label {
+# Subtest: independent browser review
+    # Subtest: current client replaces and clears retained old client, including late successful A response
+    not ok 1 - current client replaces and clears retained old client, including late successful A response
+      ---
+      duration_ms: 16252.763584
+      type: 'test'
+      location: '/private/tmp/mfda-reaudit-extra.test.mjs:79:11'
+      failureType: 'testCodeFailure'
+      error: |-
+        locator.waitFor: Timeout 15000ms exceeded.
+        Call log:
+        [2m  - waiting for getByText('A ONLY SECURITY CANARY', { exact: true }) to be visible[22m
+        
+      code: 'ERR_TEST_FAILURE'
+      name: 'TimeoutError'
+      stack: |-
+        TestContext.<anonymous> (/private/tmp/mfda-reaudit-extra.test.mjs:82:101)
+        async TestContext.<anonymous> (/private/tmp/mfda-reaudit-extra.test.mjs:79:3)
+      ...
+# 9:37:48 PM [vite] Internal server error: [postcss] /Users/davidastone/code/alot-land/alot-land/mfda/src/index.css:65:5: The `bg-surface` class does not exist. If `bg-surface` is a custom class, make sure it is defined within a `@layer` directive.
+#   Plugin: vite:css
+#   File: /Users/davidastone/code/alot-land/alot-land/mfda/src/index.css:65:4
+#   63 |  @layer components {
+#   64 |    .card {
+#   65 |      @apply bg-surface border border-border rounded-xl;
+#      |      ^
+#   66 |    }
+#   67 |    .label {
+#       at Input.error (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/postcss/lib/input.js:135:16)
+#       at AtRule.error (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/postcss/lib/node.js:166:32)
+#       at processApply (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/tailwindcss/lib/lib/expandApplyAtRules.js:380:29)
+#       at /Users/davidastone/code/alot-land/alot-land/mfda/node_modules/tailwindcss/lib/lib/expandApplyAtRules.js:551:9
+#       at /Users/davidastone/code/alot-land/alot-land/mfda/node_modules/tailwindcss/lib/processTailwindFeatures.js:55:50
+#       at async plugins (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/tailwindcss/lib/plugin.js:38:17)
+#       at async LazyResult.runAsync (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/postcss/lib/lazy-result.js:299:11)
+#       at async runPostCSS (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43983:21)
+#       at async compilePostCSS (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43953:18)
+#       at async compileCSS (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43808:27)
+#       at async TransformPluginContext.handler (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43124:11)
+#       at async EnvironmentPluginContainer.transform (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+#       at async loadAndTransform (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+#       at async viteTransformMiddleware (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:37369:24)

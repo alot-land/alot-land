@@ -1,0 +1,378 @@
+Immutable baseline directory: /private/tmp/mfda-reaudit-baseline-LmQhJI typecheck exit: 2
+vite v6.4.3 building for production...
+
+(!) outDir /private/tmp/mfda-reaudit-baseline-LmQhJI/frontend-build is not inside project root and will not be emptied.
+Use --emptyOutDir to override.
+
+transforming...
+✓ 9 modules transformed.
+✗ Build failed in 471ms
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+[vite:css] [postcss] /Users/davidastone/code/alot-land/alot-land/mfda/src/index.css:65:5: The `bg-surface` class does not exist. If `bg-surface` is a custom class, make sure it is defined within a `@layer` directive.
+file: /Users/davidastone/code/alot-land/alot-land/mfda/src/index.css:65:4
+    at Input.error (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/postcss/lib/input.js:135:16)
+    at AtRule.error (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/postcss/lib/node.js:166:32)
+    at processApply (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/tailwindcss/lib/lib/expandApplyAtRules.js:380:29)
+    at /Users/davidastone/code/alot-land/alot-land/mfda/node_modules/tailwindcss/lib/lib/expandApplyAtRules.js:551:9
+    at /Users/davidastone/code/alot-land/alot-land/mfda/node_modules/tailwindcss/lib/processTailwindFeatures.js:55:50
+    at async plugins (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/tailwindcss/lib/plugin.js:38:17)
+    at async LazyResult.runAsync (/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/postcss/lib/lazy-result.js:299:11)
+    at async runPostCSS (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43983:21)
+    at async compilePostCSS (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43953:18)
+    at async compileCSS (file:///Users/davidastone/code/alot-land/alot-land/mfda/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:43808:27) {
+  name: 'CssSyntaxError',
+  reason: 'The `bg-surface` class does not exist. If `bg-surface` is a custom class, make sure it is defined within a `@layer` directive.',
+  file: '/Users/davidastone/code/alot-land/alot-land/mfda/src/index.css',
+  source: '@tailwind base;\n' +
+    '@tailwind components;\n' +
+    '@tailwind utilities;\n' +
+    '\n' +
+    ':root {\n' +
+    '  color-scheme: light;\n' +
+    '  /* Light (default) — warm analyst-paper palette. RGB triplets for Tailwind. */\n' +
+    '  --c-bg: 249 246 240;\n' +
+    '  --c-surface: 255 255 255;\n' +
+    '  --c-surface-2: 244 239 230;\n' +
+    '  --c-border: 228 221 208;\n' +
+    '  --c-border-hi: 214 204 184;\n' +
+    '  --c-ink: 26 26 26;\n' +
+    '  --c-ink-2: 74 74 74;\n' +
+    '  --c-muted: 138 130 114;\n' +
+    '  --c-gold: 245 184 0;\n' +
+    '  --c-green: 60 176 84;\n' +
+    '  --c-green-deep: 46 140 67;\n' +
+    '  --c-blue: 62 109 163;\n' +
+    '  --c-danger: 192 57 43;\n' +
+    '  --c-warn: 184 134 11;\n' +
+    '}\n' +
+    '\n' +
+    ':root.dark {\n' +
+    '  color-scheme: dark;\n' +
+    '  /* Dark — same warmth, inverted ground; accents brightened for contrast. */\n' +
+    '  --c-bg: 23 21 18;\n' +
+    '  --c-surface: 32 29 25;\n' +
+    '  --c-surface-2: 43 38 32;\n' +
+    '  --c-border: 59 52 39;\n' +
+    '  --c-border-hi: 78 69 54;\n' +
+    '  --c-ink: 242 237 227;\n' +
+    '  --c-ink-2: 200 193 177;\n' +
+    '  --c-muted: 148 139 120;\n' +
+    '  --c-gold: 245 184 0;\n' +
+    '  --c-green: 86 199 110;\n' +
+    '  --c-green-deep: 118 208 138;\n' +
+    '  --c-blue: 130 168 212;\n' +
+    '  --c-danger: 229 110 98;\n' +
+    '  --c-warn: 226 178 80;\n' +
+    '}\n' +
+    '\n' +
+    'html,\n' +
+    'body,\n' +
+    '#root {\n' +
+    '  height: 100%;\n' +
+    '}\n' +
+    '\n' +
+    'body {\n' +
+    '  margin: 0;\n' +
+    '  @apply bg-bg text-ink;\n' +
+    "  font-family: theme('fontFamily.body');\n" +
+    '  -webkit-font-smoothing: antialiased;\n' +
+    '  text-rendering: optimizeLegibility;\n' +
+    '}\n' +
+    '\n' +
+    '/* Leaflet ships light OSM tiles; dim them slightly under the dark theme so\n' +
+    "   the map doesn't glow against the dark chrome. Pins/cards are unaffected. */\n" +
+    ':root.dark .leaflet-tile {\n' +
+    '  filter: brightness(0.8) contrast(1.05) saturate(0.9);\n' +
+    '}\n' +
+    '\n' +
+    '@layer components {\n' +
+    '  .card {\n' +
+    '    @apply bg-surface border border-border rounded-xl;\n' +
+    '  }\n' +
+    '  .label {\n' +
+    '    @apply block text-xs font-medium uppercase tracking-wide text-muted mb-1;\n' +
+    '  }\n' +
+    '  .input {\n' +
+    '    @apply w-full bg-surface border border-border rounded-lg px-3 py-2 text-ink\n' +
+    '      focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-border-hi;\n' +
+    '  }\n' +
+    '  .btn {\n' +
+    '    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2\n' +
+    '      font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;\n' +
+    '  }\n' +
+    '  .btn-primary {\n' +
+    '    /* text-bg (not white): ink and bg swap together, so this stays readable\n' +
+    '       in both themes. */\n' +
+    '    @apply btn bg-ink text-bg hover:opacity-90;\n' +
+    '  }\n' +
+    '  .btn-gold {\n' +
+    '    /* Fixed dark ink — NOT text-ink, which inverts to near-white in dark\n' +
+    '       mode and leaves white text on a yellow button. */\n' +
+    '    @apply btn bg-gold text-[#1A1A1A] hover:brightness-95;\n' +
+    '  }\n' +
+    '  .btn-ghost {\n' +
+    '    @apply btn border border-border text-ink-2 hover:bg-surface-2;\n' +
+    '  }\n' +
+    '  .stat {\n' +
+    '    @apply text-2xl font-display font-semibold tabular-nums;\n' +
+    '  }\n' +
+    '  .th {\n' +
+    '    @apply text-left text-xs font-semibold uppercase tracking-wide text-muted px-3 py-2;\n' +
+    '  }\n' +
+    '  .td {\n' +
+    '    @apply px-3 py-2 tabular-nums border-t border-border;\n' +
+    '  }\n' +
+    '  .pill {\n' +
+    '    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;\n' +
+    '  }\n' +
+    '}\n',
+  line: 65,
+  column: 5,
+  endLine: 65,
+  endColumn: 55,
+  input: {
+    column: 5,
+    endColumn: 55,
+    endLine: 65,
+    endOffset: 1531,
+    line: 65,
+    offset: 1481,
+    source: '@tailwind base;\n' +
+      '@tailwind components;\n' +
+      '@tailwind utilities;\n' +
+      '\n' +
+      ':root {\n' +
+      '  color-scheme: light;\n' +
+      '  /* Light (default) — warm analyst-paper palette. RGB triplets for Tailwind. */\n' +
+      '  --c-bg: 249 246 240;\n' +
+      '  --c-surface: 255 255 255;\n' +
+      '  --c-surface-2: 244 239 230;\n' +
+      '  --c-border: 228 221 208;\n' +
+      '  --c-border-hi: 214 204 184;\n' +
+      '  --c-ink: 26 26 26;\n' +
+      '  --c-ink-2: 74 74 74;\n' +
+      '  --c-muted: 138 130 114;\n' +
+      '  --c-gold: 245 184 0;\n' +
+      '  --c-green: 60 176 84;\n' +
+      '  --c-green-deep: 46 140 67;\n' +
+      '  --c-blue: 62 109 163;\n' +
+      '  --c-danger: 192 57 43;\n' +
+      '  --c-warn: 184 134 11;\n' +
+      '}\n' +
+      '\n' +
+      ':root.dark {\n' +
+      '  color-scheme: dark;\n' +
+      '  /* Dark — same warmth, inverted ground; accents brightened for contrast. */\n' +
+      '  --c-bg: 23 21 18;\n' +
+      '  --c-surface: 32 29 25;\n' +
+      '  --c-surface-2: 43 38 32;\n' +
+      '  --c-border: 59 52 39;\n' +
+      '  --c-border-hi: 78 69 54;\n' +
+      '  --c-ink: 242 237 227;\n' +
+      '  --c-ink-2: 200 193 177;\n' +
+      '  --c-muted: 148 139 120;\n' +
+      '  --c-gold: 245 184 0;\n' +
+      '  --c-green: 86 199 110;\n' +
+      '  --c-green-deep: 118 208 138;\n' +
+      '  --c-blue: 130 168 212;\n' +
+      '  --c-danger: 229 110 98;\n' +
+      '  --c-warn: 226 178 80;\n' +
+      '}\n' +
+      '\n' +
+      'html,\n' +
+      'body,\n' +
+      '#root {\n' +
+      '  height: 100%;\n' +
+      '}\n' +
+      '\n' +
+      'body {\n' +
+      '  margin: 0;\n' +
+      '  @apply bg-bg text-ink;\n' +
+      "  font-family: theme('fontFamily.body');\n" +
+      '  -webkit-font-smoothing: antialiased;\n' +
+      '  text-rendering: optimizeLegibility;\n' +
+      '}\n' +
+      '\n' +
+      '/* Leaflet ships light OSM tiles; dim them slightly under the dark theme so\n' +
+      "   the map doesn't glow against the dark chrome. Pins/cards are unaffected. */\n" +
+      ':root.dark .leaflet-tile {\n' +
+      '  filter: brightness(0.8) contrast(1.05) saturate(0.9);\n' +
+      '}\n' +
+      '\n' +
+      '@layer components {\n' +
+      '  .card {\n' +
+      '    @apply bg-surface border border-border rounded-xl;\n' +
+      '  }\n' +
+      '  .label {\n' +
+      '    @apply block text-xs font-medium uppercase tracking-wide text-muted mb-1;\n' +
+      '  }\n' +
+      '  .input {\n' +
+      '    @apply w-full bg-surface border border-border rounded-lg px-3 py-2 text-ink\n' +
+      '      focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-border-hi;\n' +
+      '  }\n' +
+      '  .btn {\n' +
+      '    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2\n' +
+      '      font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;\n' +
+      '  }\n' +
+      '  .btn-primary {\n' +
+      '    /* text-bg (not white): ink and bg swap together, so this stays readable\n' +
+      '       in both themes. */\n' +
+      '    @apply btn bg-ink text-bg hover:opacity-90;\n' +
+      '  }\n' +
+      '  .btn-gold {\n' +
+      '    /* Fixed dark ink — NOT text-ink, which inverts to near-white in dark\n' +
+      '       mode and leaves white text on a yellow button. */\n' +
+      '    @apply btn bg-gold text-[#1A1A1A] hover:brightness-95;\n' +
+      '  }\n' +
+      '  .btn-ghost {\n' +
+      '    @apply btn border border-border text-ink-2 hover:bg-surface-2;\n' +
+      '  }\n' +
+      '  .stat {\n' +
+      '    @apply text-2xl font-display font-semibold tabular-nums;\n' +
+      '  }\n' +
+      '  .th {\n' +
+      '    @apply text-left text-xs font-semibold uppercase tracking-wide text-muted px-3 py-2;\n' +
+      '  }\n' +
+      '  .td {\n' +
+      '    @apply px-3 py-2 tabular-nums border-t border-border;\n' +
+      '  }\n' +
+      '  .pill {\n' +
+      '    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;\n' +
+      '  }\n' +
+      '}\n',
+    url: 'file:///Users/davidastone/code/alot-land/alot-land/mfda/src/index.css',
+    file: '/Users/davidastone/code/alot-land/alot-land/mfda/src/index.css'
+  },
+  plugin: 'vite:css',
+  code: 'PLUGIN_ERROR',
+  loc: {
+    file: '/Users/davidastone/code/alot-land/alot-land/mfda/src/index.css',
+    line: 65,
+    column: 4
+  },
+  pluginCode: '@tailwind base;\n' +
+    '@tailwind components;\n' +
+    '@tailwind utilities;\n' +
+    '\n' +
+    ':root {\n' +
+    '  color-scheme: light;\n' +
+    '  /* Light (default) — warm analyst-paper palette. RGB triplets for Tailwind. */\n' +
+    '  --c-bg: 249 246 240;\n' +
+    '  --c-surface: 255 255 255;\n' +
+    '  --c-surface-2: 244 239 230;\n' +
+    '  --c-border: 228 221 208;\n' +
+    '  --c-border-hi: 214 204 184;\n' +
+    '  --c-ink: 26 26 26;\n' +
+    '  --c-ink-2: 74 74 74;\n' +
+    '  --c-muted: 138 130 114;\n' +
+    '  --c-gold: 245 184 0;\n' +
+    '  --c-green: 60 176 84;\n' +
+    '  --c-green-deep: 46 140 67;\n' +
+    '  --c-blue: 62 109 163;\n' +
+    '  --c-danger: 192 57 43;\n' +
+    '  --c-warn: 184 134 11;\n' +
+    '}\n' +
+    '\n' +
+    ':root.dark {\n' +
+    '  color-scheme: dark;\n' +
+    '  /* Dark — same warmth, inverted ground; accents brightened for contrast. */\n' +
+    '  --c-bg: 23 21 18;\n' +
+    '  --c-surface: 32 29 25;\n' +
+    '  --c-surface-2: 43 38 32;\n' +
+    '  --c-border: 59 52 39;\n' +
+    '  --c-border-hi: 78 69 54;\n' +
+    '  --c-ink: 242 237 227;\n' +
+    '  --c-ink-2: 200 193 177;\n' +
+    '  --c-muted: 148 139 120;\n' +
+    '  --c-gold: 245 184 0;\n' +
+    '  --c-green: 86 199 110;\n' +
+    '  --c-green-deep: 118 208 138;\n' +
+    '  --c-blue: 130 168 212;\n' +
+    '  --c-danger: 229 110 98;\n' +
+    '  --c-warn: 226 178 80;\n' +
+    '}\n' +
+    '\n' +
+    'html,\n' +
+    'body,\n' +
+    '#root {\n' +
+    '  height: 100%;\n' +
+    '}\n' +
+    '\n' +
+    'body {\n' +
+    '  margin: 0;\n' +
+    '  @apply bg-bg text-ink;\n' +
+    "  font-family: theme('fontFamily.body');\n" +
+    '  -webkit-font-smoothing: antialiased;\n' +
+    '  text-rendering: optimizeLegibility;\n' +
+    '}\n' +
+    '\n' +
+    '/* Leaflet ships light OSM tiles; dim them slightly under the dark theme so\n' +
+    "   the map doesn't glow against the dark chrome. Pins/cards are unaffected. */\n" +
+    ':root.dark .leaflet-tile {\n' +
+    '  filter: brightness(0.8) contrast(1.05) saturate(0.9);\n' +
+    '}\n' +
+    '\n' +
+    '@layer components {\n' +
+    '  .card {\n' +
+    '    @apply bg-surface border border-border rounded-xl;\n' +
+    '  }\n' +
+    '  .label {\n' +
+    '    @apply block text-xs font-medium uppercase tracking-wide text-muted mb-1;\n' +
+    '  }\n' +
+    '  .input {\n' +
+    '    @apply w-full bg-surface border border-border rounded-lg px-3 py-2 text-ink\n' +
+    '      focus:outline-none focus:ring-2 focus:ring-gold/40 focus:border-border-hi;\n' +
+    '  }\n' +
+    '  .btn {\n' +
+    '    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2\n' +
+    '      font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;\n' +
+    '  }\n' +
+    '  .btn-primary {\n' +
+    '    /* text-bg (not white): ink and bg swap together, so this stays readable\n' +
+    '       in both themes. */\n' +
+    '    @apply btn bg-ink text-bg hover:opacity-90;\n' +
+    '  }\n' +
+    '  .btn-gold {\n' +
+    '    /* Fixed dark ink — NOT text-ink, which inverts to near-white in dark\n' +
+    '       mode and leaves white text on a yellow button. */\n' +
+    '    @apply btn bg-gold text-[#1A1A1A] hover:brightness-95;\n' +
+    '  }\n' +
+    '  .btn-ghost {\n' +
+    '    @apply btn border border-border text-ink-2 hover:bg-surface-2;\n' +
+    '  }\n' +
+    '  .stat {\n' +
+    '    @apply text-2xl font-display font-semibold tabular-nums;\n' +
+    '  }\n' +
+    '  .th {\n' +
+    '    @apply text-left text-xs font-semibold uppercase tracking-wide text-muted px-3 py-2;\n' +
+    '  }\n' +
+    '  .td {\n' +
+    '    @apply px-3 py-2 tabular-nums border-t border-border;\n' +
+    '  }\n' +
+    '  .pill {\n' +
+    '    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;\n' +
+    '  }\n' +
+    '}\n',
+  hook: 'transform',
+  id: '/Users/davidastone/code/alot-land/alot-land/mfda/src/index.css',
+  watchFiles: [
+    '/Users/davidastone/code/alot-land/alot-land/mfda/index.html',
+    '/Users/davidastone/code/alot-land/alot-land/mfda/src/main.jsx',
+    '/Users/davidastone/code/alot-land/alot-land/mfda/package.json',
+    '/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/react/jsx-runtime.js',
+    '/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/react-dom/client.js',
+    '/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/react/index.js',
+    '/Users/davidastone/code/alot-land/alot-land/mfda/node_modules/react-router-dom/dist/index.js',
+    '/Users/davidastone/code/alot-land/alot-land/mfda/src/lib/auth.jsx',
+    '/Users/davidastone/code/alot-land/alot-land/mfda/src/lib/tenant-query.jsx',
+    '/Users/davidastone/code/alot-land/alot-land/mfda/src/App.jsx',
+    '/Users/davidastone/code/alot-land/alot-land/mfda/src/lib/org.jsx',
+    '/Users/davidastone/code/alot-land/alot-land/mfda/src/index.css',
+    '/Users/davidastone/code/alot-land/alot-land/mfda/src/lib/theme.js'
+  ]
+}
+
+Node.js v22.17.0

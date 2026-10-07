@@ -1,0 +1,103 @@
+TAP version 13
+# R-1 confirmed: FK ON DELETE SET NULL is rejected by migration 015 trigger; entire auth-user deletion rolls back.
+# Subtest: independent database review
+    # Subtest: REGRESSION reproduction: deleting consumed invitation author succeeds before 015 and fails after
+    ok 1 - REGRESSION reproduction: deleting consumed invitation author succeeds before 015 and fails after
+      ---
+      duration_ms: 58.10775
+      type: 'test'
+      ...
+    # Subtest: populated forward upgrade preserves existing memberships and consumed invitations
+    ok 2 - populated forward upgrade preserves existing memberships and consumed invitations
+      ---
+      duration_ms: 41.043083
+      type: 'test'
+      ...
+    # Subtest: unconfirmed existing recipient, multiple conflicting invitations and replay stay at member
+    ok 3 - unconfirmed existing recipient, multiple conflicting invitations and replay stay at member
+      ---
+      duration_ms: 72.451125
+      type: 'test'
+      ...
+    # Subtest: private helper cannot be exposed through role inheritance or public/anonymous execution
+    ok 4 - private helper cannot be exposed through role inheritance or public/anonymous execution
+      ---
+      duration_ms: 39.894292
+      type: 'test'
+      ...
+# Historical unauthorized admin membership remains after migration; rollout requires authorized membership reconciliation.
+    # Subtest: historical expired-invitation admin grant survives the forward migration
+    ok 5 - historical expired-invitation admin grant survives the forward migration
+      ---
+      duration_ms: 863.796292
+      type: 'test'
+      ...
+    # Subtest: restricted synthetic auth writer can run insert/confirmation triggers without helper execute grants
+    ok 6 - restricted synthetic auth writer can run insert/confirmation triggers without helper execute grants
+      ---
+      duration_ms: 31.507458
+      type: 'test'
+      ...
+    1..6
+ok 1 - independent database review
+  ---
+  duration_ms: 2792.496375
+  type: 'test'
+  ...
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-8upOyK/vite-cache/deps/react-dom_client.js?v=5aad91d4 as it exceeds the max of 500KB.
+# Subtest: independent browser review
+    # Subtest: current client replaces and clears retained old client, including late successful A response
+    ok 1 - current client replaces and clears retained old client, including late successful A response
+      ---
+      duration_ms: 2508.575708
+      type: 'test'
+      ...
+    # Subtest: identity changes within the same org and role discard local drafts and caches
+    ok 2 - identity changes within the same org and role discard local drafts and caches
+      ---
+      duration_ms: 519.289541
+      type: 'test'
+      ...
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-8upOyK/vite-cache/deps/@react-pdf_renderer.js?v=b7b079a2 as it exceeds the max of 500KB.
+    # Subtest: favorite optimistic cache update, status invalidation and note refetch still work
+    ok 3 - favorite optimistic cache update, status invalidation and note refetch still work
+      ---
+      duration_ms: 2199.216042
+      type: 'test'
+      ...
+# R-2 reproduced: unchanged foreground authorization check silently discarded the draft.
+    # Subtest: known limitation reproduced: unchanged foreground focus discards unsaved draft
+    ok 4 - known limitation reproduced: unchanged foreground focus discards unsaved draft
+      ---
+      duration_ms: 404.414959
+      type: 'test'
+      ...
+# Obsolete membership requests carrying replacement JWT: [{"table":"org_members","uid":"10000000-0000-0000-0000-000000000002","search":"?select=role%2Corg%3Aorgs%28id%2Cname%2Cplan%2Cstatus%29&user_id=eq.10000000-0000-0000-0000-000000000001&order=created_at.asc","method":"GET"},{"table":"org_members","uid":"10000000-0000-0000-0000-000000000002","search":"?select=role%2Corg%3Aorgs%28id%2Cname%2Cplan%2Cstatus%29&user_id=eq.10000000-0000-0000-0000-000000000001&order=created_at.asc","method":"GET"},{"table":"org_members","uid":"10000000-0000-0000-0000-000000000001","search":"?select=role%2Corg%3Aorgs%28id%2Cname%2Cplan%2Cstatus%29&user_id=eq.10000000-0000-0000-0000-000000000002&order=created_at.asc","method":"GET"},{"table":"org_members","uid":"10000000-0000-0000-0000-000000000001","search":"?select=role%2Corg%3Aorgs%28id%2Cname%2Cplan%2Cstatus%29&user_id=eq.10000000-0000-0000-0000-000000000002&order=created_at.asc","method":"GET"},{"table":"org_members","uid":"10000000-0000-0000-0000-000000000001","search":"?select=role%2Corg%3Aorgs%28id%2Cname%2Cplan%2Cstatus%29&user_id=eq.10000000-0000-0000-0000-000000000002&order=created_at.asc","method":"GET"}]
+    # Subtest: membership request identity race is discarded instead of supplying new identity access
+    ok 5 - membership request identity race is discarded instead of supplying new identity access
+      ---
+      duration_ms: 512.561791
+      type: 'test'
+      ...
+# R-3 confirmed: active B receives delayed A CSV: a-only-export-review.csv
+    # Subtest: RESIDUAL reproduction: delayed saved-list export downloads A records after identity becomes B
+    ok 6 - RESIDUAL reproduction: delayed saved-list export downloads A records after identity becomes B
+      ---
+      duration_ms: 580.5055
+      type: 'test'
+      ...
+    1..6
+ok 2 - independent browser review
+  ---
+  duration_ms: 7863.020042
+  type: 'test'
+  ...
+1..2
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10953.655375
