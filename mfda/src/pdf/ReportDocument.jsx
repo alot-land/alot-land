@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { usd, pct, ratio } from '../lib/format';
+import { CALC_VERSION } from '@alot/mf-calc';
 
 const C = { ink: '#1A1A1A', ink2: '#4A4A4A', muted: '#8A8272', gold: '#F5B800', green: '#2E8C43', border: '#E4DDD0', bg: '#F9F6F0', danger: '#C0392B' };
 
@@ -41,7 +42,9 @@ function TableRow({ cols, header }) {
 
 export default function ReportDocument({ deal, scenario, agent }) {
   const out = scenario.outputs;
-  const price = Number(deal.price);
+  deal={...deal,...Object.fromEntries(Object.entries(scenario.inputs ?? {}).filter(([k])=>['address','city','state','zip'].includes(k)))};
+  const price = Number(scenario.inputs?.price ?? deal.price);
+  const valid=out.plausibility?.ok !== false && out.score?.score != null;
   const d = out.derived;
   return (
     <Document>
@@ -65,8 +68,9 @@ export default function ReportDocument({ deal, scenario, agent }) {
         </View>
 
         {/* Verdict */}
+        {out.calc_version !== CALC_VERSION && <Text style={s.sub}>Historical calculation v{out.calc_version}; re-run with v{CALC_VERSION} for financial corrections.</Text>}
         <View style={[s.section, s.row]}>
-          <View style={s.metric}><Text style={s.metricLabel}>Verdict</Text><Text style={[s.metricVal, { color: out.score.pursue ? C.green : C.muted }]}>{out.score.pursue ? 'PURSUE' : 'PASS'} {Math.round(out.score.score)}</Text></View>
+          <View style={s.metric}><Text style={s.metricLabel}>Verdict</Text><Text style={[s.metricVal, { color: valid && out.score.pursue ? C.green : C.muted }]}>{valid ? (out.score.pursue ? 'PURSUE' : 'PASS') : 'CHECK INPUTS'} {valid ? Math.round(out.score.score) : ''}</Text></View>
           <View style={s.metric}><Text style={s.metricLabel}>Asking</Text><Text style={s.metricVal}>{usd(price)}</Text></View>
           <View style={s.metric}><Text style={s.metricLabel}>NOI</Text><Text style={s.metricVal}>{usd(d.noi)}</Text></View>
           <View style={s.metric}><Text style={s.metricLabel}>Cap</Text><Text style={s.metricVal}>{pct(d.cap_rate_on_price)}</Text></View>
@@ -112,12 +116,14 @@ export default function ReportDocument({ deal, scenario, agent }) {
               ['NOI', (y) => usd(y.noi)],
               ['Debt svc', (y) => usd(y.debt_service)],
               ['CFBT', (y) => usd(y.cfbt)],
+              ['Refi proceeds', (y) => usd(y.refinance_proceeds)],
+              ['Refi costs', (y) => usd(y.financing_costs)],
               ['CoC', (y) => pct(y.cash_on_cash)],
             ].map(([label, fn]) => (
               <TableRow key={label} cols={[label, ...out.proforma.years.map((y) => fn(y))]} />
             ))}
             <Text style={[s.td, { marginTop: 4 }]}>
-              Exit: value {usd(out.proforma.exit.exit_value)} − selling {usd(out.proforma.exit.selling_costs)} − payoff {usd(out.proforma.exit.loan_payoff)} = net {usd(out.proforma.exit.net_sale_proceeds)} · total profit {usd(out.proforma.exit.total_profit)} · {ratio(out.proforma.exit.equity_multiple)}x equity
+              Exit: value {usd(out.proforma.exit.exit_value)} − selling {usd(out.proforma.exit.selling_costs)} − payoff {usd(out.proforma.exit.loan_payoff)} + returned reserves {usd(out.proforma.exit.reserve_return ?? 0)} = net {usd(out.proforma.exit.net_sale_proceeds)} · total profit {usd(out.proforma.exit.total_profit)} · {ratio(out.proforma.exit.equity_multiple)}x equity
             </Text>
           </View>
         )}
@@ -125,6 +131,7 @@ export default function ReportDocument({ deal, scenario, agent }) {
         {/* Tax */}
         <View style={s.section}>
           <Text style={s.h2}>Tax layer (estimate — verify with CPA)</Text>
+          <Text style={s.sub}>{out.tax.limitations ?? 'Legacy simplified tax estimate. Basis/timing/eligibility require review.'}</Text>
           <Text style={s.td}>Year-1 depreciation {usd(out.tax.depreciation.first_year_total)} ({usd(out.tax.depreciation.first_year_bonus)} bonus). Year-1 benefit — REP on {usd(out.tax.year1.benefit_rep_on)} / REP off {usd(out.tax.year1.benefit_rep_off)}. Exit tax {usd(out.tax.exit.total_exit_tax)} on {usd(out.tax.exit.total_gain)} gain.</Text>
         </View>
 

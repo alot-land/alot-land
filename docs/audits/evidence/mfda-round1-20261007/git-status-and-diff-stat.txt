@@ -1,0 +1,117 @@
+git status --short
+ M mfda/security/rent-browser.test.mjs
+ M mfda/src/components/UnitMixEditor.jsx
+ M mfda/src/components/results.jsx
+ M mfda/src/lib/format.js
+ M mfda/src/lib/parcelscreen.js
+ M mfda/src/lib/queries.js
+ M mfda/src/lib/underwrite.js
+ M mfda/src/pages/Compare.jsx
+ M mfda/src/pages/DealNew.jsx
+ M mfda/src/pages/DealResults.jsx
+ M mfda/src/pages/OffMarketDeal.jsx
+ M mfda/src/pdf/ReportDocument.jsx
+ M packages/mf-calc/package-lock.json
+ M packages/mf-calc/package.json
+ M packages/mf-calc/src/finance.ts
+ M packages/mf-calc/src/financing.ts
+ M packages/mf-calc/src/goals.ts
+ M packages/mf-calc/src/index.ts
+ M packages/mf-calc/src/offmarket.ts
+ M packages/mf-calc/src/proforma.ts
+ M packages/mf-calc/src/property.ts
+ M packages/mf-calc/src/str.ts
+ M packages/mf-calc/src/stress.ts
+ M packages/mf-calc/src/tax.ts
+ M packages/mf-calc/src/types.ts
+ M packages/mf-calc/src/valuation.ts
+ M packages/mf-calc/test/comps.test.ts
+ M packages/mf-calc/test/financing.test.ts
+ M packages/mf-calc/test/goals.test.ts
+ M packages/mf-calc/test/offmarket.test.ts
+ M packages/mf-calc/test/plausibility.test.ts
+ M packages/mf-calc/test/proforma.test.ts
+ M packages/mf-calc/test/referenceDeals.test.ts
+ M packages/mf-calc/test/str.test.ts
+ M packages/mf-calc/vitest.config.ts
+?? .netlify/
+?? docs/audits/MFDA_ROUND1_FINANCIAL_TRUTH_2026-10-07.md
+?? docs/audits/evidence/mfda-round1-20261007/
+?? mfda/financial/
+?? mfda/src/lib/underwriting-inputs.js
+?? mfda/supabase/migration_016_financial_truth.sql
+?? packages/mf-calc/src/debt.ts
+?? packages/mf-calc/test/round1-golden.test.ts
+?? packages/mf-calc/test/round1-regressions.test.ts
+
+git diff --stat (tracked files only)
+ mfda/security/rent-browser.test.mjs          |  10 +-
+ mfda/src/components/UnitMixEditor.jsx        |   7 +-
+ mfda/src/components/results.jsx              |  35 +++---
+ mfda/src/lib/format.js                       |   2 +-
+ mfda/src/lib/parcelscreen.js                 |   9 +-
+ mfda/src/lib/queries.js                      |  27 ++---
+ mfda/src/lib/underwrite.js                   | 141 ++++++++++++++++++------
+ mfda/src/pages/Compare.jsx                   |   2 +-
+ mfda/src/pages/DealNew.jsx                   | 131 +++++++++-------------
+ mfda/src/pages/DealResults.jsx               |   6 +-
+ mfda/src/pages/OffMarketDeal.jsx             |  19 ++--
+ mfda/src/pdf/ReportDocument.jsx              |  13 ++-
+ packages/mf-calc/package-lock.json           |   4 +-
+ packages/mf-calc/package.json                |   2 +-
+ packages/mf-calc/src/finance.ts              | 131 ++++++++++++----------
+ packages/mf-calc/src/financing.ts            | 104 ++++++++++--------
+ packages/mf-calc/src/goals.ts                |  28 +++--
+ packages/mf-calc/src/index.ts                |   1 +
+ packages/mf-calc/src/offmarket.ts            |  22 +++-
+ packages/mf-calc/src/proforma.ts             | 158 ++++++++++++---------------
+ packages/mf-calc/src/property.ts             |   7 +-
+ packages/mf-calc/src/str.ts                  |   4 +-
+ packages/mf-calc/src/stress.ts               |  17 ++-
+ packages/mf-calc/src/tax.ts                  |  53 +++++++--
+ packages/mf-calc/src/types.ts                |   5 +-
+ packages/mf-calc/src/valuation.ts            |   9 +-
+ packages/mf-calc/test/comps.test.ts          |   2 +-
+ packages/mf-calc/test/financing.test.ts      |   4 +-
+ packages/mf-calc/test/goals.test.ts          |  11 +-
+ packages/mf-calc/test/offmarket.test.ts      |   2 +-
+ packages/mf-calc/test/plausibility.test.ts   |   4 +-
+ packages/mf-calc/test/proforma.test.ts       |   4 +-
+ packages/mf-calc/test/referenceDeals.test.ts |   2 +-
+ packages/mf-calc/test/str.test.ts            |   8 +-
+ packages/mf-calc/vitest.config.ts            |   1 +
+ 35 files changed, 567 insertions(+), 418 deletions(-)
+
+New Round 1 files (excluding pre-existing .netlify/)
+docs/audits/MFDA_ROUND1_FINANCIAL_TRUTH_2026-10-07.md
+docs/audits/evidence/mfda-round1-20261007/attempt-1-independent.txt
+docs/audits/evidence/mfda-round1-20261007/attempt-1-security.txt
+docs/audits/evidence/mfda-round1-20261007/baseline-browser.mjs
+docs/audits/evidence/mfda-round1-20261007/baseline-financial.mjs
+docs/audits/evidence/mfda-round1-20261007/build.mjs
+docs/audits/evidence/mfda-round1-20261007/capture.mjs
+docs/audits/evidence/mfda-round1-20261007/csv-pages.test.mjs
+docs/audits/evidence/mfda-round1-20261007/final-build.txt
+docs/audits/evidence/mfda-round1-20261007/final-calc.txt
+docs/audits/evidence/mfda-round1-20261007/final-financial.txt
+docs/audits/evidence/mfda-round1-20261007/final-independent.txt
+docs/audits/evidence/mfda-round1-20261007/final-results.json
+docs/audits/evidence/mfda-round1-20261007/final-scanner.txt
+docs/audits/evidence/mfda-round1-20261007/final-security.txt
+docs/audits/evidence/mfda-round1-20261007/final-typecheck.txt
+docs/audits/evidence/mfda-round1-20261007/immutable-starting-financial.json
+docs/audits/evidence/mfda-round1-20261007/independent-regression.test.mjs
+docs/audits/evidence/mfda-round1-20261007/observations.json
+docs/audits/evidence/mfda-round1-20261007/pre-fix-browser.txt
+docs/audits/evidence/mfda-round1-20261007/pre-fix-persistence.txt
+docs/audits/evidence/mfda-round1-20261007/pre-fix-regressions.txt
+docs/audits/evidence/mfda-round1-20261007/pre-fix-typecheck.txt
+mfda/financial/browser.test.mjs
+mfda/financial/persistence.test.mjs
+mfda/financial/transaction.test.mjs
+mfda/src/lib/underwriting-inputs.js
+mfda/supabase/migration_016_financial_truth.sql
+packages/mf-calc/src/debt.ts
+packages/mf-calc/test/round1-golden.test.ts
+packages/mf-calc/test/round1-regressions.test.ts
+docs/audits/evidence/mfda-round1-20261007/git-status-and-diff-stat.txt

@@ -27,8 +27,13 @@ export interface CashInvestedInput {
   rehab: number;
   /** STR furnishing capex, per-unit rolled up. 0 for LTR/MTR. */
   furnishing: number;
+  financing_fees?: number;
+  lender_costs?: number;
+  initial_reserves?: number;
+  seller_credits?: number;
 }
 
 export function totalCashInvested(inp: CashInvestedInput): number {
-  return inp.down_payment + inp.closing_costs + inp.rehab + inp.furnishing;
+  return inp.down_payment + inp.closing_costs + inp.rehab + inp.furnishing +
+    (inp.financing_fees ?? 0)+(inp.lender_costs ?? 0)+(inp.initial_reserves ?? 0)-(inp.seller_credits ?? 0);
 }

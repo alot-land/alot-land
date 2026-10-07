@@ -3,11 +3,12 @@
  * These are the atoms every higher-level model composes.
  */
 
-/** Round to `dp` decimal places (banker-agnostic, standard half-up). Used only
+/** Round to `dp` decimal places (half away from zero). Used only
  * at reporting boundaries — internal math stays full-precision. */
 export function round(x: number, dp = 2): number {
   const f = 10 ** dp;
-  return Math.round((x + Number.EPSILON) * f) / f;
+  const value=Math.sign(x)*Math.round((Math.abs(x)+Number.EPSILON)*f)/f;
+  return Object.is(value,-0) ? 0 : value;
 }
 
 /**
@@ -21,8 +22,8 @@ export function monthlyMortgagePayment(principal: number, annualRate: number, ye
   if (n <= 0) return 0;
   const i = annualRate / 12;
   if (i === 0) return principal / n;
-  const factor = Math.pow(1 + i, n);
-  return (principal * i * factor) / (factor - 1);
+  // expm1 avoids cancellation at tiny rates and overflow at long terms.
+  return principal * i / -Math.expm1(-n * Math.log1p(i));
 }
 
 /** Annual debt service (12 monthly payments). If interestOnly, pay interest only. */
@@ -51,15 +52,17 @@ export function remainingBalance(
   if (principal <= 0) return 0;
   if (interestOnly) return principal; // IO never amortizes principal
   const n = Math.round(years * 12);
-  const k = Math.min(Math.round(monthsPaid), n);
+  const k = Math.max(0, Math.min(Math.round(monthsPaid), n));
+  if(k===0) return principal;
+  if (k >= n) return 0;
   const i = annualRate / 12;
   if (i === 0) {
     const pmt = principal / n;
     return Math.max(0, principal - pmt * k);
   }
   const pmt = monthlyMortgagePayment(principal, annualRate, years);
-  const g = Math.pow(1 + i, k);
-  const bal = principal * g - pmt * ((g - 1) / i);
+  // PV of the payments still owed avoids subtracting large nearly equal sums.
+  const bal = pmt * -Math.expm1(-(n-k) * Math.log1p(i)) / i;
   return Math.max(0, bal);
 }
 
@@ -76,8 +79,8 @@ export function interestPaidOverMonths(
   const pmt = monthlyMortgagePayment(principal, annualRate, years);
   const endBal = remainingBalance(principal, annualRate, years, months);
   const principalPaid = principal - endBal;
-  const totalPaid = pmt * Math.min(months, Math.round(years * 12));
-  return totalPaid - principalPaid;
+  const totalPaid = pmt * Math.max(0, Math.min(months, Math.round(years * 12)));
+  return Math.max(0, totalPaid - principalPaid);
 }
 
 /**
@@ -90,11 +93,13 @@ export interface NoiInputs {
   other_income: number; // annual
   vacancy_rate: number; // decimal
   operating_expenses: number; // annual total
+  concessions?: number; // annual dollars, additional to vacancy
+  bad_debt?: number; // annual dollars, additional to vacancy
 }
 
 export function effectiveGrossIncome(inp: NoiInputs): number {
   const vacancyLoss = inp.gross_potential_rent * inp.vacancy_rate;
-  return inp.gross_potential_rent - vacancyLoss + inp.other_income;
+  return inp.gross_potential_rent - vacancyLoss - (inp.concessions ?? 0) - (inp.bad_debt ?? 0) + inp.other_income;
 }
 
 export function noi(inp: NoiInputs): number {
@@ -133,16 +138,19 @@ export function grossRentMultiplier(price: number, annualGrossRent: number): num
 /**
  * Economic break-even occupancy: the physical occupancy at which collected
  * income exactly covers operating expenses + debt service.
- * = (OpEx + Debt Service) / Gross Potential Income (GPR + other income).
+ * Fixed other income is independent of rent occupancy, as in EGI.
+ * = max(0, OpEx + Debt Service + concessions + bad debt − other income) / GPR.
  * Returns a decimal; > 1 means the deal cannot break even even at 100% occupancy.
  */
 export function breakEvenOccupancy(
   operatingExpenses: number,
   annualDebt: number,
-  grossPotentialIncome: number,
+  grossPotentialRent: number,
+  otherIncome = 0,
+  incomeLosses = 0,
 ): number {
-  if (grossPotentialIncome <= 0) return Infinity;
-  return (operatingExpenses + annualDebt) / grossPotentialIncome;
+  if (grossPotentialRent <= 0) return NaN;
+  return Math.max(0, operatingExpenses + annualDebt + incomeLosses - otherIncome) / grossPotentialRent;
 }
 
 /** Net present value of a cash flow series at a given periodic rate.
@@ -157,52 +165,57 @@ export function npv(rate: number, flows: number[]): number {
 
 /**
  * Internal Rate of Return of a cash flow series (period 0 is the investment).
- * Newton–Raphson with a bisection fallback for robustness. Returns NaN if no
- * sign change (no meaningful IRR) or if it fails to converge.
+ * Legacy numeric facade; explicit validity/status is available from timedIrr.
+ * Returns NaN internally if invalid; application boundaries use nullable status.
  */
-export function irr(flows: number[], guess = 0.1): number {
-  if (flows.length < 2) return NaN;
-  const hasPos = flows.some((f) => f > 0);
-  const hasNeg = flows.some((f) => f < 0);
-  if (!hasPos || !hasNeg) return NaN;
+export interface TimedCashFlow { time: number; amount: number }
+export interface IrrResult {
+  value: number | null;
+  status: 'ok' | 'invalid_input' | 'no_sign_change' | 'zero_investment' | 'near_zero_investment' | 'non_conventional' | 'out_of_range' | 'non_convergence';
+}
 
-  // Newton–Raphson
-  let rate = guess;
-  for (let iter = 0; iter < 100; iter++) {
-    let f = 0;
-    let df = 0;
-    for (let t = 0; t < flows.length; t++) {
-      const denom = Math.pow(1 + rate, t);
-      f += flows[t]! / denom;
-      if (t > 0) df += (-t * flows[t]!) / Math.pow(1 + rate, t + 1);
+/** Conservative uniqueness policy: one sign change only. Multiple sign
+ * changes can have several roots; do not select one using an arbitrary guess.
+ * Solve in log(1+r), scaled by the largest flow. Annual rates, timed in years. */
+export function timedIrr(flows: TimedCashFlow[], maxIterations = 256): IrrResult {
+  const unavailable=(status:IrrResult['status']):IrrResult=>({value:null,status});
+  if(flows.length<2 || flows.some(f=>!Number.isFinite(f.amount)||!Number.isFinite(f.time)||f.time<0)) return unavailable('invalid_input');
+  const byTime=new Map<number,number>();
+  for(const f of flows) byTime.set(f.time,(byTime.get(f.time) ?? 0)+f.amount);
+  const series=[...byTime].sort((a,b)=>a[0]-b[0]);
+  if(series.some(([,a])=>!Number.isFinite(a))) return unavailable('invalid_input');
+  const scale=Math.max(...series.map(([,a])=>Math.abs(a)));
+  const first=series[0];
+  if(!first || first[0]!==0 || first[1]>=0) return unavailable(first?.[1]===0 ? 'zero_investment' : 'no_sign_change');
+  if(Math.abs(first[1])<1e-8 || Math.abs(first[1])/scale<1e-12) return unavailable('near_zero_investment');
+  const nonzero=series.filter(([,a])=>a!==0);
+  let changes=0;
+  for(let i=1;i<nonzero.length;i++) if(Math.sign(nonzero[i]![1])!==Math.sign(nonzero[i-1]![1])) changes++;
+  if(changes===0) return unavailable('no_sign_change');
+  if(changes>1) return unavailable('non_conventional');
+  // log-sum scaling avoids overflow near -100% and on extreme magnitudes.
+  const residual=(x:number)=>{
+    const exps=series.map(([t,a])=>a===0 ? -Infinity : Math.log(Math.abs(a)/scale)-t*x);
+    const shift=Math.max(...exps);
+    return series.reduce((sum,[,a],i)=>sum+Math.sign(a)*Math.exp(exps[i]!-shift),0);
+  };
+  let lo=-30,hi=30,flo=residual(lo),fhi=residual(hi);
+  if(!Number.isFinite(flo)||!Number.isFinite(fhi)||flo*fhi>0) return unavailable('out_of_range');
+  for(let i=0;i<maxIterations;i++){
+    const mid=(lo+hi)/2,f=residual(mid);
+    if(!Number.isFinite(f)) return unavailable('non_convergence');
+    if(Math.abs(f)<1e-12){
+      const value=Math.expm1(mid);
+      return Number.isFinite(value) && value>-1 ? {value,status:'ok'} : unavailable('out_of_range');
     }
-    if (Math.abs(f) < 1e-7) return rate;
-    if (df === 0) break;
-    const next = rate - f / df;
-    if (!Number.isFinite(next) || next <= -0.9999) break;
-    if (Math.abs(next - rate) < 1e-9) return next;
-    rate = next;
+    if(flo*f<=0){hi=mid;fhi=f;}else{lo=mid;flo=f;}
   }
+  return unavailable('non_convergence');
+}
 
-  // Bisection fallback on a wide bracket.
-  let lo = -0.9999;
-  let hi = 10;
-  let flo = npv(lo, flows);
-  let fhi = npv(hi, flows);
-  if (flo * fhi > 0) return NaN;
-  for (let iter = 0; iter < 200; iter++) {
-    const mid = (lo + hi) / 2;
-    const fmid = npv(mid, flows);
-    if (Math.abs(fmid) < 1e-7) return mid;
-    if (flo * fmid < 0) {
-      hi = mid;
-      fhi = fmid;
-    } else {
-      lo = mid;
-      flo = fmid;
-    }
-  }
-  return (lo + hi) / 2;
+/** Legacy numeric primitive: unavailable is NaN; user-facing models use status. */
+export function irr(flows: number[], _guess = 0.1): number {
+  return timedIrr(flows.map((amount,time)=>({amount,time}))).value ?? NaN;
 }
 
 /**
@@ -215,6 +228,8 @@ export function equityMultiple(
   saleProceeds: number,
 ): number {
   if (equityInvested <= 0) return 0;
-  const totalOut = distributions.reduce((a, b) => a + b, 0) + saleProceeds;
-  return totalOut / equityInvested;
+  const all=[...distributions,saleProceeds];
+  const contributed=equityInvested+all.reduce((a,b)=>a+Math.max(0,-b),0);
+  const returned=all.reduce((a,b)=>a+Math.max(0,b),0);
+  return returned / contributed;
 }

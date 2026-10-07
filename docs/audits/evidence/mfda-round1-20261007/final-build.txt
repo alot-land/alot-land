@@ -1,0 +1,25 @@
+vite v6.4.3 building for production...
+
+(!) outDir /private/tmp/mfda-round1-build-Vv4vgj is not inside project root and will not be emptied.
+Use --emptyOutDir to override.
+
+transforming...
+✓ 352 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../../../../private/tmp/mfda-round1-build-Vv4vgj/index.html                           1.59 kB │ gzip:   0.82 kB
+../../../../../../private/tmp/mfda-round1-build-Vv4vgj/assets/leaflet-Dgihpmma.css         15.04 kB │ gzip:   6.38 kB
+../../../../../../private/tmp/mfda-round1-build-Vv4vgj/assets/index-DjUnsXl6.css           24.42 kB │ gzip:   5.09 kB
+../../../../../../private/tmp/mfda-round1-build-Vv4vgj/assets/MarketsMap-t4SlJX_z.js        1.85 kB │ gzip:   1.07 kB
+../../../../../../private/tmp/mfda-round1-build-Vv4vgj/assets/ListingsMap-BeOWiASq.js       3.62 kB │ gzip:   1.68 kB
+../../../../../../private/tmp/mfda-round1-build-Vv4vgj/assets/OffMarketMap-Bm_Vj3cT.js      4.08 kB │ gzip:   1.92 kB
+../../../../../../private/tmp/mfda-round1-build-Vv4vgj/assets/leaflet-C-PuYb-B.js         149.65 kB │ gzip:  43.40 kB
+../../../../../../private/tmp/mfda-round1-build-Vv4vgj/assets/index-48EdupKZ.js           767.57 kB │ gzip: 228.31 kB
+../../../../../../private/tmp/mfda-round1-build-Vv4vgj/assets/ReportButton-DPY8qmH1.js  1,473.18 kB │ gzip: 494.38 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 3.30s
+BUILD PASS; server-secret canary scan PASS; 9 assets; /private/tmp/mfda-round1-build-Vv4vgj

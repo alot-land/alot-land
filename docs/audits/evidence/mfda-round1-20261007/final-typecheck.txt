@@ -1,0 +1,4 @@
+
+> @alot/mf-calc@1.15.0 typecheck
+> tsc --noEmit
+

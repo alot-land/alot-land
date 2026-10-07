@@ -16,9 +16,13 @@ function clientsInPage() {
 test('real RentEstimator binds every asynchronous continuation to its initiating tenant lifetime', async t => {
   const db = await database(); let h;
   t.after(async () => { try { await h?.close(); } finally { await db.close(); } });
-  await db.sql(`update public.deals set zip='85001' where id=${q(ids.deal)};
-    insert into public.deals(id,org_id,dedupe_key,address,state,zip,status) values
-      (${q(bDeal)},${q(ids.ob)},'b-rent','B ONLY RENT ADDRESS','AZ','85002','analyzing');
+  // Round 1 no longer invents AZ or a four-unit 2BR mix. Supply the known
+  // facts this authorization fixture requires; all P0 assertions are unchanged.
+  await db.sql(`update public.deals set zip='85001',state='AZ' where id=${q(ids.deal)};
+    insert into public.deals(id,org_id,dedupe_key,address,state,zip,status,units_count) values
+      (${q(bDeal)},${q(ids.ob)},'b-rent','B ONLY RENT ADDRESS','AZ','85002','analyzing',4);
+    insert into public.units(org_id,deal_id,type,count,sqft,actual_rent,market_rent) values
+      (${q(ids.ob)},${q(bDeal)},'2BR/1BA',4,null,null,null);
     insert into public.rent_bands(org_id,source,zip,period,bedrooms,rent) values
       (${q(ids.oa)},'zori','85001','2026-10',-1,1500),(${q(ids.ob)},'zori','85002','2026-10',-1,1600);`);
   h = await browserHarness(db);

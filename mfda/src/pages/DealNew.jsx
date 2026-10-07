@@ -4,25 +4,20 @@ import { useQuery, useTenantCompletionGuard } from '../lib/tenant-query';
 import { useAuth } from '../lib/auth';
 import { useOrg } from '../lib/org';
 import { underwrite } from '../lib/underwrite';
-import { suggestStrDefaults, estimateOperatingExpenses, bedroomsFromLabel as suggestBedrooms } from '@alot/mf-calc';
+import { hydrateUnderwritingForm } from '../lib/underwriting-inputs';
+import { suggestStrDefaults, estimateOperatingExpenses } from '@alot/mf-calc';
 import { usd } from '../lib/format';
 import {
-  getDeal, getUnits, upsertDeal, replaceUnits, saveScenario, logCost, listMarkets, listScenarios,
+  getDeal, getUnits, saveUnderwriting, listMarkets, listScenarios,
   getListingContact, listAllRentBands,
 } from '../lib/queries';
 import { Field, TextInput, NumberInput, PercentInput, Section, Grid, Tip } from '../components/fields';
-import { buildZipRents, buildZipBedroomRatios, zipRentForUnit } from '../lib/parcelscreen';
 import UnitMixEditor from '../components/UnitMixEditor';
 import CompsAssist from '../components/CompsAssist';
 import RentBandsCard from '../components/RentBandsCard';
 import RentEstimator from '../components/RentEstimator';
 
-// The unit mix a form starts with when nothing is known yet. It is a
-// PLACEHOLDER, not data: leaving it in place made every scraped lead
-// underwrite at 4 × $1,400, which in turn made the STR panel suggest the same
-// $117 ADR on every property in the pipeline. The seeding effect below
-// replaces it with real ZIP rents as soon as they are available.
-const PLACEHOLDER_UNIT = { type: '2BR/1BA', count: 4, sqft: 850, actual_rent: 1200, market_rent: 1400 };
+// New underwriting starts with unknown unit facts. The operator adds a mix.
 
 function blankForm() {
   return {
@@ -31,7 +26,7 @@ function blankForm() {
     price: null, status: 'analyzing',
     lat: null, lng: null, beds_total: null, unit_bucket: null,
     market_id: '',
-    units: [{ ...PLACEHOLDER_UNIT }],
+    units: [],
     // income
     rent_basis: 'market', other_income: 0, vacancy_rate: 0.05,
     // expenses (annual $)
@@ -47,7 +42,7 @@ function blankForm() {
     hold_years: 5, exit_cap_rate: 0.08, noi_growth_rate: 0.03, selling_cost_rate: 0.06,
     targets: { min_dscr: 1.2, target_coc: 0.08 },
     // tax
-    tax: { cost_seg_pct: 0.3, bonus_rate: 1.0, marginal_rate: 0.37, recapture_rate: 0.25, ltcg_rate: 0.2 },
+    tax: { mode:'simplified', cost_seg_pct: 0, bonus_rate: 0, marginal_rate: 0.37, recapture_rate: 0.25, ltcg_rate: 0.2 },
     // valuation comps
     valuation_comps: { price_per_unit: null, price_per_sqft: null, price_per_bed: null, market_grm: null, market_cap_rate: 0.08, replacement_cost_per_unit: null },
     // prescreen
@@ -81,13 +76,10 @@ export default function DealNew() {
     enabled: !!org,
     staleTime: 30 * 60 * 1000,
   });
-  const zipRents = useMemo(() => buildZipRents(bands.data), [bands.data]);
-  const bedroomRatios = useMemo(() => buildZipBedroomRatios(bands.data), [bands.data]);
 
-  // True once we know the deal had a unit mix saved by a human. A scraped
-  // lead promoted with "Analyze" has none, so the form shows the placeholder
-  // and the rent seeder below is allowed to fill it in.
+  // Existing assumptions are never overwritten by unattended estimate effects.
   const hadSavedUnitsRef = useRef(false);
+  const loadedScenarioRef = useRef(null);
 
   // Load existing deal (edit mode): deal + units + latest scenario inputs.
   useEffect(() => {
@@ -96,18 +88,9 @@ export default function DealNew() {
     (async () => {
       const [deal, units, scenarios] = await Promise.all([getDeal(id, org.id), getUnits(id, org.id), listScenarios(id, org.id)]);
       if (!active) return;
-      hadSavedUnitsRef.current = units.length > 0;
-      const base = scenarios[0]?.inputs || {};
-      setF((prev) => ({
-        ...prev,
-        ...base,
-        address: deal.address || '', city: deal.city || '', state: deal.state || 'AZ',
-        zip: deal.zip || '', apn: deal.apn || '', county_fips: deal.county_fips || '',
-        year_built: deal.year_built, price: deal.price != null ? Number(deal.price) : null,
-        status: deal.status,
-        lat: deal.lat, lng: deal.lng, beds_total: deal.beds_total, unit_bucket: deal.unit_bucket,
-        units: units.length ? units.map((u) => ({ type: u.type, count: u.count, sqft: u.sqft, actual_rent: Number(u.actual_rent), market_rent: Number(u.market_rent) })) : prev.units,
-      }));
+      hadSavedUnitsRef.current = units.length > 0 || scenarios.length > 0;
+      loadedScenarioRef.current=scenarios[0]?.id ?? null;
+      setF(hydrateUnderwritingForm(blankForm(),deal,units,scenarios[0]));
       setHydrated(true);
     })().catch((e) => { if (active) setErr(e.message); });
     return () => { active = false; };
@@ -117,7 +100,7 @@ export default function DealNew() {
   // picks Phoenix/Maricopa) and apply its smart defaults — unless a market was
   // already chosen in a previous underwrite.
   useEffect(() => {
-    if (!hydrated || !markets.data?.length || f.market_id || !f.state) return;
+    if (editing || !hydrated || !markets.data?.length || f.market_id || !f.state) return;
     const match = markets.data.find((m) => m.state === f.state);
     if (match) applyMarket(match.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,51 +119,26 @@ export default function DealNew() {
   }, [f.units]);
   const strSuggestion = useMemo(() => suggestStrDefaults(avgMarketRent), [avgMarketRent]);
 
-  // Replace the placeholder rents with this ZIP's real market rent (bedroom
-  // adjusted where SAFMR covers the zip) before anything downstream reads
-  // them. Only fires when NOTHING was ever saved for this deal and the mix is
-  // still untouched — a saved unit mix, or one the operator has typed into,
-  // is never overwritten.
-  const seededRentsRef = useRef(false);
-  useEffect(() => {
-    if (!hydrated || seededRentsRef.current || hadSavedUnitsRef.current) return;
-    const units = f.units || [];
-    if (units.length !== 1) return;
-    const u = units[0];
-    const pristine =
-      Number(u.actual_rent) === PLACEHOLDER_UNIT.actual_rent &&
-      Number(u.market_rent) === PLACEHOLDER_UNIT.market_rent;
-    if (!pristine) return;
-    const got = zipRentForUnit(f.zip, {
-      zipRents,
-      bedroomRatios,
-      bedrooms: suggestBedrooms(u.type),
-    });
-    if (got.rent == null) return;
-    seededRentsRef.current = true;
-    const r = Math.round(got.rent);
-    // actual = market: we don't know in-place rents on a scraped listing, and
-    // assuming they're at market keeps loss-to-lease honestly at 0 rather than
-    // inventing upside. Replace with the real rent roll when you get it.
-    set({ units: [{ ...u, actual_rent: r, market_rent: r }] });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, f.zip, f.units, zipRents, bedroomRatios]);
+  // Rent references are applied only by the operator through RentEstimator.
 
   // Auto-estimate operating expenses (real annual $) from unit count + rents
   // the first time we have income to work with and the fields are still blank,
   // so the deal opens with sensible dollar figures instead of zeros.
   const estimatedExpRef = useRef(false);
   useEffect(() => {
-    if (!hydrated || estimatedExpRef.current) return;
+    if (!hydrated || estimatedExpRef.current || hadSavedUnitsRef.current) return;
     const units = f.units || [];
     const count = units.reduce((a, u) => a + (Number(u.count) || 0), 0);
-    const gpr = units.reduce((a, u) => a + (Number(u.market_rent) || 0) * (Number(u.count) || 0), 0) * 12;
+    const rentKey=f.rent_basis==='actual' ? 'actual_rent' : 'market_rent';
+    if(units.some(u=>u[rentKey]==null)) return;
+    const gpr = units.reduce((a, u) => a + Number(u[rentKey]) * (Number(u.count) || 0), 0) * 12;
     if (!count || !(gpr > 0)) return;
     const e = f.expenses;
     const blank = !e.insurance && !e.management && !e.utilities && !e.repairs_maintenance && !e.capex_reserve;
     estimatedExpRef.current = true;
     if (!blank) return; // respect anything already entered / saved
-    const est = estimateOperatingExpenses({ units: count, gross_potential_rent: gpr, vacancy_rate: f.vacancy_rate || 0.05 });
+    const est = estimateOperatingExpenses({ units: count, gross_potential_rent: gpr, vacancy_rate: f.vacancy_rate ?? 0.05,
+      other_income:f.other_income,concessions:f.concessions,bad_debt:f.bad_debt });
     setF((p) => ({
       ...p,
       expenses: {
@@ -193,7 +151,7 @@ export default function DealNew() {
       },
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, f.units, f.expenses, f.vacancy_rate]);
+  }, [hydrated, f.units, f.expenses, f.vacancy_rate,f.rent_basis,f.other_income,f.concessions,f.bad_debt]);
 
   // Auto-seed the STR ADR + occupancy from the rent data so the LTR-vs-STR
   // panel appears without hunting — glance-level estimate, editable, flagged.
@@ -208,7 +166,7 @@ export default function DealNew() {
   // typed" — the latter is never touched.
   const seededAdrRef = useRef(null);
   useEffect(() => {
-    if (!hydrated || !strSuggestion) return;
+    if (!hydrated || !strSuggestion || hadSavedUnitsRef.current) return;
     const cur = f.str.adr;
     const blank = cur == null || cur === '';
     const ours = seededAdrRef.current != null && Number(cur) === Number(seededAdrRef.current);
@@ -231,11 +189,12 @@ export default function DealNew() {
       ...p,
       market_id: marketId,
       state: m.state || p.state,
-      property_tax_rate: Number(m.property_tax_rate) || p.property_tax_rate,
-      assessment_ratio: Number(m.assessment_ratio) || p.assessment_ratio,
-      noi_growth_rate: Number(m.appreciation_rate) || p.noi_growth_rate,
+      property_tax_rate: m.property_tax_rate==null ? p.property_tax_rate : Number(m.property_tax_rate),
+      assessment_ratio: m.assessment_ratio==null ? p.assessment_ratio : Number(m.assessment_ratio),
+      noi_growth_rate: m.appreciation_rate==null ? p.noi_growth_rate : Number(m.appreciation_rate),
       vacancy_rate: d.vacancy_rate ?? p.vacancy_rate,
       prescreen: { ...p.prescreen, str_permit_status: m.str_permit_status || p.prescreen.str_permit_status },
+      market:{str_permit_status:m.str_permit_status,appreciation_rate:Number(m.appreciation_rate)},
     }));
   }
 
@@ -244,7 +203,7 @@ export default function DealNew() {
     try {
       if (!f.price || !f.units.length) return null;
       const market = (markets.data || []).find((x) => x.id === f.market_id);
-      return underwrite({ ...f, market: market ? { str_permit_status: market.str_permit_status, appreciation_rate: Number(market.appreciation_rate) } : undefined });
+      return underwrite({ ...f, market: f.market ?? (market ? { str_permit_status: market.str_permit_status, appreciation_rate: Number(market.appreciation_rate) } : undefined) });
     } catch {
       return null;
     }
@@ -256,25 +215,22 @@ export default function DealNew() {
     setErr('');
     setSaving(true);
     try {
-      const deal = await upsertDeal(org.id, user.id, {
+      const market = (markets.data || []).find((x) => x.id === f.market_id);
+      const outputs = underwrite({ ...f, market: f.market ?? (market ? { str_permit_status: market.str_permit_status, appreciation_rate: Number(market.appreciation_rate) } : undefined) });
+      const inputs=outputs.resolved_inputs;
+      const result = await saveUnderwriting(org.id, {
         id: editing ? id : undefined,
         apn: f.apn, county_fips: f.county_fips, address: f.address, city: f.city, state: f.state, zip: f.zip,
         status: f.status, units_count: f.units.reduce((a, u) => a + (Number(u.count) || 0), 0),
         year_built: f.year_built, price: f.price, source: editing ? undefined : 'manual',
-      });
-      if (!isCurrent()) return;
-      await replaceUnits(org.id, deal.id, f.units);
-      if (!isCurrent()) return;
-      const market = (markets.data || []).find((x) => x.id === f.market_id);
-      const outputs = underwrite({ ...f, market: market ? { str_permit_status: market.str_permit_status, appreciation_rate: Number(market.appreciation_rate) } : undefined });
-      await saveScenario(org.id, user.id, deal.id, {
+        units:inputs.units,
+        ...(editing ? {expected_scenario_id:loadedScenarioRef.current} : {}),
+      }, {
         label: editing ? `Revision ${new Date().toLocaleString()}` : 'Base',
-        inputs: f, outputs, calc_version: outputs.calc_version,
+        inputs, outputs, calc_version: outputs.calc_version,
       });
       if (!isCurrent()) return;
-      await logCost(org.id, user.id, { deal_id: deal.id, kind: 'model', provider: 'manual', description: 'Manual underwrite', amount_usd: 0 });
-      if (!isCurrent()) return;
-      nav(`/deals/${deal.id}`);
+      nav(`/deals/${result.deal.id}`);
     } catch (e2) {
       if (!isCurrent()) return;
       setErr(e2.message);
@@ -340,6 +296,8 @@ export default function DealNew() {
           <RentBandsCard orgId={org?.id} zip={f.zip} />
         </div>
         <UnitMixEditor units={f.units} onChange={(u) => set({ units: u })} />
+        {f.units_count != null && <p className="text-sm text-muted">Sourced property count: {f.units_count}. Unknown rents and square footage remain blank. Unit entries are underwriting assumptions unless a source is recorded.</p>}
+        <Field label="Unit-count override reason" hint="Required if the mix differs from the sourced count"><TextInput value={f.unit_count_override_reason ?? ''} onChange={(v)=>set({unit_count_override_reason:v})} /></Field>
         <Grid cols={3}>
           <Field label="Underwrite on" tip="Market rent = what units SHOULD rent for (pro forma — the upside case). Actual = what the seller collects today (conservative — the deal must survive on this). The gap between them is loss-to-lease, the value-add signal.">
             <select className="input" value={f.rent_basis} onChange={(e) => set({ rent_basis: e.target.value })}>
@@ -348,6 +306,8 @@ export default function DealNew() {
             </select>
           </Field>
           <Field label="Other income" tip="Annual non-rent income: laundry, covered parking, storage, pet fees, RUBS (billing utilities back to tenants). Not reduced by vacancy." hint="annual (laundry, parking, RUBS)"><NumberInput value={f.other_income} onChange={(v) => set({ other_income: v })} suffix="$" /></Field>
+          <Field label="Concessions" hint="Annual dollars, separate from vacancy"><NumberInput value={f.concessions ?? 0} onChange={v=>set({concessions:v})} /></Field>
+          <Field label="Bad debt" hint="Annual dollars, separate from vacancy"><NumberInput value={f.bad_debt ?? 0} onChange={v=>set({bad_debt:v})} /></Field>
           <Field label="Vacancy" tip="Percent of gross rent lost to empty units and turnover. 5% is roughly one month vacant per unit every 20 months. Stress panel tests +5 points automatically."><PercentInput value={f.vacancy_rate} onChange={(v) => set({ vacancy_rate: v })} /></Field>
         </Grid>
       </Section>
@@ -358,7 +318,7 @@ export default function DealNew() {
           <Field label="Assessment ratio" tip="The fraction of market value the county actually taxes. AZ multifamily ≈ 10%, TN residential = 25%. Set 1 if your rate is already quoted on full value." hint="1 = rate on full market value"><NumberInput value={f.assessment_ratio} onChange={(v) => set({ assessment_ratio: v })} step="0.01" /></Field>
           <Field label="Land value" tip="The land portion of the price. Land can't be depreciated, so lower land value = bigger depreciation basis = bigger tax shelter. County assessor land values are a reasonable source." hint="excluded from depreciation basis"><NumberInput value={f.land_value} onChange={(v) => set({ land_value: v })} suffix="$" /></Field>
           <Field label="Insurance" tip="Annual property insurance in DOLLARS. Estimated at ~$700/unit/yr (post-2023 repricing reality); get a real quote for older buildings — this line has been rising fast, and the stress panel tests +30% on it." hint="annual $ (est. ~$700/unit)"><NumberInput value={f.expenses.insurance} onChange={(v) => setNested('expenses', { insurance: v })} suffix="$" /></Field>
-          <Field label="Management" tip="Annual property-management cost in DOLLARS (not a percent — enter the dollar figure). Estimated at ~10% of effective income even if you self-manage; your time isn't free and lenders underwrite it in." hint="annual $ (≈10% of income)"><NumberInput value={f.expenses.management} onChange={(v) => setNested('expenses', { management: v })} suffix="$" /></Field>
+          <Field label="Management" tip="Annual property-management cost in DOLLARS. Initial estimate is 8% of effective gross income, including fixed other income and subtracting concessions/bad debt; replace with your contract amount." hint="annual $ (initial 8% EGI estimate)"><NumberInput value={f.expenses.management} onChange={(v) => setNested('expenses', { management: v })} suffix="$" /></Field>
           <Field label="Utilities" tip="Annual owner-paid utilities in DOLLARS. Estimated at ~$300/unit/yr. Master-metered buildings put more on you — check the prescreen box below and consider RUBS to bill it back." hint="annual $ (owner-paid)"><NumberInput value={f.expenses.utilities} onChange={(v) => setNested('expenses', { utilities: v })} suffix="$" /></Field>
           <Field label="Repairs & maintenance" tip="Annual routine upkeep in DOLLARS: plumbing, appliances, turns, landscaping. Estimated at ~8% of rent; older buildings run higher ($500–$1,000/unit/yr)." hint="annual $ (~8% of rent)"><NumberInput value={f.expenses.repairs_maintenance} onChange={(v) => setNested('expenses', { repairs_maintenance: v })} suffix="$" /></Field>
           <Field label="Capex reserve" tip="Annual reserve in DOLLARS for big-ticket items: roof, HVAC, repaves. Estimated at ~$300/unit/yr. Counted as an operating expense (reducing NOI) — the conservative treatment that keeps DSCR honest." hint="annual $ (~$300/unit)"><NumberInput value={f.expenses.capex_reserve} onChange={(v) => setNested('expenses', { capex_reserve: v })} suffix="$" /></Field>
@@ -371,6 +331,10 @@ export default function DealNew() {
           <Field label="DSCR loan LTV" tip="Loan-to-value for a DSCR loan (qualifies on the PROPERTY's income, not your personal income). 70–80% typical. Higher LTV = less cash in but tighter coverage."><PercentInput value={f.financing.dscr.ltv} onChange={(v) => setNested('financing', { dscr: { ...f.financing.dscr, ltv: v } })} /></Field>
           <Field label="DSCR loan rate" tip="Interest rate on the DSCR loan. Usually 0.5–1% above agency rates. The stress panel automatically tests +1.5%."><PercentInput value={f.financing.dscr.rate} onChange={(v) => setNested('financing', { dscr: { ...f.financing.dscr, rate: v } })} /></Field>
           <Field label="DSCR amort (yrs)" tip="Amortization period. 30 years standard; shorter = higher payment but faster equity build."><NumberInput value={f.financing.dscr.amort_years} onChange={(v) => setNested('financing', { dscr: { ...f.financing.dscr, amort_years: v } })} /></Field>
+          <Field label="DSCR IO months" hint="IO before the amortization period"><NumberInput value={f.financing.dscr.interest_only_months ?? 0} onChange={v=>setNested('financing',{dscr:{...f.financing.dscr,interest_only_months:v}})} /></Field>
+          <Field label="DSCR maturity (yrs)" hint="Blank: fully amortizing"><NumberInput value={f.financing.dscr.balloon_years ?? null} onChange={v=>setNested('financing',{dscr:{...f.financing.dscr,balloon_years:v ?? undefined}})} /></Field>
+          <Field label="Seller balloon (yrs)"><NumberInput value={f.financing.seller.balloon_years} onChange={v=>setNested('financing',{seller:{...f.financing.seller,balloon_years:v}})} /></Field>
+          {['financing_fees','lender_costs','initial_reserves','seller_credits'].map(key=><Field key={key} label={key.replaceAll('_',' ')} hint="Acquisition dollars; exclude from closing-cost percentage"><NumberInput value={f[key] ?? 0} onChange={v=>set({[key]:v})} /></Field>)}
           <Field label="Agency LTV" tip="Loan-to-value for conventional/agency financing (Fannie/Freddie — available on 2–4 unit properties, qualifies on YOUR income). Usually the cheapest debt if you qualify."><PercentInput value={f.financing.agency.ltv} onChange={(v) => setNested('financing', { agency: { ...f.financing.agency, ltv: v } })} /></Field>
           <Field label="Agency rate" tip="Conventional rate — typically the lowest available. Compare against the DSCR column in results to see what qualifying personally is worth."><PercentInput value={f.financing.agency.rate} onChange={(v) => setNested('financing', { agency: { ...f.financing.agency, rate: v } })} /></Field>
           <Field label="Agency amort (yrs)" tip="Amortization for the agency loan, usually 30 years."><NumberInput value={f.financing.agency.amort_years} onChange={(v) => setNested('financing', { agency: { ...f.financing.agency, amort_years: v } })} /></Field>
@@ -451,8 +415,11 @@ export default function DealNew() {
               <option value="open">open</option><option value="restricted">restricted</option><option value="closed">closed</option>
             </select>
           </Field>
-          <Field label="Cost-seg reclass %" tip="Share of the building a cost-segregation study reclassifies into 5/15-year property (eligible for bonus depreciation). 30% is a conservative default; studies often find more."><PercentInput value={f.tax.cost_seg_pct} onChange={(v) => setNested('tax', { cost_seg_pct: v })} /></Field>
-          <Field label="Bonus depreciation" tip="First-year write-off rate on reclassified property. 100% under current law (OBBBA made it permanent)."><PercentInput value={f.tax.bonus_rate} onChange={(v) => setNested('tax', { bonus_rate: v })} /></Field>
+          <Field label="Cost-seg reclass %" tip="Optional user assumption. Simplified short-life straight-line pool; requires a study and CPA review."><PercentInput value={f.tax.cost_seg_pct} onChange={(v) => setNested('tax', { cost_seg_pct: v })} /></Field>
+          <Field label="Bonus depreciation" tip="Optional assumed rate; eligibility is not determined here."><PercentInput value={f.tax.bonus_rate} onChange={(v) => setNested('tax', { bonus_rate: v })} /></Field>
+          <Field label="Placed in service month" hint="1 = acquisition month; simplified monthly timing"><NumberInput value={f.tax.placed_in_service_month ?? 1} onChange={v=>setNested('tax',{placed_in_service_month:v})} /></Field>
+          <Field label="Assumed recovery (yrs)" hint="Simplified building straight line"><NumberInput value={f.tax.recovery_years ?? 27.5} onChange={v=>setNested('tax',{recovery_years:v})} /></Field>
+          <Field label="Short-life §1245 fraction" hint="CPA-assumed classification; no automatic bonus-to-1245 mapping"><PercentInput value={f.tax.section1245_fraction ?? 0} onChange={v=>setNested('tax',{section1245_fraction:v})} /></Field>
           <Field label="Marginal tax rate" tip="Your combined federal + state rate on the next dollar of income. Determines what each dollar of depreciation is worth to you. Estimate — verify with your CPA."><PercentInput value={f.tax.marginal_rate} onChange={(v) => setNested('tax', { marginal_rate: v })} /></Field>
         </Grid>
       </Section>

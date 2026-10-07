@@ -1,0 +1,48 @@
+{
+  "starting_sha": "ae5426a39e5a689a8eece17ae8f096edfd8924be",
+  "extracted": "/private/tmp/mfda-round1-financial-baseline-Ke2lGV",
+  "calc_version": "1.14.0",
+  "debt_after_payoff": {
+    "year": 2,
+    "gpr": 24000,
+    "vacancy_loss": 0,
+    "other_income": 0,
+    "egi": 24000,
+    "operating_expenses": 0,
+    "noi": 24000,
+    "debt_service": 12000,
+    "interest": 0,
+    "principal": 12000,
+    "cfbt": 12000,
+    "cumulative_cfbt": 24000,
+    "loan_balance_end": 0,
+    "cash_on_cash": 0.12
+  },
+  "balloon_3_irr": 0.5008340083809709,
+  "balloon_9_irr": 0.5008340083809709,
+  "nan_flow_irr": 10,
+  "high_other_income": {
+    "gpr": 60000,
+    "other_income": 12000,
+    "opex": 36000,
+    "displayed_beo": 0.5,
+    "expected_beo": 0.4
+  },
+  "rehab_basis": {
+    "without": 400000,
+    "with": 400000
+  },
+  "mismatched_known_count": {
+    "sourced": 12,
+    "calculated": 4
+  },
+  "fractional_hold": {
+    "irr": "NaN",
+    "sale_value": 200,
+    "net_sale_proceeds": 200
+  },
+  "invalid_input_acceptance": {
+    "vacancy": -49000,
+    "ltv": 0
+  }
+}

@@ -11,8 +11,9 @@ import {
   dscr,
   breakEvenOccupancy,
 } from './finance.js';
+import { debtSchedule,aggregateDebt,type DebtTerms,type Refinance } from './debt.js';
 
-export interface StressBaseInput {
+export interface StressBaseInput extends DebtTerms {
   gross_potential_rent: number; // annual
   other_income: number;
   vacancy_rate: number; // decimal
@@ -24,6 +25,10 @@ export interface StressBaseInput {
   amort_years: number;
   cash_invested: number;
   interest_only?: boolean;
+  hold_months?: number;
+  refinance?: Refinance;
+  concessions?: number;
+  bad_debt?: number;
 }
 
 export interface StressScenario {
@@ -44,7 +49,7 @@ interface Shocks {
 
 function scenario(base: StressBaseInput, label: string, s: Shocks): StressScenario {
   const gpr = base.gross_potential_rent * (s.rentMult ?? 1);
-  const vac = base.vacancy_rate + (s.vacancyAdd ?? 0);
+  const vac = Math.min(1,base.vacancy_rate + (s.vacancyAdd ?? 0));
   const insurance = base.insurance * (s.insuranceMult ?? 1);
   const opex = insurance + base.other_operating_expenses;
   const rate = base.annual_rate + (s.rateAdd ?? 0);
@@ -54,16 +59,18 @@ function scenario(base: StressBaseInput, label: string, s: Shocks): StressScenar
     other_income: base.other_income,
     vacancy_rate: vac,
     operating_expenses: opex,
+    concessions:base.concessions,bad_debt:base.bad_debt,
   });
-  const ads = annualDebtService(base.loan_amount, rate, base.amort_years, base.interest_only);
+  const rows=debtSchedule({...base,annual_rate:rate},base.hold_months ?? 12,base.refinance);
+  const first=rows.slice(0,12);
+  const ads=aggregateDebt(first).debt_service*12/first.length;
   const cfbt = cashFlowBeforeTax(noiVal, ads);
-  const gpi = gpr + base.other_income;
 
   return {
     label,
     dscr: dscr(noiVal, ads),
     cash_on_cash: cashOnCash(cfbt, base.cash_invested),
-    break_even_occupancy: breakEvenOccupancy(opex, ads, gpi),
+    break_even_occupancy: breakEvenOccupancy(opex, ads, gpr, base.other_income,(base.concessions ?? 0)+(base.bad_debt ?? 0)),
     noi: noiVal,
     cfbt,
   };

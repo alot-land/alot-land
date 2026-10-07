@@ -1,0 +1,52 @@
+Starting SHA: ae5426a39e5a689a8eece17ae8f096edfd8924be
+Extracted: /private/tmp/mfda-round1-starting-b7mydd
+TAP version 13
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-hFT3gS/vite-cache/deps/react-dom_client.js?v=752aecaa as it exceeds the max of 500KB.
+# R0-7 actual loaded mix [ '2BR/1BA', '4', '850', '1200', '1400' ]
+# Subtest: Round 1 actual form/property/save financial integrity
+    # Subtest: R0-7: sourced 12 units open as 12, unknown rents/SF are blank
+    not ok 1 - R0-7: sourced 12 units open as 12, unknown rents/SF are blank
+      ---
+      duration_ms: 1415.509333
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/mfda/financial/browser.test.mjs:11:11'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        '4' !== '12'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: '12'
+      actual: '4'
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/financial/browser.test.mjs:20:14)
+        runNextTicks (node:internal/process/task_queues:65:5)
+        process.processImmediate (node:internal/timers:453:9)
+        process.callbackTrampoline (node:internal/async_hooks:130:17)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/financial/browser.test.mjs:11:3)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    1..1
+not ok 1 - Round 1 actual form/property/save financial integrity
+  ---
+  duration_ms: 2872.207041
+  type: 'test'
+  location: '/Users/davidastone/code/alot-land/alot-land/mfda/financial/browser.test.mjs:6:1'
+  failureType: 'subtestsFailed'
+  error: '1 subtest failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3160.806458

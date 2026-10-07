@@ -3,7 +3,7 @@
  * spread indicator. When methods diverge > 15%, the report must explain why
  * (typically loss-to-lease: mismanaged/value-add vs overpriced).
  */
-import { capRate, grossRentMultiplier, annualDebtService } from './finance.js';
+import { firstPeriodDebtService, type DebtTerms } from './debt.js';
 
 export type ValuationMethod =
   | 'sales-comps-per-unit'
@@ -47,12 +47,13 @@ export interface DirectCapInput {
   market_cap_rate: number; // decimal
 }
 
-export interface DscrConstrainedInput {
+export interface DscrConstrainedInput extends Omit<DebtTerms,'loan_amount'> {
   noi: number;
   min_dscr: number; // e.g. 1.20
   annual_rate: number;
   amort_years: number;
   ltv: number; // decimal
+  hold_months?: number;
 }
 
 export interface ReplacementCostInput {
@@ -100,10 +101,10 @@ export function directCapValue(inp: DirectCapInput): number {
 export function dscrConstrainedValue(inp: DscrConstrainedInput): number {
   if (inp.min_dscr <= 0 || inp.ltv <= 0) return 0;
   const maxDebtService = inp.noi / inp.min_dscr;
-  const perDollar = annualDebtService(1, inp.annual_rate, inp.amort_years);
+  const perDollar = firstPeriodDebtService({...inp,loan_amount:1},inp.hold_months);
   if (perDollar <= 0) return 0;
   const maxLoan = maxDebtService / perDollar;
-  return maxLoan / inp.ltv;
+  return Math.max(0,maxLoan / inp.ltv);
 }
 
 export function replacementCostValue(inp: ReplacementCostInput): number {

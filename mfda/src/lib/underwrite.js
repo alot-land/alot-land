@@ -11,6 +11,7 @@
  * immutably into `scenarios.outputs` alongside `calc_version`.
  */
 import * as mf from '@alot/mf-calc';
+import { validateUnderwriting, financialSnapshot } from './underwriting-inputs';
 
 const DEFAULTS = {
   vacancy_rate: 0.05,
@@ -21,10 +22,13 @@ const DEFAULTS = {
   selling_cost_rate: 0.06,
   assessment_ratio: 1,
   property_tax_rate: 0.01,
+  other_income: 0,
+  land_value: 0,
   targets: { min_dscr: 1.2, target_coc: 0.08 },
   tax: {
-    cost_seg_pct: 0.3,
-    bonus_rate: 1.0,
+    mode: 'simplified',
+    cost_seg_pct: 0,
+    bonus_rate: 0,
     marginal_rate: 0.37,
     recapture_rate: 0.25,
     ltcg_rate: 0.2,
@@ -57,6 +61,7 @@ const DEFAULTS = {
 
 /** Shallow-merge helper for nested defaults (input prep only). */
 function withDefaults(deal) {
+  deal=Object.fromEntries(Object.entries(deal).filter(([,v])=>v!==undefined));
   return {
     ...DEFAULTS,
     ...deal,
@@ -82,17 +87,26 @@ function buildExpenses(d) {
 }
 
 /** One financing structure's forward result. */
-function financingForward(d, noiValue, gpi, opex, loanAmount, rate, amortYears, extraCash) {
+function financingForward(d, noiValue, gpi, opex, loanAmount, rate, amortYears, extraCash, terms = {}) {
   const cash = mf.totalCashInvested({
     down_payment: d.price - loanAmount,
     closing_costs: d.price * d.closing_cost_rate,
     rehab: d.rehab || 0,
     furnishing: d.furnishing || 0,
+    financing_fees: loanAmount>0 ? d.financing_fees : 0,
+    lender_costs: loanAmount>0 ? d.lender_costs : 0,
+    initial_reserves:d.initial_reserves,
+    seller_credits:d.seller_credits,
   }) + (extraCash || 0);
   return mf.forward({
     price: d.price,
     noi: noiValue,
     gross_potential_income: gpi,
+    gross_potential_rent:gpi-d.other_income,
+    vacancy_rate:d.vacancy_rate,
+    other_income:d.other_income,
+    concessions:d.concessions,
+    bad_debt:d.bad_debt,
     operating_expenses: opex,
     loan_amount: loanAmount,
     annual_rate: rate,
@@ -102,18 +116,30 @@ function financingForward(d, noiValue, gpi, opex, loanAmount, rate, amortYears, 
     exit_cap_rate: d.exit_cap_rate,
     noi_growth_rate: d.noi_growth_rate,
     selling_cost_rate: d.selling_cost_rate,
+    initial_reserves:d.initial_reserves,
+    ...terms,
   });
 }
 
 export function underwrite(dealInput) {
   const d = withDefaults(dealInput);
+  // Explicit valuation/LTV sizing resolves to a stored loan amount once.
+  for(const kind of ['dscr','agency']){
+    const refi=d.financing[kind].refinance;
+    if(refi && refi.loan_amount==null){
+      if(!(refi.valuation>0 && refi.ltv>=0 && refi.ltv<=1)) throw new RangeError('Incomplete refinance valuation/LTV');
+      d.financing[kind]={...d.financing[kind],refinance:{...refi,loan_amount:refi.valuation*refi.ltv}};
+    }
+  }
+  validateUnderwriting(d);
+  mf.monthsIn(d.hold_years,'hold_years');
   const units = d.units || [];
 
   // --- Income / NOI (mf-calc) ---
   const unitsTotal = mf.totalUnits(units);
-  const sqftTotal = mf.totalSqft(units);
-  const gprMarket = mf.annualGrossPotentialRent(units, 'market');
-  const gprActual = mf.annualGrossPotentialRent(units, 'actual');
+  const sqftTotal = units.every(u=>u.sqft!=null) ? mf.totalSqft(units) : null;
+  const gprMarket = units.every(u=>u.market_rent!=null) ? mf.annualGrossPotentialRent(units, 'market') : null;
+  const gprActual = units.every(u=>u.actual_rent!=null) ? mf.annualGrossPotentialRent(units, 'actual') : null;
   const basis = d.rent_basis === 'actual' ? 'actual' : 'market';
   const gpr = basis === 'actual' ? gprActual : gprMarket;
 
@@ -126,10 +152,12 @@ export function underwrite(dealInput) {
     other_income: otherIncome,
     vacancy_rate: d.vacancy_rate,
     operating_expenses: opex,
+    concessions:d.concessions,
+    bad_debt:d.bad_debt,
   });
   const noiValue = mf.noi(noiArgs(gpr));
-  const noiMarket = mf.noi(noiArgs(gprMarket));
-  const noiActual = mf.noi(noiArgs(gprActual));
+  const noiMarket = gprMarket==null ? null : mf.noi(noiArgs(gprMarket));
+  const noiActual = gprActual==null ? null : mf.noi(noiArgs(gprActual));
   const egi = mf.effectiveGrossIncome(noiArgs(gpr));
   const capOnPrice = mf.capRate(noiValue, d.price);
   const gpi = gpr + otherIncome;
@@ -142,22 +170,27 @@ export function underwrite(dealInput) {
       vc.price_per_unit != null || vc.price_per_sqft != null || vc.price_per_bed != null
         ? {
             price_per_unit: vc.price_per_unit,
-            price_per_sqft: vc.price_per_sqft,
+            price_per_sqft: sqftTotal==null ? undefined : vc.price_per_sqft,
             price_per_bed: vc.price_per_bed,
             beds_total: d.beds_total ?? undefined,
             units: unitsTotal,
             total_sqft: sqftTotal,
           }
         : undefined,
-    grm: vc.market_grm != null ? { market_grm: vc.market_grm, annual_gross_rent: gprMarket } : undefined,
+    grm: vc.market_grm != null && gprMarket!=null ? { market_grm: vc.market_grm, annual_gross_rent: gprMarket } : undefined,
     directCap:
-      vc.market_cap_rate != null ? { noi: noiMarket, market_cap_rate: vc.market_cap_rate } : undefined,
-    dscrConstrained: {
+      vc.market_cap_rate != null && noiMarket!=null ? { noi: noiMarket, market_cap_rate: vc.market_cap_rate } : undefined,
+    dscrConstrained: d.financing.dscr.refinance ? undefined : {
       noi: noiValue,
       min_dscr: d.targets.min_dscr,
       annual_rate: d.financing.dscr.rate,
       amort_years: d.financing.dscr.amort_years,
       ltv: d.financing.dscr.ltv,
+      interest_only:d.financing.dscr.interest_only,
+      interest_only_months:d.financing.dscr.interest_only_months,
+      balloon_years:d.financing.dscr.balloon_years,
+      payoff_month:d.financing.dscr.payoff_month,
+      hold_months:mf.monthsIn(d.hold_years),
     },
     replacementCost:
       vc.replacement_cost_per_unit != null
@@ -172,12 +205,16 @@ export function underwrite(dealInput) {
 
   // --- Financing comparator: all four side by side (mf-calc.forward) ---
   const fin = d.financing;
+  const loanTerms=t=>({interest_only:t.interest_only,interest_only_months:t.interest_only_months,
+    balloon_years:t.balloon_years,payoff_month:t.payoff_month,refinance:t.refinance});
   const allCash = financingForward(d, noiValue, gpi, opex, 0, fin.agency.rate, fin.agency.amort_years);
   const dscrLoan = financingForward(
     d, noiValue, gpi, opex, d.price * fin.dscr.ltv, fin.dscr.rate, fin.dscr.amort_years,
+    0,loanTerms(fin.dscr),
   );
   const agencyLoan = financingForward(
     d, noiValue, gpi, opex, d.price * fin.agency.ltv, fin.agency.rate, fin.agency.amort_years,
+    0,loanTerms(fin.agency),
   );
   const sellerOffers = mf.sellerFinanceOffers({
     list_price: d.price,
@@ -194,18 +231,24 @@ export function underwrite(dealInput) {
     d, noiValue, gpi, opex, mid.loan_amount, mid.rate, fin.seller.amort_years,
     // seller-finance down replaces the standard down in cash-invested:
     mid.down_payment - (d.price - mid.loan_amount),
+    {balloon_years:fin.seller.balloon_years,interest_only:fin.seller.interest_only,interest_only_months:fin.seller.interest_only_months},
   );
 
   // --- Inverse solvers (mf-calc) ---
-  const otherCash = d.price * d.closing_cost_rate + (d.rehab || 0) + (d.furnishing || 0);
-  const minDown = mf.minDownForTargets({
+  const otherCash = mf.totalCashInvested({down_payment:0,closing_costs:d.price*d.closing_cost_rate,
+    rehab:d.rehab ?? 0,furnishing:d.furnishing ?? 0,
+    financing_fees:fin.dscr.ltv>0 ? d.financing_fees : 0,lender_costs:fin.dscr.ltv>0 ? d.lender_costs : 0,
+    initial_reserves:d.initial_reserves,seller_credits:d.seller_credits});
+  const minDown = fin.dscr.refinance ? null : mf.minDownForTargets({
     price: d.price,
     noi: noiValue,
     annual_rate: fin.dscr.rate,
     amort_years: fin.dscr.amort_years,
-    other_cash: otherCash,
+    other_cash:otherCash-(fin.dscr.ltv>0 ? (d.financing_fees ?? 0)+(d.lender_costs ?? 0) : 0),
+    financing_fees:d.financing_fees,lender_costs:d.lender_costs,
     min_dscr: d.targets.min_dscr,
     target_coc: d.targets.target_coc,
+    ...loanTerms(fin.dscr),hold_months:mf.monthsIn(d.hold_years),
   });
   // Inverse B: NOI as a function of price (re-assessed tax falls with price).
   const opexExTax = opex - exp.property_tax;
@@ -216,19 +259,21 @@ export function underwrite(dealInput) {
       other_income: otherIncome,
       vacancy_rate: d.vacancy_rate,
       operating_expenses: opexExTax + tax,
+      concessions:d.concessions,bad_debt:d.bad_debt,
     });
   };
-  const maxOffer = mf.maxOfferForTargets({
+  const maxOffer = fin.dscr.refinance ? null : mf.maxOfferForTargets({
     noiAtPrice,
     gross_potential_income: gpi,
     ltv: fin.dscr.ltv,
     annual_rate: fin.dscr.rate,
     amort_years: fin.dscr.amort_years,
     closing_rate: d.closing_cost_rate,
-    flat_cash: (d.rehab || 0) + (d.furnishing || 0),
+    flat_cash:otherCash-d.price*d.closing_cost_rate,
     min_dscr: d.targets.min_dscr,
     target_coc: d.targets.target_coc,
     price_high: d.price * 1.5,
+    ...loanTerms(fin.dscr),hold_months:mf.monthsIn(d.hold_years),
   });
 
   // --- Stress panel (mf-calc) ---
@@ -242,48 +287,61 @@ export function underwrite(dealInput) {
     annual_rate: fin.dscr.rate,
     amort_years: fin.dscr.amort_years,
     cash_invested: dscrLoan == null ? 0 : d.price * (1 - fin.dscr.ltv) + otherCash,
+    hold_months:mf.monthsIn(d.hold_years),
+    concessions:d.concessions,bad_debt:d.bad_debt,
+    ...loanTerms(fin.dscr),
   });
 
   // --- Tax layer (mf-calc): depreciation, year 1 both ways, exit ---
-  const dep = mf.depreciation({
+  const depInput = {
     purchase_price: d.price,
     land_value: d.land_value || 0,
     cost_seg_pct: d.tax.cost_seg_pct,
     bonus_rate: d.tax.bonus_rate,
-  });
+    improvements:d.rehab ?? 0,
+    capitalized_costs:d.tax.capitalized_acquisition_costs ?? 0,
+    recovery_years:d.tax.recovery_years,
+    placed_in_service_month:d.tax.placed_in_service_month,
+    short_life_years:d.tax.short_life_years,
+  };
+  const dep=mf.depreciation(depInput);
   const year1 = mf.taxYear({
-    noi: noiValue,
+    noi: dscrLoan.proforma.years[0].noi,
     loan_amount: d.price * fin.dscr.ltv,
     annual_rate: fin.dscr.rate,
     amort_years: fin.dscr.amort_years,
     year: 1,
-    depreciation_this_year: dep.first_year_total,
+    depreciation_this_year: mf.depreciationOverHold(depInput,Math.min(12,mf.monthsIn(d.hold_years))).total,
     marginal_rate: d.tax.marginal_rate,
     passive_income_available: d.tax.passive_income_available || 0,
+    interest_this_year:dscrLoan.proforma.years[0].interest,
+    reserve_addback:exp.capex_reserve*dscrLoan.proforma.years[0].months/12,
   });
   // Accumulated depreciation over the hold (bonus yr1 + straight-line thereafter).
-  const accumDep =
-    dep.first_year_total + dep.annual_straight_line * Math.max(0, d.hold_years - 1);
+  const depHold=mf.depreciationOverHold(depInput,mf.monthsIn(d.hold_years));
+  const accumDep=depHold.total;
   const exit = mf.exitTax({
     sale_price: dscrLoan.exit_value,
     selling_costs: dscrLoan.exit_value * d.selling_cost_rate,
     purchase_price: d.price,
     accumulated_depreciation: accumDep,
-    // Cost-seg bonus depreciation is §1245 personal property — recaptured at
-    // ordinary rates, not the 25% §1250 cap (calc v1.12.0).
-    section1245_depreciation: dep.first_year_bonus,
+    // Classification is a user assumption, never inferred from a bonus election.
+    section1245_depreciation: depHold.short_life*(d.tax.section1245_fraction ?? 0),
+    capital_improvements:d.rehab ?? 0,
+    capitalized_costs:d.tax.capitalized_acquisition_costs ?? 0,
     ordinary_rate: d.tax.marginal_rate,
     recapture_rate: d.tax.recapture_rate,
     ltcg_rate: d.tax.ltcg_rate,
   });
   const strEligible = mf.strMaterialParticipationEligible(
-    d.str_avg_stay_days ?? 30,
-    d.str_material_participation ?? false,
+    d.str?.avg_stay_days ?? d.str_avg_stay_days ?? 30,
+    d.str?.material_participation ?? d.str_material_participation ?? false,
   );
 
   // --- Prescreen (mf-calc) ---
   const prescreenFlags = mf.prescreen({
     ...d.prescreen,
+    year_built:d.year_built,
     str_permit_status: d.prescreen.str_permit_status ?? d.market?.str_permit_status,
   });
 
@@ -295,14 +353,16 @@ export function underwrite(dealInput) {
   const writeoffRatio = equity > 0 ? dep.first_year_total / equity : 0; // input prep
   const score = mf.scoreDeal(
     {
-      cash_on_cash: dscrLoan.cash_on_cash,
-      dscr: dscrLoan.dscr,
+      cash_on_cash: dscrLoan.cash_on_cash ?? NaN,
+      dscr: dscrLoan.dscr ?? (fin.dscr.ltv===0 ? Infinity : NaN),
       appreciation_rate: d.market?.appreciation_rate ?? d.noi_growth_rate,
       first_year_writeoff_ratio: writeoffRatio,
       value_spread: valueSpread,
     },
     d.buy_box,
   );
+  score.valid=Number.isFinite(score.score);
+  if(!score.valid) score.pursue=false;
 
   // --- Investor proforma (mf-calc): year-by-year on the DSCR-loan structure ---
   const proforma = mf.buildProforma({
@@ -318,12 +378,15 @@ export function underwrite(dealInput) {
     exit_cap_rate: d.exit_cap_rate,
     selling_cost_rate: d.selling_cost_rate,
     cash_invested: d.price * (1 - fin.dscr.ltv) + otherCash,
+    concessions:d.concessions,bad_debt:d.bad_debt,
+    initial_reserves:d.initial_reserves,
+    ...loanTerms(fin.dscr),
   });
 
   // --- Optional STR comparison (mf-calc): same building, same loan --------
   const strInputs = d.str || {};
   const strOut =
-    strInputs.adr > 0 && strInputs.occupancy_rate > 0
+    (d.prescreen.str_permit_status ?? d.market?.str_permit_status) !== 'closed' && strInputs.adr > 0 && strInputs.occupancy_rate > 0
       ? mf.strComparison({
           units: unitsTotal,
           adr: strInputs.adr,
@@ -337,21 +400,26 @@ export function underwrite(dealInput) {
           loan_amount: d.price * fin.dscr.ltv,
           annual_rate: fin.dscr.rate,
           amort_years: fin.dscr.amort_years,
+          annual_debt_service:dscrLoan.annual_debt_service,
           cash_invested: d.price * (1 - fin.dscr.ltv) + otherCash,
           ltr_noi: noiValue,
           ltr_cfbt: dscrLoan.cfbt,
         })
       : null;
 
-  return {
+  return financialSnapshot({
     calc_version: mf.CALC_VERSION,
+    resolved_inputs:structuredClone(d),
+    conventions:{cash_flows:'monthly; end of month; annualized IRR',noi:'replacement reserve included',
+      break_even:'max(0, expenses + debt + concessions + bad debt - fixed other income) / GPR',
+      exit:'forward annual NOI at sale',tax:'optional simplified estimate; excluded from IRR'},
     basis,
     derived: {
       units_total: unitsTotal,
       sqft_total: sqftTotal,
       gpr_market: gprMarket,
       gpr_actual: gprActual,
-      loss_to_lease: mf.lossToLease(units),
+      loss_to_lease: gprActual==null || gprMarket==null ? null : mf.lossToLease(units),
       egi,
       opex_total: opex,
       expenses: exp,
@@ -368,10 +436,11 @@ export function underwrite(dealInput) {
       seller_forward: sellerForward,
       seller_offers: sellerOffers,
     },
-    solvers: { min_down: minDown, max_offer: maxOffer },
+    solvers: { min_down: minDown, max_offer: maxOffer, unavailable_reason:fin.dscr.refinance ? 'Inverse solvers do not assume refinance proceeds' : null },
     stress,
     proforma,
-    tax: { depreciation: dep, year1, exit, accumulated_depreciation: accumDep, str_eligible: strEligible },
+    tax: { mode:'simplified',limitations:'User-assumed straight-line pools and service month. No MACRS/mid-month convention, eligibility determination, asset sale allocation, passive-loss carryforward, NIIT or state-specific rules. Furnishings excluded from basis; verify with CPA. Not tax advice; pretax returns exclude all taxes.',
+      depreciation: dep, year1, exit, accumulated_depreciation: accumDep, str_eligible: strEligible },
     prescreen: prescreenFlags,
     str_comparison: strOut,
     score,
@@ -387,5 +456,5 @@ export function underwrite(dealInput) {
       rent_per_unit: unitsTotal > 0 ? gprMarket / unitsTotal / 12 : null,
       cap_rate: capOnPrice,
     }),
-  };
+  });
 }

@@ -4,8 +4,7 @@
  *
  * Models:
  *  - Cost-seg: reclassify a % of depreciable basis into short-life property.
- *  - Bonus depreciation: 100% first-year on the reclassified portion
- *    (OBBBA made 100% bonus permanent).
+ *  - Optional user-assumed bonus; this engine does not determine eligibility.
  *  - REP-on vs REP-off: computed BOTH ways always. REP-on lets rental losses
  *    offset active income; REP-off suspends passive losses (no active offset).
  *  - STR material-participation path: avg stay ≤ 7 days escapes passive rules
@@ -18,13 +17,16 @@ export interface DepreciationInput {
   purchase_price: number;
   /** Non-depreciable land value. */
   land_value: number;
-  /** Fraction of depreciable basis reclassified to 5/15-yr property via cost seg.
-   * Default 0.30 (conservative). */
+  /** User-assumed fraction allocated to the simplified short-life pool. */
   cost_seg_pct: number;
-  /** Bonus depreciation rate on the reclassified portion. 1.0 under OBBBA. */
+  /** User-assumed bonus rate. This model does not determine eligibility. */
   bonus_rate: number;
   /** Residential MF straight-line recovery period. 27.5 years. */
   recovery_years?: number;
+  improvements?: number;
+  capitalized_costs?: number;
+  placed_in_service_month?: number;
+  short_life_years?: number;
 }
 
 export interface DepreciationResult {
@@ -37,23 +39,47 @@ export interface DepreciationResult {
   annual_straight_line: number;
   /** Total first-year depreciation = bonus + one year straight-line. */
   first_year_total: number;
+  annual_short_life: number;
+  unbonused_short_basis: number;
 }
 
 export function depreciation(inp: DepreciationInput): DepreciationResult {
   const recovery = inp.recovery_years ?? 27.5;
-  const basis = Math.max(0, inp.purchase_price - inp.land_value);
+  if(![inp.purchase_price,inp.land_value,inp.cost_seg_pct,inp.bonus_rate,recovery,inp.improvements ?? 0,inp.capitalized_costs ?? 0].every(Number.isFinite) ||
+    inp.purchase_price<0 || (inp.improvements ?? 0)<0 || (inp.capitalized_costs ?? 0)<0 || inp.land_value<0 || inp.land_value>inp.purchase_price || recovery<=0 || inp.cost_seg_pct<0 || inp.cost_seg_pct>1 || inp.bonus_rate<0 || inp.bonus_rate>1)
+    throw new RangeError('Invalid simplified depreciation assumptions');
+  const service=inp.placed_in_service_month ?? 1,shortLife=inp.short_life_years ?? 5;
+  if(!Number.isInteger(service)||service<1 || service>1200 || !Number.isFinite(shortLife)||shortLife<=0) throw new RangeError('Invalid depreciation timing');
+  const basis = Math.max(0, inp.purchase_price - inp.land_value + (inp.improvements ?? 0)+(inp.capitalized_costs ?? 0));
   const reclassified = basis * inp.cost_seg_pct;
   const remaining = basis - reclassified;
   const bonus = reclassified * inp.bonus_rate;
   const sl = remaining / recovery;
+  const shortBasis=reclassified-bonus;
+  const shortAnnual=shortBasis/shortLife;
+  const fraction=Math.max(0,13-service)/12;
   return {
     depreciable_basis: basis,
     reclassified_basis: reclassified,
     remaining_basis: remaining,
     first_year_bonus: bonus,
     annual_straight_line: sl,
-    first_year_total: bonus + sl,
+    first_year_total: service<=12 ? bonus+Math.min(remaining,sl*fraction)+Math.min(shortBasis,shortAnnual*fraction) : 0,
+    annual_short_life:shortAnnual,
+    unbonused_short_basis:shortBasis,
   };
+}
+
+/** Optional simplified straight-line asset pools, NOT MACRS/mid-month tax advice.
+ * Acquisition improvements assumed ready on the supplied service month. */
+export function depreciationOverHold(inp: DepreciationInput, months: number) {
+  if(!Number.isInteger(months)||months<0||months>1200) throw new RangeError('Invalid depreciation hold months');
+  const d=depreciation(inp),service=inp.placed_in_service_month ?? 1;
+  const active=Math.max(0,months-service+1);
+  const bonus=active>0 ? d.first_year_bonus : 0;
+  const building=Math.min(d.remaining_basis,d.annual_straight_line*active/12);
+  const short=Math.min(d.unbonused_short_basis,d.annual_short_life*active/12);
+  return {total:bonus+building+short,building,short_life:bonus+short};
 }
 
 export interface TaxYearInput {
@@ -69,6 +95,9 @@ export interface TaxYearInput {
   marginal_rate: number;
   /** Passive income available to absorb losses when REP is off (usually 0). */
   passive_income_available?: number;
+  /** Actual projection interest, including IO/refinance/early payoff. */
+  interest_this_year?: number;
+  reserve_addback?: number;
 }
 
 export interface TaxYearResult {
@@ -89,7 +118,7 @@ export interface TaxYearResult {
  * Positive benefit = reduces tax bill; negative = adds to it.
  */
 export function taxYear(inp: TaxYearInput): TaxYearResult {
-  const interest = interestPaidOverMonths(
+  const interest = inp.interest_this_year ?? (interestPaidOverMonths(
     inp.loan_amount,
     inp.annual_rate,
     inp.amort_years,
@@ -103,9 +132,9 @@ export function taxYear(inp: TaxYearInput): TaxYearResult {
       inp.amort_years,
       (inp.year - 1) * 12,
       inp.interest_only,
-    );
+    ));
 
-  const taxable = inp.noi - interest - inp.depreciation_this_year;
+  const taxable = inp.noi + (inp.reserve_addback ?? 0) - interest - inp.depreciation_this_year;
 
   // REP ON: whole loss (or income) hits active at marginal rate.
   const benefitRepOn = -taxable * inp.marginal_rate;
@@ -149,6 +178,8 @@ export interface ExitTaxInput {
   recapture_rate?: number;
   /** Long-term capital gains rate on appreciation. Default 0.20. */
   ltcg_rate?: number;
+  capital_improvements?: number;
+  capitalized_costs?: number;
 }
 
 export interface ExitTaxResult {
@@ -171,7 +202,7 @@ export function exitTax(inp: ExitTaxInput): ExitTaxResult {
   const ltcgRate = inp.ltcg_rate ?? 0.2;
   const s1245 = Math.min(inp.section1245_depreciation ?? 0, inp.accumulated_depreciation);
   const netProceeds = inp.sale_price - inp.selling_costs;
-  const adjustedBasis = inp.purchase_price - inp.accumulated_depreciation;
+  const adjustedBasis = Math.max(0,inp.purchase_price+(inp.capital_improvements ?? 0)+(inp.capitalized_costs ?? 0)-inp.accumulated_depreciation);
   const totalGain = Math.max(0, netProceeds - adjustedBasis);
   // Recapture applies to the portion of gain up to accumulated depreciation.
   // §1245 (cost-seg personal property) recaptures first, at ordinary rates;

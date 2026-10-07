@@ -40,6 +40,9 @@ export interface EstimateExpensesInputs {
   units: number;
   gross_potential_rent: number;
   vacancy_rate: number;
+  other_income?: number;
+  concessions?: number;
+  bad_debt?: number;
   rates?: Partial<ExpenseEstimateRates>;
 }
 
@@ -49,7 +52,9 @@ export function estimateOperatingExpenses(inp: EstimateExpensesInputs): ExpenseI
   const r = { ...DEFAULT_EXPENSE_RATES, ...(inp.rates || {}) };
   const egi = effectiveGrossIncome({
     gross_potential_rent: inp.gross_potential_rent,
-    other_income: 0,
+    other_income: inp.other_income ?? 0,
+    concessions:inp.concessions,
+    bad_debt:inp.bad_debt,
     vacancy_rate: inp.vacancy_rate,
     operating_expenses: 0,
   });
@@ -122,9 +127,9 @@ const EMPTY: Omit<ScreenParcelResult, 'ok' | 'missing' | 'verdict' | 'plausible'
  */
 export function screenParcel(inp: ScreenParcelInputs): ScreenParcelResult {
   const missing: string[] = [];
-  if (!(inp.units != null && inp.units > 0)) missing.push('units');
-  if (!(inp.market_rent_monthly != null && inp.market_rent_monthly > 0)) missing.push('market_rent_monthly');
-  if (!(inp.price_anchor != null && inp.price_anchor > 0)) missing.push('price_anchor');
+  if (!(inp.units != null && Number.isFinite(inp.units) && inp.units > 0)) missing.push('units');
+  if (!(inp.market_rent_monthly != null && Number.isFinite(inp.market_rent_monthly) && inp.market_rent_monthly > 0)) missing.push('market_rent_monthly');
+  if (!(inp.price_anchor != null && Number.isFinite(inp.price_anchor) && inp.price_anchor > 0)) missing.push('price_anchor');
   // Missing beats absurd: an absent input is a data gap, not a false claim.
   if (missing.length) return { ...EMPTY, ok: false, missing, verdict: 'insufficient', plausible: true, flags: [] };
 
@@ -141,6 +146,11 @@ export function screenParcel(inp: ScreenParcelInputs): ScreenParcelResult {
   // was stricter than the tool it feeds, filtering borderline deals early).
   const minDscr = inp.min_dscr ?? 1.2;
   const targetCap = inp.target_cap ?? 0.07;
+  const assumptions=[vacancy,taxRate,assessRatio,ltv,rate];
+  if(!Number.isInteger(units)||assumptions.some(v=>!Number.isFinite(v)||v<0||v>1)||
+    !Number.isFinite(amort)||amort<=0||amort>100||!Number.isFinite(minDscr)||minDscr<=0||
+    !Number.isFinite(targetCap)||targetCap<=0||Object.values(inp.expense_rates ?? {}).some(v=>!Number.isFinite(v)||v<0))
+    return {...EMPTY,ok:false,missing:['assumptions'],verdict:'insufficient',plausible:true,flags:[]};
 
   const gpr = units * rent * 12;
   const expenses = estimateOperatingExpenses({
@@ -164,6 +174,8 @@ export function screenParcel(inp: ScreenParcelInputs): ScreenParcelResult {
   const debt = annualDebtService(anchor * ltv, rate, amort);
   const dscrValue = dscrOf(noiValue, debt);
   const cashFlow = noiValue - debt;
+  if(![gpr,egi,opex,noiValue,cap,debt,cashFlow].every(Number.isFinite))
+    return {...EMPTY,ok:false,missing:['numerical_overflow'],verdict:'insufficient',plausible:true,flags:[]};
 
   let verdict: ScreenVerdict = 'pass';
   if (dscrValue >= minDscr && cap >= targetCap) verdict = 'pursue';
@@ -192,7 +204,7 @@ export function screenParcel(inp: ScreenParcelInputs): ScreenParcelResult {
     noi: noiValue,
     cap_rate: cap,
     annual_debt_service: debt,
-    dscr: dscrValue,
+    dscr: Number.isFinite(dscrValue) ? dscrValue : null,
     cash_flow: cashFlow,
     verdict,
     plausible: plaus.ok,

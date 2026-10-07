@@ -56,6 +56,8 @@ export interface StrComparisonInputs {
   loan_amount: number;
   annual_rate: number;
   amort_years: number;
+  /** Same annualized first-period ledger service as the LTR comparison. */
+  annual_debt_service?: number;
   cash_invested: number;
   ltr_noi: number;
   ltr_cfbt: number;
@@ -103,7 +105,7 @@ export function strComparison(inp: StrComparisonInputs): StrComparisonResult | n
     expenses.management + expenses.str_cleaning + expenses.str_platform_fees + expenses.other;
 
   const noi = gross - opex;
-  const debt = annualDebtService(inp.loan_amount, inp.annual_rate, inp.amort_years);
+  const debt = inp.annual_debt_service ?? annualDebtService(inp.loan_amount, inp.annual_rate, inp.amort_years);
   const cfbt = noi - debt;
   return {
     occupied_nights: occupiedNights,

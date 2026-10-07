@@ -1,0 +1,90 @@
+[
+  {
+    "probe": "populated-upgrade",
+    "preserved": true,
+    "foreignKeysAltered": false
+  },
+  {
+    "probe": "author-deletion",
+    "consumed": {
+      "id": "749c5196-64ff-4dc3-9cb7-dbbaad16481c",
+      "role": "member",
+      "email": "a@example.invalid",
+      "token": "62132b9d-bda9-42cd-95b8-08fdef528d54",
+      "org_id": "20000000-0000-0000-0000-000000000001",
+      "created_at": "2026-10-07T15:29:56.757188-07:00",
+      "expires_at": "2026-10-21T15:29:56.757188-07:00",
+      "invited_by": null,
+      "accepted_at": "2025-12-31T20:04:05.123456-07:00"
+    },
+    "membershipChanges": "deleted author only"
+  },
+  {
+    "probe": "rent-estimate-deletion",
+    "vulnerableBefore015": true,
+    "vulnerableInV2": true,
+    "invitationOnlyDeletionFixed": true
+  },
+  {
+    "probe": "delayed-pdf-positive",
+    "bytes": 7802,
+    "filename": "a-only-security-canary-report.pdf"
+  },
+  {
+    "probe": "delayed-pdf-auth",
+    "downloads": 0,
+    "publishedUrls": []
+  },
+  {
+    "probe": "pdf-b-positive-after-suppression",
+    "filename": "b-only-independent-positive-report.pdf",
+    "bytes": 7763
+  },
+  {
+    "probe": "delayed-pdf-org",
+    "downloads": 0,
+    "publishedUrls": []
+  },
+  {
+    "probe": "delayed-pdf-auth-roundtrip",
+    "downloads": 0,
+    "publishedUrls": [
+      {
+        "url": "blob:http://127.0.0.1:5173/d8824ee8-6355-4e3e-9928-598819776145",
+        "startedEpoch": 2,
+        "publishedEpoch": 2
+      },
+      {
+        "url": "blob:http://127.0.0.1:5173/eefe44c2-0ff4-4121-9255-811ecf56a5dc",
+        "startedEpoch": 2,
+        "publishedEpoch": 2
+      }
+    ]
+  },
+  {
+    "probe": "pdf-auth-publication-race",
+    "publishedUrls": [],
+    "downloads": 0
+  },
+  {
+    "probe": "auth-synchronous-guard",
+    "checks": [
+      {
+        "allowed": false,
+        "body": "MFDA.\nMarkets\nOn-Market\nOff-Market\nDeals\nGoals\nGuide\nSettings\nSynthetic Tenant A\n🌙\na@example.invalid\nSign out\nDeals\n\nUnderwrite, compare scenarios, and pursue the good ones.\n\n+ New deal\n♥ Hearted\n\t\tPROPERTY\tMARKET\tSOURCEI\tUNITS\tPRICE\tNET / MOI\tSTATUS\tUPDATED\n\t♡\tA ONLY SECURITY CANARY\tAZ\tManual\t4\t$500,000\t$1,445\tanalyzing\t10/7/2026"
+      }
+    ]
+  },
+  {
+    "probe": "stale-rentcast-v3",
+    "outbound": [],
+    "writes": [],
+    "externalCallInitiatedAfterB": false
+  },
+  {
+    "probe": "rentcast-handler-no-auth-v3",
+    "status": 401,
+    "upstreamCalls": 0,
+    "synthetic": true
+  }
+]

@@ -1,6 +1,6 @@
 import { NumberInput, TextInput } from './fields';
 
-const BLANK = { type: '', count: 1, sqft: 0, actual_rent: 0, market_rent: 0 };
+const BLANK = { type: '', count: 1, sqft: null, actual_rent: null, market_rent: null, provenance:'operator assumption' };
 
 export default function UnitMixEditor({ units, onChange }) {
   function update(i, patch) {
@@ -36,6 +36,7 @@ export default function UnitMixEditor({ units, onChange }) {
               <tr key={i}>
                 <td className="td border-0 pt-2">
                   <TextInput value={u.type} onChange={(v) => update(i, { type: v })} placeholder="2BR/1BA" />
+                  <div className="text-xs text-muted mt-1">{u.provenance || 'Unverified unit assumptions'}</div>
                 </td>
                 <td className="td border-0 pt-2">
                   <NumberInput value={u.count} onChange={(v) => update(i, { count: v })} min="0" />
@@ -65,8 +66,8 @@ export default function UnitMixEditor({ units, onChange }) {
         </button>
         <div className="text-xs text-muted">
           <span className="text-ink font-medium">{totalUnits}</span> units ·{' '}
-          <span className="text-ink font-medium">${monthlyActual.toLocaleString()}</span> actual /{' '}
-          <span className="text-ink font-medium">${monthlyMarket.toLocaleString()}</span> market /mo
+          <span className="text-ink font-medium">{units.length && units.every(u=>u.actual_rent!=null) ? `$${monthlyActual.toLocaleString()}` : 'Unknown'}</span> actual /{' '}
+          <span className="text-ink font-medium">{units.length && units.every(u=>u.market_rent!=null) ? `$${monthlyMarket.toLocaleString()}` : 'Unknown'}</span> market /mo
         </div>
       </div>
     </div>

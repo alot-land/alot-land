@@ -20,13 +20,13 @@ describe('checkPlausibility', () => {
     expect(codes).toContain('cap_rate_impossible');
     expect(Math.round(r.price_per_unit!)).toBe(5516);
     // The message has to be readable next to the number, not a code.
-    expect(r.flags[0].message).toContain('$5,516 per unit');
+    expect(r.flags[0]!.message).toContain('$5,516 per unit');
   });
 
   it('flags a price per unit that implies the unit count is a floor', () => {
     const r = checkPlausibility({ units: 2, price: 6_000_000 });
     expect(r.flags.map((f) => f.code)).toEqual(['price_per_unit_too_high']);
-    expect(r.flags[0].message).toContain('25 - 99 UNITS');
+    expect(r.flags[0]!.message).toContain('25 - 99 UNITS');
   });
 
   it('flags a rent that is really a whole-building figure', () => {

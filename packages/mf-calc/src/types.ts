@@ -10,7 +10,7 @@
 
 /** Bump this whenever a formula changes. Scenario snapshots record the version
  * they were computed under so historical results stay reproducible. */
-export const CALC_VERSION = '1.14.0';
+export const CALC_VERSION = '1.15.0';
 
 export type Confidence = 'high' | 'med' | 'low';
 
@@ -126,8 +126,7 @@ export interface LoanTerms {
   amort_years: number;
   /** Interest-only? If true, payment = interest only, no amortization. */
   interest_only?: boolean;
-  /** Balloon term in years (for seller finance / bridge). Not used by amort math
-   * directly but retained for reporting. */
+  /** Balloon term; applied by debtSchedule after the event month's payment. */
   balloon_years?: number;
 }
 

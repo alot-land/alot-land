@@ -122,7 +122,7 @@ describe('Reference Deal 1 — Maple Fourplex ($500k, 4u)', () => {
       hold_years: 5,
       exit_cap_rate: 0.08,
     });
-    expect(r.dscr).toBe(Infinity);
+    expect(r.dscr).toBeNull(); // No debt: coverage is not applicable.
     expect(r.cash_on_cash).toBeCloseTo(0.0957, 3);
   });
 

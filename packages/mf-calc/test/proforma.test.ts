@@ -9,7 +9,7 @@ import { CALC_VERSION } from '../src/types.js';
 
 describe('CALC_VERSION', () => {
   it('is at least 1.2.0 (the proforma addition)', () => {
-    const [maj, min] = CALC_VERSION.split('.').map(Number);
+    const [maj=0, min=0] = CALC_VERSION.split('.').map(Number);
     expect(maj * 100 + min).toBeGreaterThanOrEqual(102);
   });
 });
@@ -110,7 +110,7 @@ describe('proforma ↔ forward consistency', () => {
     expect(pf.exit.net_sale_proceeds).toBeCloseTo(fwd.net_sale_proceeds, 4);
   });
   it('equity multiple matches forward()', () => {
-    expect(pf.exit.equity_multiple).toBeCloseTo(fwd.equity_multiple, 6);
+    expect(pf.exit.equity_multiple).toBeCloseTo(fwd.equity_multiple!, 6);
   });
   it('year-5 CFBT equals the forward flow for year 5 (ex-sale)', () => {
     const y5 = pf.years[4]!;

@@ -1,34 +1,32 @@
-/**
- * Investor proforma — year-by-year projection over the hold (calc v1.2.0).
- *
- * CONSISTENCY CONTRACT: the proforma applies ONE growth rate to income and
- * expenses alike, so year-N NOI equals noi × (1+g)^(N-1) — exactly the NOI
- * trajectory `forward()` uses for IRR and exit value. A report can therefore
- * show forward metrics and this table without contradicting itself. (Separate
- * rent/expense growth curves are a future version bump.)
- */
-import { annualDebtService, remainingBalance, interestPaidOverMonths } from './finance.js';
+/** Monthly operating/equity ledger, aggregated into annual report rows.
+ * One growth rate applies to income and expenses. Partial years are prorated.
+ * Exit uses the forward annual NOI at sale (year N+1 for integer holds).
+ * Pretax returns. Taxes remain a separate, explicitly simplified estimate. */
+import { effectiveGrossIncome, equityMultiple, type TimedCashFlow } from './finance.js';
+import { debtSchedule, aggregateDebt, monthsIn, type DebtTerms, type DebtMonth, type Refinance } from './debt.js';
 
-export interface ProformaInput {
-  gross_potential_rent: number; // year-1 annual GPR
-  other_income: number; // year-1 annual
-  vacancy_rate: number; // decimal, held constant
-  operating_expenses: number; // year-1 annual total
-  growth_rate: number; // applied to GPR, other income, AND expenses
-  loan_amount: number;
-  annual_rate: number;
-  amort_years: number;
-  interest_only?: boolean;
+export interface ProformaInput extends DebtTerms {
+  gross_potential_rent: number;
+  other_income: number;
+  vacancy_rate: number;
+  concessions?: number;
+  bad_debt?: number;
+  operating_expenses: number;
+  growth_rate: number;
   hold_years: number;
   exit_cap_rate: number;
-  selling_cost_rate: number; // fraction of sale price
-  cash_invested: number; // for annual CoC + return-of-equity math
+  selling_cost_rate: number;
+  cash_invested: number;
+  refinance?: Refinance;
+  initial_reserves?: number;
 }
-
 export interface ProformaYear {
   year: number;
+  months: number;
   gpr: number;
   vacancy_loss: number;
+  concessions: number;
+  bad_debt: number;
   other_income: number;
   egi: number;
   operating_expenses: number;
@@ -36,87 +34,73 @@ export interface ProformaYear {
   debt_service: number;
   interest: number;
   principal: number;
+  refinance_proceeds: number;
+  financing_costs: number;
   cfbt: number;
   cumulative_cfbt: number;
   loan_balance_end: number;
-  cash_on_cash: number;
+  cash_on_cash: number | null;
 }
-
 export interface ProformaExit {
-  /** NOI used for exit pricing: year-hold NOI grown one more year (matches forward()). */
   exit_noi: number;
   exit_value: number;
   selling_costs: number;
   loan_payoff: number;
+  reserve_return: number;
   net_sale_proceeds: number;
-  /** Total profit = Σ CFBT + net proceeds − equity. */
   total_profit: number;
-  equity_multiple: number;
+  equity_multiple: number | null;
 }
-
 export interface Proforma {
   years: ProformaYear[];
   exit: ProformaExit;
+  debt_schedule: DebtMonth[];
+  equity_cash_flows: TimedCashFlow[];
 }
 
 export function buildProforma(inp: ProformaInput): Proforma {
-  const g = inp.growth_rate;
-  const ads = annualDebtService(inp.loan_amount, inp.annual_rate, inp.amort_years, inp.interest_only);
-
-  const years: ProformaYear[] = [];
-  let cumulative = 0;
-  for (let y = 1; y <= inp.hold_years; y++) {
-    const f = Math.pow(1 + g, y - 1);
-    const gpr = inp.gross_potential_rent * f;
-    const vacancyLoss = gpr * inp.vacancy_rate;
-    const other = inp.other_income * f;
-    const egi = gpr - vacancyLoss + other;
-    const opex = inp.operating_expenses * f;
-    const noi = egi - opex;
-    const interest =
-      interestPaidOverMonths(inp.loan_amount, inp.annual_rate, inp.amort_years, y * 12, inp.interest_only) -
-      interestPaidOverMonths(inp.loan_amount, inp.annual_rate, inp.amort_years, (y - 1) * 12, inp.interest_only);
-    const principal = ads > 0 ? ads - interest : 0;
-    const cfbt = noi - ads;
-    cumulative += cfbt;
-    years.push({
-      year: y,
-      gpr,
-      vacancy_loss: vacancyLoss,
-      other_income: other,
-      egi,
-      operating_expenses: opex,
-      noi,
-      debt_service: ads,
-      interest,
-      principal,
-      cfbt,
-      cumulative_cfbt: cumulative,
-      loan_balance_end: remainingBalance(inp.loan_amount, inp.annual_rate, inp.amort_years, y * 12, inp.interest_only),
-      cash_on_cash: inp.cash_invested > 0 ? cfbt / inp.cash_invested : 0,
-    });
+  const hold=monthsIn(inp.hold_years,'hold_years');
+  if(hold<1) throw new RangeError('Hold must be at least one month');
+  if(![inp.gross_potential_rent,inp.other_income,inp.vacancy_rate,inp.operating_expenses,inp.growth_rate,
+    inp.exit_cap_rate,inp.selling_cost_rate,inp.cash_invested,inp.concessions ?? 0,inp.bad_debt ?? 0,inp.initial_reserves ?? 0].every(Number.isFinite))
+    throw new RangeError('Non-finite projection input');
+  if(inp.exit_cap_rate<=0 || inp.growth_rate<=-1 || inp.vacancy_rate<0 || inp.vacancy_rate>1 || inp.selling_cost_rate<0 || inp.selling_cost_rate>1 || inp.cash_invested<0)
+    throw new RangeError('Invalid projection rate/equity');
+  const debt=debtSchedule(inp,hold,inp.refinance);
+  const baseEgi=effectiveGrossIncome(inp);
+  const year1Noi=baseEgi-inp.operating_expenses;
+  const exitNoi=year1Noi*Math.pow(1+inp.growth_rate,inp.hold_years);
+  const exitValue=Math.max(0,exitNoi/inp.exit_cap_rate);
+  const sellingCosts=exitValue*inp.selling_cost_rate;
+  const loanPayoff=debt.at(-1)!.closing_balance;
+  const reserveReturn=inp.initial_reserves ?? 0;
+  const netSale=exitValue-sellingCosts-loanPayoff+reserveReturn;
+  const flows:TimedCashFlow[]=[{time:0,amount:-inp.cash_invested}];
+  const dists:number[]=[];
+  for(const row of debt){
+    const growth=Math.pow(1+inp.growth_rate,Math.floor((row.month-1)/12));
+    const equityCf=year1Noi*growth/12-row.debt_service+row.refinance_proceeds-row.financing_costs;
+    const total=equityCf+(row.month===hold ? netSale : 0);
+    dists.push(total);
+    flows.push({time:row.month/12,amount:total});
   }
-
-  const year1Noi = years[0]?.noi ?? 0;
-  const exitNoi = year1Noi * Math.pow(1 + g, inp.hold_years);
-  const exitValue = inp.exit_cap_rate > 0 ? exitNoi / inp.exit_cap_rate : 0;
-  const sellingCosts = exitValue * inp.selling_cost_rate;
-  const loanPayoff = years[years.length - 1]?.loan_balance_end ?? 0;
-  const netProceeds = exitValue - sellingCosts - loanPayoff;
-  const totalProfit = cumulative + netProceeds - inp.cash_invested;
-  const equityMultiple =
-    inp.cash_invested > 0 ? (cumulative + netProceeds) / inp.cash_invested : 0;
-
-  return {
-    years,
-    exit: {
-      exit_noi: exitNoi,
-      exit_value: exitValue,
-      selling_costs: sellingCosts,
-      loan_payoff: loanPayoff,
-      net_sale_proceeds: netProceeds,
-      total_profit: totalProfit,
-      equity_multiple: equityMultiple,
-    },
-  };
+  const years:ProformaYear[]=[];
+  let cumulative=0;
+  for(let start=0;start<hold;start+=12){
+    const rows=debt.slice(start,start+12),year=Math.floor(start/12)+1;
+    const f=Math.pow(1+inp.growth_rate,year-1)*rows.length/12;
+    const gpr=inp.gross_potential_rent*f, vacancy=gpr*inp.vacancy_rate;
+    const other=inp.other_income*f,concessions=(inp.concessions ?? 0)*f,badDebt=(inp.bad_debt ?? 0)*f;
+    const egi=gpr-vacancy+other-concessions-badDebt,opex=inp.operating_expenses*f;
+    const totals=aggregateDebt(rows),noi=egi-opex,cfbt=noi-totals.debt_service;
+    cumulative+=cfbt;
+    years.push({year,months:rows.length,gpr,vacancy_loss:vacancy,other_income:other,concessions,bad_debt:badDebt,egi,
+      operating_expenses:opex,noi,...totals,cfbt,cumulative_cfbt:cumulative,
+      loan_balance_end:rows.at(-1)!.closing_balance,cash_on_cash:inp.cash_invested>1e-8 ? cfbt/inp.cash_invested : null});
+  }
+  if(!flows.every(f=>Number.isFinite(f.amount))) throw new RangeError('Projection overflow');
+  const totalProfit=dists.reduce((a,b)=>a+b,0)-inp.cash_invested;
+  return {years,debt_schedule:debt,equity_cash_flows:flows,exit:{exit_noi:exitNoi,exit_value:exitValue,
+    selling_costs:sellingCosts,loan_payoff:loanPayoff,reserve_return:reserveReturn,net_sale_proceeds:netSale,
+    total_profit:totalProfit,equity_multiple:inp.cash_invested>1e-8 ? equityMultiple(inp.cash_invested,dists,0) : null}};
 }

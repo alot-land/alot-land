@@ -76,7 +76,7 @@ describe('simulateGoal', () => {
     // With refi: +60k back at month 12; 12k cash flow banked by then → 28k to go
     // at 1k/mo → buys at month 40.
     expect(refi.months_to_goal).toBe(40);
-    expect(refi.months_to_goal).toBeLessThan(noRefi.months_to_goal);
+    expect(refi.months_to_goal).toBeLessThan(noRefi.months_to_goal!);
   });
 
   it('same-month refi is clamped to month 1, never silently dropped (v1.12.0)', () => {
@@ -113,6 +113,7 @@ describe('simulateGoal', () => {
 describe('equitySpread (v1.7.0)', () => {
   it('reports dollars and percent under value', () => {
     const s = equitySpread({ price: 700_000, value: 1_100_000 });
+    if(!s) throw new Error('Expected valid equity spread');
     expect(s.dollars).toBe(400_000);
     expect(s.pct).toBeCloseTo(400_000 / 1_100_000, 12);
   });
@@ -157,7 +158,9 @@ describe('equityCapture (v1.7.0) — the buy-under-value + cash-out-refi play', 
       refi_rate: 0.075,
     });
     expect(thin.cash_out).toBe(0); // 735k refi < 750k loan
-    expect(thin.added_monthly_debt_service).toBe(0);
+    // Smaller new loan REDUCES service even though there is no cash out.
+    expect(thin.added_monthly_debt_service).toBeCloseTo((annualDebtService(735000,.075,30)-annualDebtService(750000,.075,30))/12,8);
+    expect(thin.cash_in_at_refi).toBe(15000);
   });
 
   it('rehab adds to cash in and to the value basis the caller provides', () => {
@@ -283,7 +286,9 @@ describe('goalScenarios', () => {
     // price 600k at 70% of value → value ≈ 857,143; refi 70% → 600k loan;
     // purchase loan 450k → cash out 150k on 168k in.
     expect(ec.per_deal_cash).toBeCloseTo(168_000, 6);
-    expect(ec.refi_cash_back).toBeCloseTo(0.7 * (600_000 / 0.7) - 450_000, 0);
+    // Independent end-of-month ledger: $450k / 7.5% / 30yr, 12 payments
+    // leaves $445,851.745076; new proceeds repay that balance.
+    expect(ec.refi_cash_back).toBeCloseTo(600000 - 445851.7450763217, 6);
     // Entry cash flow reflects the discount: same NOI, smaller loan.
     expect(ec.per_deal_monthly_cashflow).toBeGreaterThan(s[0]!.per_deal_monthly_cashflow);
     expect(ec.post_refi_monthly_cashflow!).toBeGreaterThan(0);

@@ -1,0 +1,129 @@
+TAP version 13
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-0YHyoV/vite-cache/deps/react-dom_client.js?v=d7357c4d as it exceeds the max of 500KB.
+# R0-7 actual loaded mix [ 'Unknown mix', '12', '', '', '' ]
+# Subtest: Round 1 actual form/property/save financial integrity
+    # Subtest: R0-7: sourced 12 units open as 12, unknown rents/SF are blank
+    ok 1 - R0-7: sourced 12 units open as 12, unknown rents/SF are blank
+      ---
+      duration_ms: 1991.150625
+      type: 'test'
+      ...
+    # Subtest: snapshot price/zero expenses/vacancy survive edit hydration and market data
+    ok 2 - snapshot price/zero expenses/vacancy survive edit hydration and market data
+      ---
+      duration_ms: 401.197209
+      type: 'test'
+      ...
+    # Subtest: actual form save: scenario failure rolls back; retry saves a replayable revision
+    ok 3 - actual form save: scenario failure rolls back; retry saves a replayable revision
+      ---
+      duration_ms: 673.650209
+      type: 'test'
+      ...
+    1..3
+ok 1 - Round 1 actual form/property/save financial integrity
+  ---
+  duration_ms: 4673.586166
+  type: 'test'
+  ...
+# R0-6 prior unit count after failed replacement: "12"
+# Subtest: R0-6: failed unit replacement preserves the prior financial truth
+ok 2 - R0-6: failed unit replacement preserves the prior financial truth
+  ---
+  duration_ms: 1087.061459
+  type: 'test'
+  ...
+# Subtest: Round 1 atomic underwriting transactions with actual PostgreSQL/RLS
+    # Subtest: unit insert failure rolls back deal, old units and scenarios
+    ok 1 - unit insert failure rolls back deal, old units and scenarios
+      ---
+      duration_ms: 35.678208
+      type: 'test'
+      ...
+    # Subtest: scenario insert failure rolls back the entire revision
+    ok 2 - scenario insert failure rolls back the entire revision
+      ---
+      duration_ms: 58.904833
+      type: 'test'
+      ...
+    # Subtest: new-deal failure leaves no orphan deal
+    ok 3 - new-deal failure leaves no orphan deal
+      ---
+      duration_ms: 36.211917
+      type: 'test'
+      ...
+    # Subtest: mismatched units/price/version/resolved snapshot cannot be inserted
+    ok 4 - mismatched units/price/version/resolved snapshot cannot be inserted
+      ---
+      duration_ms: 81.721791
+      type: 'test'
+      ...
+    # Subtest: known count mismatch rolls back all writes
+    ok 5 - known count mismatch rolls back all writes
+      ---
+      duration_ms: 40.054041
+      type: 'test'
+      ...
+    # Subtest: tenant B cannot alter A through either RPC
+    ok 6 - tenant B cannot alter A through either RPC
+      ---
+      duration_ms: 45.749125
+      type: 'test'
+      ...
+    # Subtest: anon cannot execute either mutation RPC
+    ok 7 - anon cannot execute either mutation RPC
+      ---
+      duration_ms: 20.100709
+      type: 'test'
+      ...
+    # Subtest: multi-org user cannot combine org B RPC and org A deal
+    ok 8 - multi-org user cannot combine org B RPC and org A deal
+      ---
+      duration_ms: 12.038667
+      type: 'test'
+      ...
+    # Subtest: valid save commits matching deal/mix/snapshot and authenticated authorship
+    ok 9 - valid save commits matching deal/mix/snapshot and authenticated authorship
+      ---
+      duration_ms: 36.910666
+      type: 'test'
+      ...
+    # Subtest: stale loaded revision is rejected without partial writes
+    ok 10 - stale loaded revision is rejected without partial writes
+      ---
+      duration_ms: 37.133333
+      type: 'test'
+      ...
+    # Subtest: two concurrent saves of one revision serialize; exactly one succeeds
+    ok 11 - two concurrent saves of one revision serialize; exactly one succeeds
+      ---
+      duration_ms: 26.787
+      type: 'test'
+      ...
+    # Subtest: standalone replacement is atomic; unknowns survive a round trip
+    ok 12 - standalone replacement is atomic; unknowns survive a round trip
+      ---
+      duration_ms: 13.769125
+      type: 'test'
+      ...
+    # Subtest: promotion without a scenario commits a known count with unknown rent
+    ok 13 - promotion without a scenario commits a known count with unknown rent
+      ---
+      duration_ms: 24.872834
+      type: 'test'
+      ...
+    1..13
+ok 3 - Round 1 atomic underwriting transactions with actual PostgreSQL/RLS
+  ---
+  duration_ms: 1546.668416
+  type: 'test'
+  ...
+1..3
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7738.00125

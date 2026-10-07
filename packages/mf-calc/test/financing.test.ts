@@ -44,9 +44,9 @@ describe('forward underwrite', () => {
   it('equity multiple > 1 for a cash-flowing deal with gain', () => {
     expect(r.equity_multiple).toBeGreaterThan(1);
   });
-  it('all-cash (loan 0) has infinite DSCR and lower CoC', () => {
+  it('all-cash (loan 0) has unavailable DSCR and lower CoC', () => {
     const cash = forward({ ...inp, loan_amount: 0, cash_invested: 500000 });
-    expect(cash.dscr).toBe(Infinity);
+    expect(cash.dscr).toBeNull();
     expect(cash.cash_on_cash).toBeCloseTo(44400 / 500000, 4); // 8.88% unlevered
   });
 });

@@ -18,7 +18,7 @@ export function SummaryVerdict({ out, price }) {
   // (Scenarios saved before v1.14.0 have no plausibility block; treat those as
   // unchecked rather than implausible.)
   const implausible = out.plausibility && out.plausibility.ok === false;
-  const pursue = s.pursue && !implausible;
+  const pursue = s.pursue && !implausible && s.score != null;
   return (
     <div className={`card p-6 ${implausible ? 'ring-1 ring-warn/50' : pursue ? 'ring-1 ring-green/40' : ''}`}>
       {implausible && (
@@ -35,14 +35,15 @@ export function SummaryVerdict({ out, price }) {
           </div>
         </div>
       )}
+      {s.score == null && <p className="text-warn mb-3">Return denominator unavailable — verdict withheld.</p>}
       <div className="flex flex-wrap items-center gap-6">
         <div>
           <div className="label">Verdict<Tip text="One-glance answer: the composite score vs your buy-box, plus the headline numbers. PURSUE means it cleared your threshold — worth real diligence and a call to the agent. Max offer (green) is the highest price that still hits your targets. If the inputs can't describe a real building — a land-only price anchor, or a unit count that is really a county range — the verdict is withheld entirely rather than scored." /></div>
           <div className="flex items-center gap-2">
             <span className={`pill ${implausible ? 'bg-gold/20 text-warn' : pursue ? 'bg-green/15 text-green-deep' : 'bg-surface-2 text-muted'}`}>
-              {implausible ? 'CHECK INPUTS' : pursue ? 'PURSUE' : 'below threshold'}
+              {implausible || s.score == null ? 'CHECK INPUTS' : pursue ? 'PURSUE' : 'below threshold'}
             </span>
-            {!implausible && (
+            {!implausible && s.score != null && (
               <>
                 <span className="stat">{Math.round(s.score)}</span>
                 <span className="text-muted text-sm">/ 100</span>
@@ -137,7 +138,8 @@ const FIN_ROWS = [
   ['DSCR', (r) => ratio(r.dscr)],
   ['Cash-on-cash', (r) => pct(r.cash_on_cash)],
   ['Cash flow / yr', (r) => usd(r.cfbt)],
-  ['IRR', (r) => pct(r.irr)],
+  ['IRR', (r) => r.irr == null && r.irr_status ? `Unavailable (${r.irr_status.replaceAll('_',' ')})` : pct(r.irr)],
+  ['Debt yield', (r) => pct(r.debt_yield)],
   ['Equity multiple', (r) => `${ratio(r.equity_multiple)}×`],
   ['Break-even occ.', (r) => pct(r.break_even_occupancy, 1)],
   ['Debt service / yr', (r) => usd(r.annual_debt_service)],
@@ -195,7 +197,7 @@ export function InverseSolvers({ out }) {
               <div className="stat">{pct(md.down_fraction, 1)}</div>
               <div className="text-sm text-ink-2 mt-1">{usd(md.down_payment)} down · DSCR {ratio(md.dscr)} · CoC {pct(md.cash_on_cash)}</div>
             </>
-          ) : <div className="text-danger text-sm">No down payment meets both targets.</div>}
+          ) : <div className="text-danger text-sm">{out.solvers.unavailable_reason || 'No down payment meets both targets.'}</div>}
         </div>
         <div className="bg-surface-2 rounded-xl p-4">
           <div className="label">Max allowable offer</div>
@@ -205,7 +207,7 @@ export function InverseSolvers({ out }) {
               <div className="stat text-green-deep">{usd(mo.max_offer)}</div>
               <div className="text-sm text-ink-2 mt-1">DSCR {ratio(mo.dscr)} · CoC {pct(mo.cash_on_cash)}</div>
             </>
-          ) : <div className="text-danger text-sm">Targets unreachable in range.</div>}
+          ) : <div className="text-danger text-sm">{out.solvers.unavailable_reason || 'Targets unreachable in range.'}</div>}
         </div>
       </div>
     </Panel>
@@ -239,7 +241,8 @@ export function StressPanel({ out }) {
 export function TaxPanel({ out }) {
   const t = out.tax;
   return (
-    <Panel title="Tax layer" subtitle="Estimates — verify with CPA" tip="The paper-loss machine. Cost segregation + bonus depreciation front-loads a large year-1 write-off. REP ON assumes Real Estate Professional status (losses offset your ACTIVE income); REP OFF shows losses suspended without it. Both shown always, because the status decision is yours and your CPA's. Exit tax shows depreciation recapture (25%) plus capital gains due at sale." right={<span className="pill bg-surface-2 text-muted">estimate</span>}>
+    <Panel title="Tax layer" subtitle="Optional simplified estimate — verify with CPA" tip="Straight-line asset pools using user-assumed rates and service timing. Eligibility and asset sale allocation require CPA review. Investment IRR and equity multiple are pretax." right={<span className="pill bg-surface-2 text-muted">simplified</span>}>
+      <p className="text-xs text-muted mb-3">{t.limitations ?? 'Legacy simplified estimate; basis, timing and eligibility need review.'}</p>
       <div className="grid sm:grid-cols-2 gap-4 text-sm">
         <div className="bg-surface-2 rounded-xl p-4">
           <div className="label">Year-1 depreciation (cost seg + bonus)</div>
@@ -318,25 +321,25 @@ export function ProvenanceTable({ inputs }) {
   const rows = [
     ['Purchase price', usd(inputs.price), 'operator', 'high'],
     ['Vacancy', pct(inputs.vacancy_rate), 'operator', 'med'],
-    ['Property tax rate', pct(inputs.property_tax_rate), 'county rule', 'med'],
+    ['Property tax rate', pct(inputs.property_tax_rate), 'underwriting assumption', 'unverified'],
     ['DSCR loan rate', pct(inputs.financing?.dscr?.rate), 'operator', 'med'],
     ['Exit cap', pct(inputs.exit_cap_rate), 'operator', 'low'],
-    ['NOI growth', pct(inputs.noi_growth_rate), 'market', 'low'],
-    ['Market cap rate', pct(inputs.valuation_comps?.market_cap_rate), 'comps', 'med'],
+    ['NOI growth', pct(inputs.noi_growth_rate), 'underwriting assumption', 'unverified'],
+    ['Market cap rate', pct(inputs.valuation_comps?.market_cap_rate), 'underwriting assumption', 'unverified'],
     ['Cost-seg reclass %', pct(inputs.tax?.cost_seg_pct), 'operator', 'low'],
     ['Marginal tax rate', pct(inputs.tax?.marginal_rate), 'operator', 'med'],
   ];
   const CONF = { high: 'bg-green/15 text-green-deep', med: 'bg-gold/20 text-warn', low: 'bg-surface-2 text-muted' };
   return (
-    <Panel title="Assumptions & provenance" subtitle="Every input, sourced (Rule #3: no naked numbers)" tip="Where every number came from and how much to trust it. Any output is only as good as these inputs — challenge the low-confidence rows first when a deal looks too good.">
+    <Panel title="Underwriting assumptions" subtitle="Source evidence and confidence require operator verification" tip="These are stored assumptions. The model does not establish that a value came from county rules or comparable sales.">
       <table className="w-full text-sm">
         <thead><tr><th className="th">Assumption</th><th className="th text-right">Value</th><th className="th">Source</th><th className="th">Confidence</th></tr></thead>
         <tbody>
           {rows.map(([k, v, src, conf]) => (
             <tr key={k}>
               <td className="td">{k}</td><td className="td text-right">{v}</td>
-              <td className="td text-ink-2">{src} <span className="text-xs text-muted">· override</span></td>
-              <td className="td"><span className={`pill ${CONF[conf]}`}>{conf}</span></td>
+              <td className="td text-ink-2">{inputs.assumption_sources?.[k] ?? 'underwriting assumption'}</td>
+              <td className="td">unverified</td>
             </tr>
           ))}
         </tbody>
@@ -354,6 +357,8 @@ export function ProformaPanel({ out }) {
     ['Gross potential rent', (y) => usd(y.gpr)],
     ['Vacancy loss', (y) => `(${usd(y.vacancy_loss)})`],
     ['Other income', (y) => usd(y.other_income)],
+    ['Concessions', (y) => usd(y.concessions)],
+    ['Bad debt', (y) => usd(y.bad_debt)],
     ['Effective gross income', (y) => usd(y.egi), true],
     ['Operating expenses', (y) => `(${usd(y.operating_expenses)})`],
     ['Net operating income', (y) => usd(y.noi), true],
@@ -361,6 +366,8 @@ export function ProformaPanel({ out }) {
     ['— interest', (y) => usd(y.interest)],
     ['— principal paydown', (y) => usd(y.principal)],
     ['Cash flow before tax', (y) => usd(y.cfbt), true],
+    ['Refinance proceeds', (y) => usd(y.refinance_proceeds)],
+    ['Refinance financing costs', (y) => usd(y.financing_costs)],
     ['Cash-on-cash', (y) => pct(y.cash_on_cash)],
     ['Cumulative cash flow', (y) => usd(y.cumulative_cfbt)],
     ['Loan balance (end)', (y) => usd(y.loan_balance_end)],
@@ -372,7 +379,7 @@ export function ProformaPanel({ out }) {
           <thead>
             <tr>
               <th className="th"></th>
-              {pf.years.map((y) => <th key={y.year} className="th text-right">Year {y.year}</th>)}
+              {pf.years.map((y) => <th key={y.year} className="th text-right">Year {y.year}{y.months && y.months < 12 ? ` (${y.months} mo)` : ''}</th>)}
             </tr>
           </thead>
           <tbody>

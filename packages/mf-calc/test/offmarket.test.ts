@@ -124,6 +124,6 @@ describe('screenParcel', () => {
   });
 
   it('estimated expense panel reconciles with totalOperatingExpenses', () => {
-    expect(totalOperatingExpenses(strong.expenses)).toBeCloseTo(strong.opex, 4);
+    expect(totalOperatingExpenses(strong.expenses)).toBeCloseTo(strong.opex!, 4);
   });
 });

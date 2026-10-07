@@ -1,0 +1,43 @@
+
+> @alot/mf-calc@1.14.0 typecheck
+> tsc --noEmit
+
+test/comps.test.ts(19,12): error TS18048: 'maj' is possibly 'undefined'.
+test/comps.test.ts(19,24): error TS18048: 'min' is possibly 'undefined'.
+test/goals.test.ts(79,46): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number | bigint'.
+  Type 'null' is not assignable to type 'number | bigint'.
+test/goals.test.ts(116,12): error TS18047: 's' is possibly 'null'.
+test/goals.test.ts(117,12): error TS18047: 's' is possibly 'null'.
+test/offmarket.test.ts(127,65): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+  Type 'null' is not assignable to type 'number'.
+test/plausibility.test.ts(23,12): error TS2532: Object is possibly 'undefined'.
+test/plausibility.test.ts(29,12): error TS2532: Object is possibly 'undefined'.
+test/proforma.test.ts(13,12): error TS18048: 'maj' is possibly 'undefined'.
+test/proforma.test.ts(13,24): error TS18048: 'min' is possibly 'undefined'.
+test/round1-regressions.test.ts(37,65): error TS2554: Expected 3 arguments, but got 4.
+test/round1-regressions.test.ts(38,48): error TS2554: Expected 3 arguments, but got 4.
+test/str.test.ts(19,12): error TS18047: 's' is possibly 'null'.
+test/str.test.ts(20,12): error TS18047: 's' is possibly 'null'.
+test/str.test.ts(21,12): error TS18047: 's' is possibly 'null'.
+test/str.test.ts(25,12): error TS2531: Object is possibly 'null'.
+test/str.test.ts(26,12): error TS2531: Object is possibly 'null'.
+test/str.test.ts(59,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(60,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(61,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(66,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(67,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(68,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(69,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(75,12): error TS18047: 'absorb' is possibly 'null'.
+test/str.test.ts(79,17): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(79,35): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(80,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(82,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(83,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(84,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(88,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(88,37): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(89,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(89,38): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(93,12): error TS18047: 'r' is possibly 'null'.
+test/str.test.ts(95,12): error TS18047: 'monthly' is possibly 'null'.

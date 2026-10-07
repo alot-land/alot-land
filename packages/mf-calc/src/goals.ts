@@ -8,7 +8,7 @@
  * one; optional refi events return a fraction of each deal's invested cash
  * `refi_months` after its purchase (BRRRR-style recycling).
  */
-import { annualDebtService } from './finance.js';
+import { annualDebtService, remainingBalance } from './finance.js';
 
 export interface SimulateGoalInputs {
   target_monthly_cashflow: number;
@@ -85,7 +85,7 @@ export function simulateGoal(inp: SimulateGoalInputs): SimulateGoalResult {
       invested += inp.per_deal_cash;
       cashflow += inp.per_deal_monthly_cashflow;
       purchases.push({ month: m, deal_number: purchases.length + 1 });
-      if (refiFrac > 0) refiQueue.push({ month: m + refiMonths, amount: refiFrac * inp.per_deal_cash });
+      if (refiFrac !== 0 || refiDelta !== 0) refiQueue.push({ month: m + refiMonths, amount: refiFrac * inp.per_deal_cash });
       if (cashflow >= inp.target_monthly_cashflow) return done(true, m);
     }
   }
@@ -120,6 +120,10 @@ export interface EquityCaptureInputs {
   refi_ltv: number;
   refi_rate: number;
   refi_amort_years?: number;
+  bank_rate?: number;
+  purchase_amort_years?: number;
+  refi_months?: number;
+  refi_costs?: number;
 }
 
 export interface EquityCaptureResult {
@@ -132,6 +136,8 @@ export interface EquityCaptureResult {
   equity_after_refi: number;
   /** Debt service on the ADDED principal — the honest cash-flow cost. */
   added_monthly_debt_service: number;
+  purchase_payoff: number;
+  cash_in_at_refi: number;
 }
 
 export function equityCapture(inp: EquityCaptureInputs): EquityCaptureResult {
@@ -140,15 +146,21 @@ export function equityCapture(inp: EquityCaptureInputs): EquityCaptureResult {
   const cashIn = inp.purchase_price * (inp.down_payment_rate + inp.closing_cost_rate) + rehab;
   const purchaseLoan = inp.purchase_price * (1 - inp.down_payment_rate);
   const refiLoan = inp.refi_ltv * inp.market_value;
-  const cashOut = Math.max(0, refiLoan - purchaseLoan);
+  const bankRate=inp.bank_rate ?? inp.refi_rate;
+  const purchaseAmort=inp.purchase_amort_years ?? amort;
+  const payoff=remainingBalance(purchaseLoan,bankRate,purchaseAmort,inp.refi_months ?? 0);
+  const net=refiLoan-payoff-(inp.refi_costs ?? 0);
+  const cashOut = Math.max(0, net);
   return {
     cash_in: cashIn,
     purchase_loan: purchaseLoan,
     refi_loan: refiLoan,
     cash_out: cashOut,
-    net_cash_left_in: cashIn - cashOut,
-    equity_after_refi: inp.market_value - Math.max(refiLoan, purchaseLoan),
-    added_monthly_debt_service: cashOut > 0 ? annualDebtService(cashOut, inp.refi_rate, amort) / 12 : 0,
+    net_cash_left_in: cashIn - net,
+    equity_after_refi: inp.market_value - refiLoan,
+    added_monthly_debt_service: (annualDebtService(refiLoan,inp.refi_rate,amort)-annualDebtService(purchaseLoan,bankRate,purchaseAmort))/12,
+    purchase_payoff:payoff,
+    cash_in_at_refi:Math.max(0,-net),
   };
 }
 
@@ -310,6 +322,8 @@ export function goalScenarios(inp: GoalScenarioInputs): GoalScenario[] {
     closing_cost_rate: inp.closing_cost_rate,
     refi_ltv: refiLtv,
     refi_rate: refiRate,
+    bank_rate:bankRate,
+    refi_months:inp.refi_months,
   });
   // The discount is cash flow: same NOI, smaller loan pre-refi; the honest
   // full-value loan post-refi (v1.8.0 — earlier versions charged the refi
@@ -329,7 +343,7 @@ export function goalScenarios(inp: GoalScenarioInputs): GoalScenario[] {
     ...common,
     per_deal_cash: ec.cash_in,
     per_deal_monthly_cashflow: entry.pre_refi_monthly_cashflow,
-    refi_cash_back_fraction: ec.cash_in > 0 ? ec.cash_out / ec.cash_in : 0,
+    refi_cash_back_fraction: ec.cash_in > 0 ? (ec.cash_out-ec.cash_in_at_refi) / ec.cash_in : 0,
     refi_months: inp.refi_months,
     refi_monthly_cashflow_delta: entry.post_refi_monthly_cashflow - entry.pre_refi_monthly_cashflow,
   });

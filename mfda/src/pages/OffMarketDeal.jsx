@@ -8,8 +8,7 @@ import {
   setParcelRating,
   listAllRentBands,
   listMarkets,
-  upsertDeal,
-  replaceUnits,
+  saveUnderwriting,
   findDealByDedupeKey,
   dedupeKey,
 } from '../lib/queries';
@@ -113,7 +112,11 @@ export default function OffMarketDeal() {
         nav(`/deals/${existing.id}/edit`);
         return;
       }
-      const deal = await upsertDeal(org.id, user.id, {
+      const mix=Number(units)>0 ? [{type:'avg unit',count:Number(units),
+        sqft:p.building_sqft ? Math.round(Number(p.building_sqft)/Number(units)) : null,
+        actual_rent:null,market_rent:Number(rent)>0 ? Number(rent) : null,
+        provenance:'parcel count/area or operator; estimated market rent; actual rent unknown'}] : [];
+      const {deal} = await saveUnderwriting(org.id, {
         apn: p.apn,
         county_fips: p.county_fips,
         address: p.situs_address,
@@ -126,17 +129,9 @@ export default function OffMarketDeal() {
         price: Number(anchor) || null,
         source: 'offmarket',
         notes: `Off-market parcel APN ${p.apn}. Owner: ${p.owner_name || 'unknown'}${p.absentee ? ' (absentee)' : ''}. Mailing: ${[p.mailing_address, p.mailing_city, p.mailing_state, p.mailing_zip].filter(Boolean).join(', ')}`,
+        units:mix,
       });
       if (!isCurrent()) return;
-      if (Number(units) > 0 && Number(rent) > 0) {
-        // units.sqft is NOT NULL — use the building average when known, else 0.
-        const sqft = p.building_sqft ? Math.round(Number(p.building_sqft) / Number(units)) : 0;
-        // actual_rent = market rent: in-place rents are unknown off-market;
-        // at-market keeps loss-to-lease honestly 0 rather than a fake 100%.
-        await replaceUnits(org.id, deal.id, [
-          { type: 'avg unit', count: Number(units), sqft, actual_rent: Number(rent), market_rent: Number(rent) },
-        ]);
-      }
       if (!isCurrent()) return;
       qc.invalidateQueries({ queryKey: ['deals', org.id] });
       nav(`/deals/${deal.id}/edit`);

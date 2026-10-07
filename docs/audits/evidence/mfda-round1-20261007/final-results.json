@@ -1,0 +1,71 @@
+{
+  "phase": "final",
+  "environment": "synthetic; local disposable PostgreSQL; no dotenv/provider connections",
+  "checks": {
+    "calc": {
+      "code": 0,
+      "command": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/Users/davidastone/code/alot-land/alot-land/packages/mf-calc"
+    },
+    "typecheck": {
+      "code": 0,
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "/Users/davidastone/code/alot-land/alot-land/packages/mf-calc"
+    },
+    "scanner": {
+      "code": 0,
+      "command": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/Users/davidastone/code/alot-land/alot-land/workers/scan"
+    },
+    "financial": {
+      "code": 0,
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "--test-concurrency=1",
+        "financial/persistence.test.mjs",
+        "financial/transaction.test.mjs",
+        "financial/browser.test.mjs"
+      ],
+      "cwd": "/Users/davidastone/code/alot-land/alot-land/mfda"
+    },
+    "security": {
+      "code": 0,
+      "command": [
+        "npm",
+        "run",
+        "test:security"
+      ],
+      "cwd": "/Users/davidastone/code/alot-land/alot-land/mfda"
+    },
+    "independent": {
+      "code": 0,
+      "command": [
+        "/usr/local/bin/node",
+        "--test",
+        "--test-concurrency=1",
+        "/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-round1-20261007/independent-regression.test.mjs",
+        "/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-round1-20261007/csv-pages.test.mjs"
+      ],
+      "cwd": "/Users/davidastone/code/alot-land/alot-land/mfda"
+    },
+    "build": {
+      "code": 0,
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-round1-20261007/build.mjs"
+      ],
+      "cwd": "/Users/davidastone/code/alot-land/alot-land/mfda"
+    }
+  }
+}

@@ -1,0 +1,157 @@
+
+> @alot/mf-calc@1.14.0 test
+> vitest run test/round1-regressions.test.ts
+
+
+ RUN  v1.6.1 /Users/davidastone/code/alot-land/alot-land/packages/mf-calc
+
+stdout | test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-1: debt service and principal stop after payoff
+R0-1 starting observation {"year":2,"gpr":24000,"vacancy_loss":0,"other_income":0,"egi":24000,"operating_expenses":0,"noi":24000,"debt_service":12000,"interest":0,"principal":12000,"cfbt":12000,"cumulative_cfbt":24000,"loan_balance_end":0,"cash_on_cash":0.12}
+
+stdout | test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-2: seller balloons at 3 and 9 years produce different returns
+R0-2 returns 0.5008340083809709 0.5008340083809709
+
+stdout | test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-3: non-finite cash flow cannot become 1000 percent IRR
+R0-3 IRR 10
+
+stdout | test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-4: fixed other income reduces rent required for break-even
+R0-4 BEO 0.6
+
+stdout | test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-5: rehab is retained in simplified depreciable and sale basis
+R0-5 rehab basis 400000 400000
+
+ ❯ test/round1-regressions.test.ts  (7 tests | 7 failed) 12ms
+   ❯ test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-1: debt service and principal stop after payoff
+     → expected 12000 to be +0 // Object.is equality
+   ❯ test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-2: seller balloons at 3 and 9 years produce different returns
+     → expected 0.5008340083809709 not to be 0.5008340083809709 // Object.is equality
+   ❯ test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-3: non-finite cash flow cannot become 1000 percent IRR
+     → expected false to be true // Object.is equality
+   ❯ test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-4: fixed other income reduces rent required for break-even
+     → expected 0.6 to be close to 0.4, received difference is 0.19999999999999996, but expected 5e-13
+   ❯ test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-5: rehab is retained in simplified depreciable and sale basis
+     → expected +0 to be 100000 // Object.is equality
+   ❯ test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-7: known property count cannot be silently overwritten by a default mix
+     → expected [Function] to throw an error
+   ❯ test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > adjacent: a half-year hold includes the sale at the correct time
+     → expected NaN to be null
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-1: debt service and principal stop after payoff
+AssertionError: expected 12000 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 12000
+
+ ❯ test/round1-regressions.test.ts:20:38
+     18|       selling_cost_rate: 0, cash_invested: 100000 });
+     19|     console.log('R0-1 starting observation', JSON.stringify(p.years[1]…
+     20|     expect(p.years[1]!.debt_service).toBe(0);
+       |                                      ^
+     21|     expect(p.years[1]!.principal).toBe(0);
+     22|     expect(p.years[1]!.cfbt).toBe(24000);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-2: seller balloons at 3 and 9 years produce different returns
+AssertionError: expected 0.5008340083809709 not to be 0.5008340083809709 // Object.is equality
+ ❯ test/round1-regressions.test.ts:28:48
+     26|     const b = underwrite({ ...property, financing: { seller: { balloon…
+     27|     console.log('R0-2 returns', a.financing.seller_forward.irr, b.fina…
+     28|     expect(a.financing.seller_forward.irr).not.toBe(b.financing.seller…
+       |                                                ^
+     29|     expect(a.financing.seller_forward.equity_multiple).not.toBe(b.fina…
+     30|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-3: non-finite cash flow cannot become 1000 percent IRR
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ test/round1-regressions.test.ts:33:49
+     31|   it('R0-3: non-finite cash flow cannot become 1000 percent IRR', () =…
+     32|     console.log('R0-3 IRR', irr([-100, NaN, 200]));
+     33|     expect(Number.isNaN(irr([-100, NaN, 200]))).toBe(true);
+       |                                                 ^
+     34|   });
+     35|   it('R0-4: fixed other income reduces rent required for break-even', …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-4: fixed other income reduces rent required for break-even
+AssertionError: expected 0.6 to be close to 0.4, received difference is 0.19999999999999996, but expected 5e-13
+ ❯ test/round1-regressions.test.ts:38:56
+     36|     // $60k rent + $12k fixed other income; $36k costs => 40% rent occ…
+     37|     console.log('R0-4 BEO', breakEvenOccupancy(36000, 0, 60000, 12000)…
+     38|     expect(breakEvenOccupancy(36000, 0, 60000, 12000)).toBeCloseTo(.4,…
+       |                                                        ^
+     39|   });
+     40|   it('R0-5: rehab is retained in simplified depreciable and sale basis…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-5: rehab is retained in simplified depreciable and sale basis
+AssertionError: expected +0 to be 100000 // Object.is equality
+
+- Expected
++ Received
+
+- 100000
++ 0
+
+ ❯ test/round1-regressions.test.ts:44:89
+     42|     const b = underwrite({ ...property, rehab: 100000 });
+     43|     console.log('R0-5 rehab basis', a.tax.depreciation.depreciable_bas…
+     44|     expect(b.tax.depreciation.depreciable_basis - a.tax.depreciation.d…
+       |                                                                                         ^
+     45|     expect(b.tax.exit.adjusted_basis).toBeGreaterThan(a.tax.exit.adjus…
+     46|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > R0-7: known property count cannot be silently overwritten by a default mix
+AssertionError: expected [Function] to throw an error
+
+- Expected: 
+null
+
++ Received: 
+undefined
+
+ ❯ test/round1-regressions.test.ts:48:64
+     46|   });
+     47|   it('R0-7: known property count cannot be silently overwritten by a d…
+     48|     expect(() => underwrite({ ...property, units_count: 12 })).toThrow…
+       |                                                                ^
+     49|   });
+     50|   it('adjacent: a half-year hold includes the sale at the correct time…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  test/round1-regressions.test.ts > Round 1 starting-SHA financial regressions > adjacent: a half-year hold includes the sale at the correct time
+AssertionError: expected NaN to be null
+ ❯ test/round1-regressions.test.ts:55:19
+     53|       cash_invested: 100, hold_years: .5, exit_cap_rate: .1, selling_c…
+     54|     // No sale value and no positive flow: explicit unavailable IRR.
+     55|     expect(a.irr).toBeNull();
+       |                   ^
+     56|   });
+     57| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+ Test Files  1 failed (1)
+      Tests  7 failed (7)
+   Start at  14:42:46
+   Duration  444ms (transform 122ms, setup 0ms, collect 122ms, tests 12ms, environment 0ms, prepare 121ms)
+

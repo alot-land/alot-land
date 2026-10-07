@@ -4,6 +4,7 @@ import { useOrg } from '../lib/org';
 import { getDeal, listScenarios, getListingContact } from '../lib/queries';
 import { Suspense, useState } from 'react';
 import { lazyReload } from '../lib/lazyReload';
+import { CALC_VERSION } from '@alot/mf-calc';
 import { streetViewUrl } from '../lib/parcelscreen';
 import HeartButton from '../components/HeartButton';
 import NotesCard from '../components/NotesCard';
@@ -114,9 +115,10 @@ export default function DealResults() {
         </div>
       ) : (
         <>
-          <SummaryVerdict out={out} price={Number(deal.data.price)} />
+          {out.calc_version !== CALC_VERSION && <p className="text-warn text-sm">Historical calculation v{out.calc_version}. Re-run with v{CALC_VERSION} to apply the financial corrections; this snapshot has not been recalculated.</p>}
+          <SummaryVerdict out={out} price={Number(scen.inputs?.price ?? deal.data.price)} />
           <div className="grid lg:grid-cols-2 gap-5">
-            <ValuationPanel out={out} price={Number(deal.data.price)} />
+            <ValuationPanel out={out} price={Number(scen.inputs?.price ?? deal.data.price)} />
             <ScoreBreakdown out={out} />
           </div>
           <FinancingComparator out={out} />

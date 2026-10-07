@@ -303,20 +303,21 @@ export async function getUnits(dealId, orgId) {
 }
 
 export async function replaceUnits(orgId, dealId, units) {
-  await supabase.from('units').delete().eq('deal_id', dealId);
-  if (!units.length) return [];
-  const rows = units.map((u, i) => ({
-    org_id: orgId,
-    deal_id: dealId,
-    type: u.type,
-    count: u.count,
-    sqft: u.sqft,
-    actual_rent: u.actual_rent,
-    market_rent: u.market_rent,
-    sort_order: i,
-  }));
-  const { data, error } = await supabase.from('units').insert(rows).select();
+  const { data, error } = await supabase.rpc('replace_mfda_units', {
+    p_org_id:orgId,p_deal_id:dealId,p_units:units,
+  });
   if (error) throw error;
+  return data;
+}
+
+/** One PostgreSQL transaction owns the mutable deal/mix and immutable analysis. */
+export async function saveUnderwriting(orgId, deal, scenario = null) {
+  const row={...deal,dedupe_key:dedupeKey(deal)};
+  delete row.units;
+  const {data,error}=await supabase.rpc('save_mfda_underwriting',{
+    p_org_id:orgId,p_deal:row,p_units:deal.units ?? [],p_scenario:scenario,
+  });
+  if(error) throw friendlyDedupeError(error);
   return data;
 }
 

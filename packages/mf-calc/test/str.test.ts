@@ -16,14 +16,15 @@ describe('calc version', () => {
 describe('suggestStrDefaults', () => {
   it('derives ADR from monthly rent (~2.5x the nightly LTR equivalent)', () => {
     const s = suggestStrDefaults(2_000);
+    if(!s) throw new Error('Expected valid STR suggestion');
     expect(s.adr).toBe(167); // round(2000 / 12)
     expect(s.occupancy_rate).toBe(0.6);
     expect(s.estimated).toBe(true);
   });
 
   it('scales with rent and rounds to whole dollars', () => {
-    expect(suggestStrDefaults(1_400).adr).toBe(117);
-    expect(suggestStrDefaults(3_600).adr).toBe(300);
+    expect(suggestStrDefaults(1_400)!.adr).toBe(117);
+    expect(suggestStrDefaults(3_600)!.adr).toBe(300);
   });
 
   it('returns null (not a fabricated number) without a usable rent', () => {
@@ -54,6 +55,7 @@ describe('strComparison', () => {
     ltr_cfbt: 7_199.4,
   };
   const r = strComparison(inp);
+  if(!r) throw new Error('Expected valid STR comparison');
 
   it('computes occupied nights, turns, and gross revenue exactly', () => {
     expect(r.occupied_nights).toBeCloseTo(4 * 365 * 0.65, 6); // 949
@@ -71,6 +73,7 @@ describe('strComparison', () => {
 
   it('charges only the UNRECOVERED cleaning when the owner absorbs part', () => {
     const absorb = strComparison({ ...inp, cost_per_turn: 120, cleaning_fee_per_stay: 90 });
+    if(!absorb) throw new Error('Expected valid STR comparison');
     const turns = (4 * 365 * 0.65) / 3;
     expect(absorb.expenses.str_cleaning).toBeCloseTo(turns * 30, 4); // 120 − 90
   });
@@ -92,6 +95,7 @@ describe('strComparison', () => {
   it('flags material-participation eligibility from the stay length', () => {
     expect(r.material_participation_hint).toBe(true); // 3-night stays ≤ 7
     const monthly = strComparison({ ...inp, avg_stay_days: 30 });
+    if(!monthly) throw new Error('Expected valid STR comparison');
     expect(monthly.material_participation_hint).toBe(false);
   });
 

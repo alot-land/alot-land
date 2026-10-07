@@ -18,7 +18,7 @@ export function pct(n, dp = 2) {
 
 export function ratio(n, dp = 2) {
   if (n == null) return '—';
-  if (!Number.isFinite(n)) return '∞';
+  if (!Number.isFinite(n)) return '—';
   return n.toFixed(dp);
 }
 

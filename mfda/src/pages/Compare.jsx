@@ -16,7 +16,7 @@ import { usd, pct, ratio } from '../lib/format';
 // Curated output metrics: [label, getter, formatter]
 const METRICS = [
   ['Score', (o) => o.score?.score, (v) => (v != null ? Math.round(v) : '—')],
-  ['Verdict', (o) => o.score?.pursue, (v) => (v == null ? '—' : v ? 'PURSUE' : 'pass')],
+  ['Verdict', (o) => o.plausibility?.ok === false || o.score?.score == null ? null : o.score?.pursue, (v) => (v == null ? 'CHECK INPUTS' : v ? 'PURSUE' : 'pass')],
   ['NOI', (o) => o.derived?.noi, usd],
   ['Cap on price', (o) => o.derived?.cap_rate_on_price, pct],
   ['DSCR (loan)', (o) => o.financing?.dscr?.dscr, ratio],
