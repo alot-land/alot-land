@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '../lib/tenant-query';
+import { useQuery, useQueryClient, useTenantCompletionGuard } from '../lib/tenant-query';
 import { useOrg } from '../lib/org';
 import { useAuth } from '../lib/auth';
 import {
@@ -33,6 +33,7 @@ function holdYears(d) {
 }
 
 export default function OffMarketDeal() {
+  const captureCompletion = useTenantCompletionGuard();
   const { id } = useParams();
   const { org } = useOrg();
   const { user } = useAuth();
@@ -97,6 +98,7 @@ export default function OffMarketDeal() {
 
   // Promote to a real deal (prefilled) for the full manual workflow + PDF.
   async function analyzeAsDeal() {
+    const isCurrent = captureCompletion();
     setCreating(true);
     setCreateError(null);
     try {
@@ -106,6 +108,7 @@ export default function OffMarketDeal() {
         org.id,
         dedupeKey({ apn: p.apn, county_fips: p.county_fips, address: p.situs_address, city: p.situs_city, state: p.state, zip: p.situs_zip }),
       );
+      if (!isCurrent()) return;
       if (existing) {
         nav(`/deals/${existing.id}/edit`);
         return;
@@ -124,6 +127,7 @@ export default function OffMarketDeal() {
         source: 'offmarket',
         notes: `Off-market parcel APN ${p.apn}. Owner: ${p.owner_name || 'unknown'}${p.absentee ? ' (absentee)' : ''}. Mailing: ${[p.mailing_address, p.mailing_city, p.mailing_state, p.mailing_zip].filter(Boolean).join(', ')}`,
       });
+      if (!isCurrent()) return;
       if (Number(units) > 0 && Number(rent) > 0) {
         // units.sqft is NOT NULL — use the building average when known, else 0.
         const sqft = p.building_sqft ? Math.round(Number(p.building_sqft) / Number(units)) : 0;
@@ -133,13 +137,15 @@ export default function OffMarketDeal() {
           { type: 'avg unit', count: Number(units), sqft, actual_rent: Number(rent), market_rent: Number(rent) },
         ]);
       }
+      if (!isCurrent()) return;
       qc.invalidateQueries({ queryKey: ['deals', org.id] });
       nav(`/deals/${deal.id}/edit`);
     } catch (e) {
+      if (!isCurrent()) return;
       console.error('analyzeAsDeal', e);
       setCreateError(e.message || 'Could not create the deal.');
     } finally {
-      setCreating(false);
+      if (isCurrent()) setCreating(false);
     }
   }
 

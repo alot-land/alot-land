@@ -1,6 +1,6 @@
 import { Suspense, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '../lib/tenant-query';
+import { useQuery, useQueryClient, useTenantCompletionGuard } from '../lib/tenant-query';
 import { useOrg } from '../lib/org';
 import {
   listOnMarket,
@@ -45,6 +45,7 @@ const LSTATUS = {
 };
 
 export default function OnMarket() {
+  const captureCompletion = useTenantCompletionGuard();
   const { org } = useOrg();
   const nav = useNavigate();
   const qc = useQueryClient();
@@ -137,7 +138,14 @@ export default function OnMarket() {
   );
 
   async function analyze(deal) {
-    await setDealStatus(deal.id, 'analyzing');
+    const isCurrent = captureCompletion();
+    try {
+      await setDealStatus(deal.id, 'analyzing');
+    } catch (error) {
+      if (isCurrent()) throw error;
+      return;
+    }
+    if (!isCurrent()) return;
     qc.invalidateQueries({ queryKey: ['onmarket', org.id] });
     qc.invalidateQueries({ queryKey: ['deals', org.id] });
     nav(`/deals/${deal.id}/edit`);

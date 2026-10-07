@@ -7,6 +7,13 @@ const listeners = new Set();
 const subscribe = (listener) => { listeners.add(listener); return () => listeners.delete(listener); };
 const getSnapshot = () => snapshot;
 
+// Completion checks read the synchronous auth snapshot, before React commits.
+export function getAuthScope() {
+  const { session, loading, generation } = snapshot;
+  if (loading || !session || session.expires_at * 1000 <= Date.now()) return null;
+  return { userId: session.user.id, generation };
+}
+
 function publish(session) {
   const identityChanged = snapshot.session?.user?.id !== session?.user?.id
     || snapshot.session?.user?.email !== session?.user?.email;

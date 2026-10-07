@@ -15,14 +15,31 @@ export function OrgProvider({ children }) {
 
 function UserOrganizations({ user, children }) {
   const { pathname } = useLocation();
-  const [state, setState] = useState({ orgs: [], id: null, loading: !!user, generation: 0 });
+  const current = useRef({ orgs: [], id: null, loading: !!user, generation: 0 });
+  const [state, setState] = useState(current.current);
+  function publish(updater) {
+    const old = current.current;
+    const next = updater(old);
+    const oldRole = old.orgs.find((o) => o.id === old.id)?.role;
+    const nextRole = next.orgs.find((o) => o.id === next.id)?.role;
+    if (old.id !== next.id || oldRole !== nextRole || old.loading !== next.loading) {
+      next.generation = Math.max(next.generation, old.generation + 1);
+    }
+    current.current = next;
+    setState(current.current);
+  }
+  function getScope() {
+    const s = current.current;
+    const org = s.orgs.find((o) => o.id === s.id);
+    return s.loading || !org ? null : { orgId: org.id, role: org.role, generation: s.generation };
+  }
   const request = useRef(0);
   const alive = useRef(true);
   const key = `mfda.activeOrg:${user?.id}`;
 
   async function load({ background = false } = {}) {
     const ticket = ++request.current;
-    if (!background) setState((s) => ({ ...s, orgs: [], loading: !!user, generation: s.generation + 1 }));
+    if (!background) publish((s) => ({ ...s, orgs: [], loading: !!user, generation: s.generation + 1 }));
     if (!user) return;
     try {
       const { error: inviteError } = await supabase.rpc('accept_pending_mfda_invites');
@@ -35,15 +52,15 @@ function UserOrganizations({ user, children }) {
       const orgs = (data || []).filter((r) => r.org).map((r) => ({ ...r.org, role: r.role }));
       const preferred = localStorage.getItem(key);
       const id = orgs.some((o) => o.id === preferred) ? preferred : orgs[0]?.id ?? null;
-      setState((s) => ({ ...s, orgs, id, loading: false }));
+      publish((s) => ({ ...s, orgs, id, loading: false }));
     } catch {
-      if (alive.current && ticket === request.current) setState((s) => ({ ...s, orgs: [], id: null, loading: false }));
+      if (alive.current && ticket === request.current) publish((s) => ({ ...s, orgs: [], id: null, loading: false }));
     }
   }
 
   function refresh() {
     // Focus, realtime and explicit refresh discard the view before validation.
-    flushSync(() => setState((s) => ({ ...s, orgs: [], loading: true, generation: s.generation + 1 })));
+    flushSync(() => publish((s) => ({ ...s, orgs: [], loading: true, generation: s.generation + 1 })));
     void load({ background: true });
   }
   useEffect(() => {
@@ -79,6 +96,6 @@ function UserOrganizations({ user, children }) {
   }
   const org = state.loading ? null : state.orgs.find((o) => o.id === state.id) ?? null;
   return <OrgCtx.Provider value={{ orgs: state.orgs, org, role: org?.role ?? null, loading: state.loading,
-    generation: state.generation, setOrg, refresh }}>{children}</OrgCtx.Provider>;
+    generation: state.generation, setOrg, refresh, getScope }}>{children}</OrgCtx.Provider>;
 }
 export const useOrg = () => useContext(OrgCtx);

@@ -280,7 +280,23 @@ test('tenant isolation in the actual MFDA SPA with PostgreSQL-backed synthetic A
   });
   await t.test('query keys contain user, organization and role; identity replacement creates fresh cache', async () => {
     const { ctx, page } = await h.context();
+    let release;
+    const held = new Promise((r) => { release = r; });
+    let oldRpcStarted = false;
+    // Deterministically resume A's obsolete load after the SDK holds B's JWT.
+    // The SDK selects a bearer at send time, after the filter was constructed.
+    await ctx.route('https://mfda-security.invalid/rest/v1/rpc/accept_pending_mfda_invites', async (route) => {
+      const bearer = route.request().headers().authorization.split('.')[1];
+      const uid = JSON.parse(Buffer.from(bearer, 'base64url')).sub;
+      if (uid !== ids.a || oldRpcStarted) return route.fallback();
+      await db.sql('select public.accept_pending_mfda_invites()', uid);
+      oldRpcStarted = true;
+      await held;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: 'null' }).catch(() => {});
+    });
     try {
+      // Let the initial load through; hold the next foreground revalidation.
+      oldRpcStarted = true;
       await page.goto(h.base + `/deals/${ids.deal}`); await loaded(page, 'A ONLY SECURITY CANARY');
       const keys = await page.evaluate(() => {
         const element = document.getElementById('root');
@@ -288,13 +304,43 @@ test('tenant isolation in the actual MFDA SPA with PostgreSQL-backed synthetic A
         const clients = new Set();
         function walk(f) { if (!f) return; const client = f.memoizedProps?.client; if (client?.getQueryCache) clients.add(client); walk(f.child); walk(f.sibling); }
         walk(fiber);
+        window.securityOldClient = [...clients][0];
         return [...clients].flatMap((c) => c.getQueryCache().getAll().map((x) => x.queryKey));
       });
       assert.ok(keys.length > 0);
       for (const key of keys) { assert.equal(key[0], 'tenant'); assert.equal(key[1], ids.a); assert.equal(key[3], ids.oa); assert.equal(key[4], 'member'); }
-      await watch(page); await h.changeUser(page, ids.b); await absent(page); await noLeaks(page);
-      assert.ok(h.requests.filter((r) => r.table === 'org_members' && new URLSearchParams(r.search).get('select')?.includes('org:orgs')).every((r) => r.search.includes('user_id=eq.' + r.uid)));
-    } finally { await ctx.close(); }
+      oldRpcStarted = false;
+      await watch(page); await page.evaluate(() => dispatchEvent(new Event('focus')));
+      await waitForRequest(page, () => oldRpcStarted);
+      const start = h.requests.length;
+      await h.changeUser(page, ids.b);
+      await page.getByText('Synthetic Tenant B', { exact: true }).waitFor();
+      const obsoleteResponse = page.waitForResponse((response) => {
+        const url = new URL(response.url());
+        return url.pathname.endsWith('/org_members') && url.searchParams.get('user_id') === 'eq.' + ids.a;
+      });
+      release();
+      await waitForRequest(page, () => h.requests.slice(start).some((r) => r.table === 'org_members'
+        && r.uid === ids.b && r.search.includes('user_id=eq.' + ids.a)));
+      assert.deepEqual(await (await obsoleteResponse).json(), [], 'actual B RLS denies the obsolete A membership read');
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      await absent(page); await noLeaks(page);
+      await page.getByText('Synthetic Tenant B', { exact: true }).waitFor();
+      assert.equal(await page.evaluate(() => window.securityOldClient.getQueryCache().getAll().length), 0);
+      const currentKeys = await page.evaluate(() => {
+        const element = document.getElementById('root');
+        const fiber = element[Object.keys(element).find((k) => k.startsWith('__reactContainer$'))].stateNode.current;
+        const clients = new Set();
+        function walk(f) { if (!f) return; const client = f.memoizedProps?.client; if (client?.getQueryCache) clients.add(client); walk(f.child); walk(f.sibling); }
+        walk(fiber);
+        if (clients.has(window.securityOldClient)) throw new Error('Old query client reused');
+        return [...clients].flatMap((c) => c.getQueryCache().getAll().map((x) => x.queryKey));
+      });
+      assert.ok(currentKeys.length > 0);
+      assert.ok(currentKeys.every((key) => key[1] === ids.b && key[3] === ids.ob && key[4] === 'member'));
+      assert.ok(h.requests.slice(start).some((r) => r.table === 'org_members' && r.uid === ids.b && r.search.includes('user_id=eq.' + ids.b)), 'B must also load its own authoritative memberships');
+      assert.equal(await db.sql(`select count(*) from public.org_members where user_id=${q(ids.a)}`, ids.b), '0');
+    } finally { release(); await ctx.close(); }
   });
   await t.test('cross-tab signout and login propagate identity isolation', async () => {
     const { ctx, page } = await h.context();

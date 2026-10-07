@@ -1,0 +1,174 @@
+TAP version 13
+# Subtest: baseline controls reproduce the original P0s in isolated source/SQL
+not ok 1 - baseline controls reproduce the original P0s in isolated source/SQL
+  ---
+  duration_ms: 2783.3965
+  type: 'test'
+  location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/baseline.test.mjs:14:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: initdb -D /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-gY1wDc/data -A trust --no-locale -E UTF8
+    2026-10-07 10:37:56.914 MST [94418] FATAL:  could not create shared memory segment: Operation not permitted
+    2026-10-07 10:37:56.914 MST [94418] DETAIL:  Failed system call was shmget(key=160865310, size=56, 03600).
+    child process exited with exit code 1
+    initdb: removing data directory "/private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-gY1wDc/data"
+    
+  code: 1
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    ChildProcess.exithandler (node:child_process:415:12)
+    ChildProcess.emit (node:events:518:28)
+    maybeClose (node:internal/child_process:1101:16)
+    ChildProcess._handle.onexit (node:internal/child_process:304:5)
+  ...
+# Subtest: tenant-scoped exports in the real SPA never release a stale completion
+not ok 2 - tenant-scoped exports in the real SPA never release a stale completion
+  ---
+  duration_ms: 940.799125
+  type: 'test'
+  location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/export-browser.test.mjs:27:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: initdb -D /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-HahmGT/data -A trust --no-locale -E UTF8
+    2026-10-07 10:37:58.138 MST [94656] FATAL:  could not create shared memory segment: Operation not permitted
+    2026-10-07 10:37:58.138 MST [94656] DETAIL:  Failed system call was shmget(key=160866026, size=56, 03600).
+    child process exited with exit code 1
+    initdb: removing data directory "/private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-HahmGT/data"
+    
+  code: 1
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    ChildProcess.exithandler (node:child_process:415:12)
+    ChildProcess.emit (node:events:518:28)
+    maybeClose (node:internal/child_process:1101:16)
+    Socket.<anonymous> (node:internal/child_process:456:11)
+    Socket.emit (node:events:518:28)
+    Pipe.<anonymous> (node:net:346:12)
+  ...
+# Subtest: invitation history and authorized Auth-user deletion survive migration 015
+not ok 3 - invitation history and authorized Auth-user deletion survive migration 015
+  ---
+  duration_ms: 835.2995
+  type: 'test'
+  location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/invitation-lifecycle.test.mjs:7:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: initdb -D /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-ufoFiC/data -A trust --no-locale -E UTF8
+    2026-10-07 10:37:59.010 MST [94819] FATAL:  could not create shared memory segment: Operation not permitted
+    2026-10-07 10:37:59.010 MST [94819] DETAIL:  Failed system call was shmget(key=160866330, size=56, 03600).
+    child process exited with exit code 1
+    initdb: removing data directory "/private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-ufoFiC/data"
+    
+  code: 1
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    ChildProcess.exithandler (node:child_process:415:12)
+    ChildProcess.emit (node:events:518:28)
+    maybeClose (node:internal/child_process:1101:16)
+    Socket.<anonymous> (node:internal/child_process:456:11)
+    Socket.emit (node:events:518:28)
+    Pipe.<anonymous> (node:net:346:12)
+  ...
+# Subtest: invitation authorization at the trusted database boundary
+not ok 4 - invitation authorization at the trusted database boundary
+  ---
+  duration_ms: 888.791208
+  type: 'test'
+  location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/invitations.test.mjs:9:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: initdb -D /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-IpaGol/data -A trust --no-locale -E UTF8
+    2026-10-07 10:37:59.926 MST [94981] FATAL:  could not create shared memory segment: Operation not permitted
+    2026-10-07 10:37:59.926 MST [94981] DETAIL:  Failed system call was shmget(key=160866760, size=56, 03600).
+    child process exited with exit code 1
+    initdb: removing data directory "/private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-IpaGol/data"
+    
+  code: 1
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    ChildProcess.exithandler (node:child_process:415:12)
+    ChildProcess.emit (node:events:518:28)
+    maybeClose (node:internal/child_process:1101:16)
+    ChildProcess._handle.onexit (node:internal/child_process:304:5)
+  ...
+# Subtest: tenant isolation in the actual MFDA SPA with PostgreSQL-backed synthetic API
+not ok 5 - tenant isolation in the actual MFDA SPA with PostgreSQL-backed synthetic API
+  ---
+  duration_ms: 893.065667
+  type: 'test'
+  location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/tenant-browser.test.mjs:48:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: initdb -D /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-vW9WQt/data -A trust --no-locale -E UTF8
+    2026-10-07 10:38:01.134 MST [95169] FATAL:  could not create shared memory segment: Operation not permitted
+    2026-10-07 10:38:01.134 MST [95169] DETAIL:  Failed system call was shmget(key=160867389, size=56, 03600).
+    child process exited with exit code 1
+    initdb: removing data directory "/private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-vW9WQt/data"
+    
+  code: 1
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    ChildProcess.exithandler (node:child_process:415:12)
+    ChildProcess.emit (node:events:518:28)
+    maybeClose (node:internal/child_process:1101:16)
+    Socket.<anonymous> (node:internal/child_process:456:11)
+    Socket.emit (node:events:518:28)
+    Pipe.<anonymous> (node:net:346:12)
+  ...
+# Subtest: tenant completion guards validate authorization and lifetime
+    # Subtest: unchanged tenant and token renewal allow completion
+    ok 1 - unchanged tenant and token renewal allow completion
+      ---
+      duration_ms: 0.325084
+      type: 'test'
+      ...
+    # Subtest: every identity, org, role and generation dimension is enforced
+    ok 2 - every identity, org, role and generation dimension is enforced
+      ---
+      duration_ms: 0.059875
+      type: 'test'
+      ...
+    # Subtest: loading, absent membership, logout and expiry fail closed
+    ok 3 - loading, absent membership, logout and expiry fail closed
+      ---
+      duration_ms: 0.051041
+      type: 'test'
+      ...
+    # Subtest: A → B → A does not revive the first auth/org generation
+    ok 4 - A → B → A does not revive the first auth/org generation
+      ---
+      duration_ms: 0.060291
+      type: 'test'
+      ...
+    # Subtest: unmount and StrictMode cleanup never revive a captured continuation
+    ok 5 - unmount and StrictMode cleanup never revive a captured continuation
+      ---
+      duration_ms: 0.055083
+      type: 'test'
+      ...
+    # Subtest: failed work retried in a fresh scope cannot release the previous result
+    ok 6 - failed work retried in a fresh scope cannot release the previous result
+      ---
+      duration_ms: 0.196292
+      type: 'test'
+      ...
+    1..6
+ok 6 - tenant completion guards validate authorization and lifetime
+  ---
+  duration_ms: 1.745708
+  type: 'test'
+  ...
+1..6
+# tests 12
+# suites 0
+# pass 7
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7666.698042

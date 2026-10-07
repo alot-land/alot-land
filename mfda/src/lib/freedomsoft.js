@@ -93,14 +93,17 @@ export function freedomsoftCSV(parcels, listName) {
 }
 
 /** Trigger a browser download of the CSV. */
-export function downloadCSV(filename, text) {
+export function downloadCSV(filename, text, isCurrent) {
+  if (!isCurrent()) return false;
   const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
-  a.click();
+  const released = isCurrent();
+  if (released) a.click();
   a.remove();
   URL.revokeObjectURL(url);
+  return released;
 }

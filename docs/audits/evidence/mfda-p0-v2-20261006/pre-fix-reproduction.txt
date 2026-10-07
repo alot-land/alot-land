@@ -1,0 +1,25 @@
+TAP version 13
+# BLOCKER A CONFIRMED: authorized author deletion fails; user and consumed invitation unchanged.
+# Subtest: V2 independent reproduction: consumed inviter deletion rolls back
+ok 1 - V2 independent reproduction: consumed inviter deletion rolls back
+  ---
+  duration_ms: 1112.039375
+  type: 'test'
+  ...
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-uvD2va/vite-cache/deps/react-dom_client.js?v=fbe52a35 as it exceeds the max of 500KB.
+# BLOCKER B CONFIRMED: B receives v2-a-only-export.csv containing A-only parcel data.
+# Subtest: V2 independent reproduction: captured A response downloads after B renders
+ok 2 - V2 independent reproduction: captured A response downloads after B renders
+  ---
+  duration_ms: 3657.416125
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5091.716875

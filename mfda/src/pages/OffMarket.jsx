@@ -1,7 +1,7 @@
 import { Suspense, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { lazyReload } from '../lib/lazyReload';
-import { useQuery, useQueryClient, keepPreviousData } from '../lib/tenant-query';
+import { useQuery, useQueryClient, keepPreviousData, useTenantCompletionGuard } from '../lib/tenant-query';
 import { useOrg } from '../lib/org';
 import { useAuth } from '../lib/auth';
 import {
@@ -51,6 +51,8 @@ export default function OffMarket() {
   const { org } = useOrg();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const captureCompletion = useTenantCompletionGuard();
+  const [exportError, setExportError] = useState(null);
 
   const [state, setState] = useState('all');
   const [county, setCounty] = useState('all');
@@ -164,10 +166,12 @@ export default function OffMarket() {
     [counties.data, state],
   );
 
-  function exportCSV(parcelRows, listName, listId) {
+  function exportCSV(parcelRows, listName, listId, isCurrent = captureCompletion()) {
+    if (!isCurrent()) return;
     const name = listName || `MFDA off-market ${new Date().toISOString().slice(0, 10)}`;
-    downloadCSV(`${name.replace(/[^\w-]+/g, '-').toLowerCase()}.csv`, freedomsoftCSV(parcelRows, name));
-    logMailExport(org.id, user.id, { listId, rowCount: parcelRows.length });
+    if (downloadCSV(`${name.replace(/[^\w-]+/g, '-').toLowerCase()}.csv`, freedomsoftCSV(parcelRows, name), isCurrent)) {
+      void logMailExport(org.id, user.id, { listId, rowCount: parcelRows.length });
+    }
   }
 
   async function saveList() {
@@ -187,8 +191,14 @@ export default function OffMarket() {
   }
 
   async function exportSavedList(list) {
-    const items = await listParcelsForMailList(list.id, org.id);
-    exportCSV(items, list.name, list.id);
+    const isCurrent = captureCompletion();
+    setExportError(null);
+    try {
+      const items = await listParcelsForMailList(list.id, org.id);
+      if (isCurrent()) exportCSV(items, list.name, list.id, isCurrent);
+    } catch (error) {
+      if (isCurrent()) setExportError(error.message || 'Could not export the saved list.');
+    }
   }
 
   async function removeList(list) {
@@ -199,6 +209,7 @@ export default function OffMarket() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
+      {exportError && <p role="alert" className="text-danger">{exportError}</p>}
       <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
         <div>
           <h1 className="font-display text-2xl font-semibold">Off-market</h1>

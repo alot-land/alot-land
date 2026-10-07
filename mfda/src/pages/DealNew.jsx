@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '../lib/tenant-query';
+import { useQuery, useTenantCompletionGuard } from '../lib/tenant-query';
 import { useAuth } from '../lib/auth';
 import { useOrg } from '../lib/org';
 import { underwrite } from '../lib/underwrite';
@@ -58,6 +58,7 @@ function blankForm() {
 }
 
 export default function DealNew() {
+  const captureCompletion = useTenantCompletionGuard();
   const { id } = useParams();
   const editing = Boolean(id);
   const { user } = useAuth();
@@ -251,6 +252,7 @@ export default function DealNew() {
 
   async function submit(e) {
     e.preventDefault();
+    const isCurrent = captureCompletion();
     setErr('');
     setSaving(true);
     try {
@@ -260,16 +262,21 @@ export default function DealNew() {
         status: f.status, units_count: f.units.reduce((a, u) => a + (Number(u.count) || 0), 0),
         year_built: f.year_built, price: f.price, source: editing ? undefined : 'manual',
       });
+      if (!isCurrent()) return;
       await replaceUnits(org.id, deal.id, f.units);
+      if (!isCurrent()) return;
       const market = (markets.data || []).find((x) => x.id === f.market_id);
       const outputs = underwrite({ ...f, market: market ? { str_permit_status: market.str_permit_status, appreciation_rate: Number(market.appreciation_rate) } : undefined });
       await saveScenario(org.id, user.id, deal.id, {
         label: editing ? `Revision ${new Date().toLocaleString()}` : 'Base',
         inputs: f, outputs, calc_version: outputs.calc_version,
       });
+      if (!isCurrent()) return;
       await logCost(org.id, user.id, { deal_id: deal.id, kind: 'model', provider: 'manual', description: 'Manual underwrite', amount_usd: 0 });
+      if (!isCurrent()) return;
       nav(`/deals/${deal.id}`);
     } catch (e2) {
+      if (!isCurrent()) return;
       setErr(e2.message);
       setSaving(false);
     }

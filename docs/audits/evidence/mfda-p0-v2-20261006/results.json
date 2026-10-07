@@ -1,0 +1,64 @@
+{
+  "scanner": {
+    "code": 0,
+    "command": [
+      "npm",
+      "test"
+    ],
+    "cwd": "/Users/davidastone/code/alot-land/alot-land/workers/scan"
+  },
+  "calc": {
+    "code": 0,
+    "command": [
+      "npm",
+      "test"
+    ],
+    "cwd": "/Users/davidastone/code/alot-land/alot-land/packages/mf-calc"
+  },
+  "typecheck": {
+    "code": 2,
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "cwd": "/Users/davidastone/code/alot-land/alot-land/packages/mf-calc"
+  },
+  "baseline-typecheck": {
+    "code": 2,
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "cwd": "/private/tmp/mfda-v2-baseline-mqjboZ/packages/mf-calc"
+  },
+  "security": {
+    "code": 0,
+    "command": [
+      "/usr/local/bin/node",
+      "--test",
+      "--test-concurrency=1",
+      "security/baseline.test.mjs",
+      "security/export-browser.test.mjs",
+      "security/invitation-lifecycle.test.mjs",
+      "security/invitations.test.mjs",
+      "security/tenant-browser.test.mjs",
+      "security/tenant-completion.test.mjs"
+    ],
+    "cwd": "/Users/davidastone/code/alot-land/alot-land/mfda"
+  },
+  "typecheckComparison": {
+    "identical": true,
+    "currentDiagnostics": 35,
+    "baselineDiagnostics": 35,
+    "baseline": "c800392a3c57cb425dc9ab90ca3cda4893b2e5fd",
+    "extracted": "/private/tmp/mfda-v2-baseline-mqjboZ"
+  },
+  "build": {
+    "code": 0,
+    "envFile": false,
+    "supabase": "synthetic",
+    "outDir": "/private/tmp/mfda-v2-verification/frontend-build"
+  }
+}

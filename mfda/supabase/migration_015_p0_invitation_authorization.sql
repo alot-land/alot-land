@@ -112,10 +112,19 @@ create trigger on_auth_user_confirmed_mfda after update of email_confirmed_at on
   execute function public.bootstrap_new_user();
 
 -- Consumption cannot be undone, nor can a consumed invitation be retargeted.
+-- invited_by is deliberately nullable (schema.sql: ON DELETE SET NULL).
+-- Preserve history when Auth deletes its author: allow only that FK cleanup,
+-- only after the referenced user is gone, with every other column unchanged.
+-- A definer lookup is required: Auth writers need not have SELECT on auth.users.
 create or replace function public.protect_consumed_mfda_invite()
-returns trigger language plpgsql set search_path = '' as $$
+returns trigger language plpgsql security definer set search_path = '' as $$
 begin
   if old.accepted_at is not null and new is distinct from old then
+    if old.invited_by is not null and new.invited_by is null
+      and (to_jsonb(new) - 'invited_by') = (to_jsonb(old) - 'invited_by')
+      and not exists (select 1 from auth.users where id = old.invited_by) then
+      return new;
+    end if;
     raise exception 'Consumed invitation is immutable' using errcode = '42501';
   end if;
   return new;
