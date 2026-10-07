@@ -1,0 +1,30 @@
+
+> @alot/mf-calc@1.14.0 test
+> vitest run
+
+
+ RUN  v1.6.1 /Users/davidastone/code/alot-land/alot-land/packages/mf-calc
+
+ ✓ test/finance.test.ts  (30 tests) 3ms
+ ✓ test/financing.test.ts  (15 tests) 4ms
+ ✓ test/proforma.test.ts  (14 tests) 3ms
+ ✓ test/offmarket.test.ts  (12 tests) 3ms
+ ✓ test/tax.test.ts  (22 tests) 5ms
+ ✓ test/rents.test.ts  (16 tests) 4ms
+ ✓ test/markets.test.ts  (21 tests) 8ms
+ ✓ test/referenceDeals.test.ts  (17 tests) 5ms
+ ✓ test/goals.test.ts  (26 tests) 7ms
+ ✓ test/plausibility.test.ts  (11 tests) 36ms
+ ✓ test/str.test.ts  (11 tests) 5ms
+ ✓ test/comps.test.ts  (14 tests) 4ms
+ ✓ test/stress.test.ts  (6 tests) 5ms
+ ✓ test/valuation.test.ts  (9 tests) 3ms
+ ✓ test/prescreen.test.ts  (8 tests) 3ms
+ ✓ test/unitMix.test.ts  (7 tests) 4ms
+ ✓ test/scoring.test.ts  (5 tests) 2ms
+
+ Test Files  17 passed (17)
+      Tests  244 passed (244)
+   Start at  12:34:39
+   Duration  1.40s (transform 547ms, setup 0ms, collect 3.31s, tests 104ms, environment 3ms, prepare 4.50s)
+

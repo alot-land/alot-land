@@ -1,0 +1,143 @@
+{
+  "branch": "hardening/mfda-p0-closure-v3",
+  "head": "b9288e13f83b2dd5a36718165cf84c8aab1cb6a5",
+  "filesScanned": 26,
+  "credentialFindings": [],
+  "newSourceWhitespaceFindings": [],
+  "gitDiffCheck": "PASS",
+  "netlifyMetadataUnchanged": true,
+  "netlifyEntries": 1027,
+  "priorSuitesMigrationsCalcScannerUnchanged": true,
+  "inventory": [
+    {
+      "path": "docs/audits/MFDA_P0_CLOSURE_V3_2026-10-07.md",
+      "bytes": 20718,
+      "sha256": "7569ad4b24ada8ec10e07132eaa160c88e3ce6f8136ce58fea908bc51d2ecc3b"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/baseline-typecheck.txt",
+      "bytes": 2626,
+      "sha256": "3aa666fb057278a61391a59c66edbb09c963a5b764f18ff2e5cc7cd4f01da0d0"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/build-first.txt",
+      "bytes": 2295,
+      "sha256": "c96f59dae4ead7569f86ea988ee2e5b9b6eba57d037e337a3accaf8959591f9b"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/build.txt",
+      "bytes": 1916,
+      "sha256": "2478a336130d82c40b1e551aeae53c4d686e79eb937974afb201c4060117f49d"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/calc.txt",
+      "bytes": 1025,
+      "sha256": "95602826c15cd32fb23b6874c02273acdb91176dfed00b053d5695dcaa9fd6cb"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/csv-pages.test.mjs",
+      "bytes": 6013,
+      "sha256": "25a5a4c60d06558b7e8a3fa300fd5d9eb5faaa6ca8e2a00875c2cc1623a33773"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/independent-regression.test.mjs",
+      "bytes": 28465,
+      "sha256": "272dddd1e6f783fb84f25079a641eede27fcebf0f458e9c83c53adeef6981908"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/independent.txt",
+      "bytes": 6427,
+      "sha256": "a89d064fb529f85fd004546a28330008f66e83275c198c129bdfc35c5f4e39a5"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/observations.json",
+      "bytes": 2298,
+      "sha256": "c5f7eb2d381d3a0e13f549592f86f3701d9e2295ac022a399e5314324176bd48"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/pre-fix-reproduction.test.mjs",
+      "bytes": 3811,
+      "sha256": "b3e32e2ef424e007bebbf00ad4a4c98f47def7536883ac818457c1908c22ac61"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/pre-fix-reproduction.txt",
+      "bytes": 1100,
+      "sha256": "dbc8440d5b7b91238a2760ada51e613132c01e1bbc1cde547ede707439eab281"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/pre-fix-sandbox.txt",
+      "bytes": 1707,
+      "sha256": "dc9692b51e95d90af54f5a467679862378a59991550043e2eabd0b9e7d81cd24"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/rent-development-first.txt",
+      "bytes": 20549,
+      "sha256": "ac1ecc856e4560749f07532eae404368cecde3fb9b741dfff860708d5cc501f1"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/rent-development-second.txt",
+      "bytes": 12079,
+      "sha256": "ae708857032e9a4292834c28eb116c24dc8c23463bd1504e172deebd38762f2a"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/rent.txt",
+      "bytes": 10601,
+      "sha256": "5bd593d435d5f5a65caf4951e75492d3d4de9c7bd6c47efe3854e167619b79cf"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/results.json",
+      "bytes": 2054,
+      "sha256": "5c4ec9a1b74ab22c505e23554b61bcaea1afc2656a41aaa90f3f45f263cd33d8"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/scanner.txt",
+      "bytes": 804,
+      "sha256": "3bbc0027a2bd4733ffe04aed7835a131160885026191b819ef9faf92efa131b8"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/security-infrastructure.txt",
+      "bytes": 38714,
+      "sha256": "b99900aefde060ee629f0dbb8b482c2b72cf3d04de56d866556fe3a5aa417ea9"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/security.txt",
+      "bytes": 34418,
+      "sha256": "09c4f9a5f961325240dda2816c0f6ae2f3f2df773d10d5d838a29d349f86061f"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/typecheck.txt",
+      "bytes": 2626,
+      "sha256": "3aa666fb057278a61391a59c66edbb09c963a5b764f18ff2e5cc7cd4f01da0d0"
+    },
+    {
+      "path": "docs/audits/evidence/mfda-p0-v3-20261007/verify.mjs",
+      "bytes": 9108,
+      "sha256": "633e7752e072325af220c50e37d848fe1b588d8bfdc7166d05ef07026f263a72"
+    },
+    {
+      "path": "mfda/netlify/functions/rent-estimate.mjs",
+      "bytes": 6927,
+      "sha256": "fe41c5c26f42a6200ce4553475f8539f9fad0ca8ae94f5def6aac3a8e378012d"
+    },
+    {
+      "path": "mfda/security/rent-browser.test.mjs",
+      "bytes": 16122,
+      "sha256": "02c099d2994d97c789ceaac041cbeab3b11234b1b1743ffbafb6bc684596b982"
+    },
+    {
+      "path": "mfda/security/rent-proxy.test.mjs",
+      "bytes": 8598,
+      "sha256": "56d47f284fa6eee3adce17d6ee5a73ed1b051404c692c320d23253cc59153607"
+    },
+    {
+      "path": "mfda/src/components/RentEstimator.jsx",
+      "bytes": 11893,
+      "sha256": "68aae7eaef88ca671fa769f6c0aa27b10bc417862d9db3dc61ac10375d5b7d99"
+    },
+    {
+      "path": "mfda/src/lib/queries.js",
+      "bytes": 26970,
+      "sha256": "b04bd6c503fc02612552e651de710f958b6b516ba7f76489aa48c89c27e018e0"
+    }
+  ]
+}

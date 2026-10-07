@@ -1,0 +1,42 @@
+TAP version 13
+# Unauthenticated proxy status: 200 stubbed upstream calls: 1
+# Subtest: pre-fix N-1: held A cache miss starts A RentCast proxy request under B
+not ok 1 - pre-fix N-1: held A cache miss starts A RentCast proxy request under B
+  ---
+  duration_ms: 831.780375
+  type: 'test'
+  location: '/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v3-20261007/pre-fix-reproduction.test.mjs:8:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: initdb -D /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-pZq2RU/data -A trust --no-locale -E UTF8
+    2026-10-07 12:24:01.572 MST [17810] FATAL:  could not create shared memory segment: Operation not permitted
+    2026-10-07 12:24:01.572 MST [17810] DETAIL:  Failed system call was shmget(key=162249278, size=56, 03600).
+    child process exited with exit code 1
+    initdb: removing data directory "/private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-pZq2RU/data"
+    
+  code: 1
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    ChildProcess.exithandler (node:child_process:415:12)
+    ChildProcess.emit (node:events:518:28)
+    maybeClose (node:internal/child_process:1101:16)
+    Socket.<anonymous> (node:internal/child_process:456:11)
+    Socket.emit (node:events:518:28)
+    Pipe.<anonymous> (node:net:346:12)
+  ...
+# Subtest: pre-fix real proxy accepts unauthenticated synthetic request
+ok 2 - pre-fix real proxy accepts unauthenticated synthetic request
+  ---
+  duration_ms: 3.512084
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1159.346375

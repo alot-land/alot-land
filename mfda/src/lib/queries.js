@@ -491,9 +491,9 @@ export async function saveRentEstimate(orgId, userId, row) {
  * account has a card on file, so request 51 costs real money — the app has to
  * refuse it rather than discover it on a statement.
  *
- * Every outbound call is written to cost_ledger, so the count is of requests
- * actually SENT, not of rows that happened to succeed. Cache hits never call
- * and never count.
+ * Current-scope outbound attempts are written to cost_ledger, including
+ * failures. Cache hits never count. Obsolete lifetimes suppress their writes;
+ * this client meter is not an authoritative server-wide quota reservation.
  */
 export const RENTCAST_MONTHLY_LIMIT = 50;
 
@@ -518,16 +518,30 @@ export async function countRentcastCalls(orgId, sinceIso = monthStart()) {
  * lives in Netlify's environment, never in this bundle. A 501 means no key is
  * configured, which is a normal state — the caller falls back to ZIP bands.
  */
-export async function fetchRentEstimate({ address, bedrooms, bathrooms, squareFootage }) {
-  const p = new URLSearchParams({ address });
+export async function fetchRentEstimate({ orgId, userId, isCurrent, address, bedrooms, bathrooms, squareFootage }) {
+  const refuse = () => {
+    const error = new Error('Rent estimate authorization is no longer current.');
+    error.code = 'cancelled';
+    throw error;
+  };
+  if (!orgId || !userId || !isCurrent?.()) refuse();
+  const { data, error } = await supabase.auth.getSession();
+  // The SDK may refresh/read a session asynchronously. Do not send an old
+  // address with the replacement user's token, or revive an obsolete A ticket.
+  if (!isCurrent() || error || data.session?.user?.id !== userId || !data.session?.access_token) refuse();
+  const p = new URLSearchParams({ address, orgId });
   if (bedrooms != null) p.set('bedrooms', String(bedrooms));
   if (bathrooms != null) p.set('bathrooms', String(bathrooms));
   if (squareFootage) p.set('squareFootage', String(squareFootage));
-  const res = await fetch(`/.netlify/functions/rent-estimate?${p.toString()}`);
+  const res = await fetch(`/.netlify/functions/rent-estimate?${p.toString()}`, {
+    headers: { Authorization: `Bearer ${data.session.access_token}` },
+    cache: 'no-store',
+  });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new Error(body.message || `rent estimate failed (${res.status})`);
     err.code = body.error || String(res.status);
+    err.reachedRentcast = body.rentcast_contacted === true;
     throw err;
   }
   return body;

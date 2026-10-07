@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '../lib/tenant-query';
+import { useQuery, useQueryClient, useTenantCompletionGuard } from '../lib/tenant-query';
 import * as mf from '@alot/mf-calc';
 import {
   listAllRentBands,
@@ -29,6 +29,7 @@ import { Tip } from './fields';
  */
 export default function RentEstimator({ orgId, userId, zip, address, city, state, units, onApply }) {
   const qc = useQueryClient();
+  const capture = useTenantCompletionGuard();
   const [busy, setBusy] = useState(false);
   const [apiResult, setApiResult] = useState(null);
   const [apiError, setApiError] = useState(null);
@@ -73,6 +74,7 @@ export default function RentEstimator({ orgId, userId, zip, address, city, state
   const fullAddress = [address, city, state, zip].filter(Boolean).join(', ');
 
   function applyZip() {
+    if (!capture()()) return;
     const next = (units || []).map((u, i) => {
       const s = suggestions[i];
       return s?.rent != null ? { ...u, market_rent: Math.round(s.rent) } : u;
@@ -81,6 +83,7 @@ export default function RentEstimator({ orgId, userId, zip, address, city, state
   }
 
   function applyApi(rent) {
+    if (!capture()()) return;
     // Apply to the unit type whose bedroom count the estimate was priced at,
     // or to everything when the mix is a single type.
     const beds = apiResult?.bedrooms ?? null;
@@ -93,6 +96,10 @@ export default function RentEstimator({ orgId, userId, zip, address, city, state
   }
 
   async function fetchApi() {
+    // Keep the original lifetime ticket across every await, including the
+    // session lookup inside fetchRentEstimate. Returning to A cannot revive it.
+    const isCurrent = capture();
+    if (!isCurrent()) return;
     setBusy(true);
     setApiError(null);
     try {
@@ -102,6 +109,7 @@ export default function RentEstimator({ orgId, userId, zip, address, city, state
       // Cache first — a repeat click must never spend a request.
       if (key) {
         const cached = await getRentEstimate(orgId, key, bedrooms);
+        if (!isCurrent()) return;
         if (cached) {
           setApiResult({ ...cached, bedrooms, cached: true });
           return;
@@ -110,6 +118,7 @@ export default function RentEstimator({ orgId, userId, zip, address, city, state
       // Nothing cached, so this WILL leave the building. Re-check the meter
       // against fresh numbers rather than whatever the page loaded with.
       const fresh = await countRentcastCalls(orgId);
+      if (!isCurrent()) return;
       if (fresh >= RENTCAST_MONTHLY_LIMIT && !allowOverLimit) {
         qc.setQueryData(['rentcast-usage', orgId], fresh);
         setApiError(
@@ -120,34 +129,37 @@ export default function RentEstimator({ orgId, userId, zip, address, city, state
       }
 
       let got;
-      let reachedRentcast = true;
+      let reachedRentcast = false;
       try {
         got = await fetchRentEstimate({
+          orgId, userId, isCurrent,
           address: fullAddress,
           bedrooms,
           squareFootage: first.sqft || null,
         });
+        reachedRentcast = true;
       } catch (e) {
-        // A missing key is refused by our own function — nothing was sent, so
-        // it must not consume quota. Everything else did reach RentCast.
-        if (e.code === 'not_configured') reachedRentcast = false;
+        // Authentication/configuration refusals and cancelled session lookups
+        // never reached RentCast. Only the proxy can report an upstream attempt.
+        reachedRentcast = e.reachedRentcast === true;
         throw e;
       } finally {
-        if (reachedRentcast) {
-          // Counted whether or not it succeeded: the request went out either
-          // way, and counting only successes would under-report usage in
-          // precisely the direction that costs money.
+        if (isCurrent() && reachedRentcast) {
+          // Within this lifetime, count failures as well as successes. Once
+          // scope changes, suppress all new writes; already sent upstream
+          // attempts may then be absent from this advisory client meter.
           await logCost(orgId, userId, {
             kind: 'api',
             provider: 'rentcast',
             description: `rent estimate · ${fullAddress}`,
             amount_usd: 0,
           });
-          qc.invalidateQueries({ queryKey: ['rentcast-usage', orgId] });
+          if (isCurrent()) qc.invalidateQueries({ queryKey: ['rentcast-usage', orgId] });
         }
       }
+      if (!isCurrent()) return;
       setApiResult({ ...got, bedrooms, cached: false });
-      if (key) {
+      if (isCurrent() && key) {
         await saveRentEstimate(orgId, userId, {
           addr_key: key,
           address: fullAddress,
@@ -161,11 +173,12 @@ export default function RentEstimator({ orgId, userId, zip, address, city, state
         }).catch(() => {}); // caching is best-effort; never block the estimate
       }
     } catch (e) {
+      if (!isCurrent()) return;
       setApiError(e.code === 'not_configured'
         ? 'No RentCast key configured — the free ZIP estimate above is what you have. See the Guide to add one.'
         : e.message);
     } finally {
-      setBusy(false);
+      if (isCurrent()) setBusy(false);
     }
   }
 
@@ -233,7 +246,7 @@ export default function RentEstimator({ orgId, userId, zip, address, city, state
           <input
             type="checkbox"
             checked={allowOverLimit}
-            onChange={(e) => setAllowOverLimit(e.target.checked)}
+            onChange={(e) => { if (capture()()) setAllowOverLimit(e.target.checked); }}
             className="mt-0.5"
           />
           <span>

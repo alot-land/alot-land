@@ -1,0 +1,25 @@
+TAP version 13
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-EX2e4n/vite-cache/deps/react-dom_client.js?v=f6db2e7a as it exceeds the max of 500KB.
+# N-1 observed: {"address":"A ONLY SECURITY CANARY, AZ, 85001","authorization":null,"activeHeader":"MFDA.\\nMarkets\\nOn-Market\\nOff-Market\\nDeals\\nGoals\\nGuide\\nSettings\\nSynthetic Tenant B\\n🌙\\nb@example.invalid\\nSign out","activeUser":"10000000-0000-0000-0000-000000000002"}
+# Unauthenticated proxy status: 200 stubbed upstream calls: 1
+# Subtest: pre-fix N-1: held A cache miss starts A RentCast proxy request under B
+ok 1 - pre-fix N-1: held A cache miss starts A RentCast proxy request under B
+  ---
+  duration_ms: 3161.992708
+  type: 'test'
+  ...
+# Subtest: pre-fix real proxy accepts unauthenticated synthetic request
+ok 2 - pre-fix real proxy accepts unauthenticated synthetic request
+  ---
+  duration_ms: 2.365167
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18319.385291

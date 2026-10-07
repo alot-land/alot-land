@@ -1,0 +1,77 @@
+{
+  "scanner": {
+    "code": 0,
+    "command": [
+      "npm",
+      "test"
+    ],
+    "cwd": "/Users/davidastone/code/alot-land/alot-land/workers/scan"
+  },
+  "calc": {
+    "code": 0,
+    "command": [
+      "npm",
+      "test"
+    ],
+    "cwd": "/Users/davidastone/code/alot-land/alot-land/packages/mf-calc"
+  },
+  "typecheck": {
+    "code": 2,
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "cwd": "/Users/davidastone/code/alot-land/alot-land/packages/mf-calc"
+  },
+  "baseline-typecheck": {
+    "code": 2,
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "cwd": "/private/tmp/mfda-v3-verification-4iy48N/baseline/packages/mf-calc"
+  },
+  "independent": {
+    "code": 0,
+    "command": [
+      "/usr/local/bin/node",
+      "--test",
+      "--test-concurrency=1",
+      "/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v3-20261007/independent-regression.test.mjs",
+      "/Users/davidastone/code/alot-land/alot-land/docs/audits/evidence/mfda-p0-v3-20261007/csv-pages.test.mjs"
+    ],
+    "cwd": "/Users/davidastone/code/alot-land/alot-land/mfda"
+  },
+  "security": {
+    "code": 0,
+    "command": [
+      "/usr/local/bin/node",
+      "--test",
+      "--test-concurrency=1",
+      "security/baseline.test.mjs",
+      "security/export-browser.test.mjs",
+      "security/invitation-lifecycle.test.mjs",
+      "security/invitations.test.mjs",
+      "security/rent-browser.test.mjs",
+      "security/rent-proxy.test.mjs",
+      "security/tenant-browser.test.mjs",
+      "security/tenant-completion.test.mjs"
+    ],
+    "cwd": "/Users/davidastone/code/alot-land/alot-land/mfda"
+  },
+  "typecheckComparison": {
+    "identical": true,
+    "currentDiagnostics": 35,
+    "baselineDiagnostics": 35,
+    "baseline": "c800392a3c57cb425dc9ab90ca3cda4893b2e5fd",
+    "extracted": "/private/tmp/mfda-v3-verification-4iy48N/baseline"
+  },
+  "build": {
+    "code": 0,
+    "envDir": false,
+    "outDir": "/private/tmp/mfda-v3-verification-pnP3QA/frontend-build",
+    "serverSecretScan": "PASS"
+  }
+}

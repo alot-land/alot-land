@@ -1,0 +1,467 @@
+TAP version 13
+# [BABEL] Note: The code generator has deoptimised the styling of /private/var/folders/v8/pxztscbj2rl_5_r28_5bzm2w0000gn/T/mfda-security-EsDnOh/vite-cache/deps/react-dom_client.js?v=3b451b67 as it exceeds the max of 500KB.
+# Subtest: real RentEstimator binds every asynchronous continuation to its initiating tenant lifetime
+    # Subtest: same-scope cache miss succeeds with initiating bearer/org and exact cache/usage attribution
+    ok 1 - same-scope cache miss succeeds with initiating bearer/org and exact cache/usage attribution
+      ---
+      duration_ms: 1861.382083
+      type: 'test'
+      ...
+    # Subtest: same-scope cache hit returns without upstream or metering
+    ok 2 - same-scope cache hit returns without upstream or metering
+      ---
+      duration_ms: 585.564292
+      type: 'test'
+      ...
+    # Subtest: user A → B during held cache suppresses stale request/result/cache/meter
+    not ok 3 - user A → B during held cache suppresses stale request/result/cache/meter
+      ---
+      duration_ms: 592.922208
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:128:15'
+      failureType: 'testCodeFailure'
+      error: |-
+        only initial usage query; no obsolete follow-on
+        
+        2 !== 1
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 1
+      actual: 2
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:133:39)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:128:7)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: user A → B during held usage suppresses stale request/result/cache/meter
+    ok 4 - user A → B during held usage suppresses stale request/result/cache/meter
+      ---
+      duration_ms: 558.837208
+      type: 'test'
+      ...
+    # Subtest: user A → B during held proxy suppresses stale request/result/cache/meter
+    ok 5 - user A → B during held proxy suppresses stale request/result/cache/meter
+      ---
+      duration_ms: 625.44925
+      type: 'test'
+      ...
+    # Subtest: user A → B suppresses late proxy error and usage
+    ok 6 - user A → B suppresses late proxy error and usage
+      ---
+      duration_ms: 585.983792
+      type: 'test'
+      ...
+    # Subtest: user A → B → A never revives first-A result
+    ok 7 - user A → B → A never revives first-A result
+      ---
+      duration_ms: 740.144041
+      type: 'test'
+      ...
+    # Subtest: user B performs fresh estimate after suppressed A
+    ok 8 - user B performs fresh estimate after suppressed A
+      ---
+      duration_ms: 953.02475
+      type: 'test'
+      ...
+    # Subtest: org A → B during held cache suppresses stale request/result/cache/meter
+    not ok 9 - org A → B during held cache suppresses stale request/result/cache/meter
+      ---
+      duration_ms: 533.786958
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:128:15'
+      failureType: 'testCodeFailure'
+      error: |-
+        only initial usage query; no obsolete follow-on
+        
+        2 !== 1
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 1
+      actual: 2
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:133:39)
+        runNextTicks (node:internal/process/task_queues:65:5)
+        process.processImmediate (node:internal/timers:453:9)
+        process.callbackTrampoline (node:internal/async_hooks:130:17)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:128:7)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: org A → B during held usage suppresses stale request/result/cache/meter
+    ok 10 - org A → B during held usage suppresses stale request/result/cache/meter
+      ---
+      duration_ms: 569.082791
+      type: 'test'
+      ...
+    # Subtest: org A → B during held proxy suppresses stale request/result/cache/meter
+    ok 11 - org A → B during held proxy suppresses stale request/result/cache/meter
+      ---
+      duration_ms: 580.72025
+      type: 'test'
+      ...
+    # Subtest: org A → B suppresses late proxy error and usage
+    ok 12 - org A → B suppresses late proxy error and usage
+      ---
+      duration_ms: 535.085042
+      type: 'test'
+      ...
+    # Subtest: org A → B → A never revives first-A result
+    ok 13 - org A → B → A never revives first-A result
+      ---
+      duration_ms: 886.528292
+      type: 'test'
+      ...
+    # Subtest: org B performs fresh estimate after suppressed A
+    ok 14 - org B performs fresh estimate after suppressed A
+      ---
+      duration_ms: 1195.781375
+      type: 'test'
+      ...
+    # Subtest: held cache failure after user switch shows no stale error
+    ok 15 - held cache failure after user switch shows no stale error
+      ---
+      duration_ms: 719.005
+      type: 'test'
+      ...
+    # Subtest: logout during cache miss suppresses every follow-on
+    not ok 16 - logout during cache miss suppresses every follow-on
+      ---
+      duration_ms: 15505.139
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:165:11'
+      failureType: 'testCodeFailure'
+      error: |-
+        locator.waitFor: Timeout 15000ms exceeded.
+        Call log:
+        [2m  - waiting for getByRole('button', { name: /Send sign-in/ }) to be visible[22m
+        
+      code: 'ERR_TEST_FAILURE'
+      name: 'TimeoutError'
+      stack: |-
+        TestContext.<anonymous> (/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:167:128)
+        async TestContext.<anonymous> (/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:165:3)
+      ...
+    # Subtest: same-user token renewal preserves pending estimate
+    ok 17 - same-user token renewal preserves pending estimate
+      ---
+      duration_ms: 603.029292
+      type: 'test'
+      ...
+    # Subtest: scope change during an already initiated A usage write prevents cache/result follow-on
+    ok 18 - scope change during an already initiated A usage write prevents cache/result follow-on
+      ---
+      duration_ms: 565.849083
+      type: 'test'
+      ...
+    # Subtest: authorization rejection before RentCast creates no misleading meter
+    ok 19 - authorization rejection before RentCast creates no misleading meter
+      ---
+      duration_ms: 467.40725
+      type: 'test'
+      ...
+    # Subtest: same-scope upstream failure is metered and shows current error
+    ok 20 - same-scope upstream failure is metered and shows current error
+      ---
+      duration_ms: 470.940167
+      type: 'test'
+      ...
+    # Subtest: same-scope fresh quota denial updates current meter without upstream
+    not ok 21 - same-scope fresh quota denial updates current meter without upstream
+      ---
+      duration_ms: 467.439542
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:190:11'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+        + [
+        +   {
+        +     address: 'A ONLY SECURITY CANARY, AZ, 85001',
+        +     org: '20000000-0000-0000-0000-000000000001',
+        +     uid: '10000000-0000-0000-0000-000000000001'
+        +   }
+        + ]
+        - []
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual:
+        0:
+          uid: '10000000-0000-0000-0000-000000000001'
+          org: '20000000-0000-0000-0000-000000000001'
+          address: 'A ONLY SECURITY CANARY, AZ, 85001'
+      operator: 'deepStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:192:12)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:190:3)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    1..21
+not ok 1 - real RentEstimator binds every asynchronous continuation to its initiating tenant lifetime
+  ---
+  duration_ms: 30969.356459
+  type: 'test'
+  location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-browser.test.mjs:16:1'
+  failureType: 'subtestsFailed'
+  error: '4 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+# Subtest: rent proxy requires trusted user and organization authorization
+    # Subtest: missing bearer rejects before any external request
+    ok 1 - missing bearer rejects before any external request
+      ---
+      duration_ms: 10.747833
+      type: 'test'
+      ...
+    # Subtest: malformed bearer rejects before any external request
+    ok 2 - malformed bearer rejects before any external request
+      ---
+      duration_ms: 0.438583
+      type: 'test'
+      ...
+    # Subtest: Auth rejects SYNTHETIC-INVALID-TOKEN
+    ok 3 - Auth rejects SYNTHETIC-INVALID-TOKEN
+      ---
+      duration_ms: 0.498
+      type: 'test'
+      ...
+    # Subtest: Auth rejects SYNTHETIC-EXPIRED-SESSION
+    ok 4 - Auth rejects SYNTHETIC-EXPIRED-SESSION
+      ---
+      duration_ms: 0.521541
+      type: 'test'
+      ...
+    # Subtest: authenticated user with no membership rejects
+    ok 5 - authenticated user with no membership rejects
+      ---
+      duration_ms: 0.982917
+      type: 'test'
+      ...
+    # Subtest: forged org rejects even with claimed userId
+    ok 6 - forged org rejects even with claimed userId
+      ---
+      duration_ms: 0.7025
+      type: 'test'
+      ...
+    # Subtest: missing and malformed org fail closed
+    ok 7 - missing and malformed org fail closed
+      ---
+      duration_ms: 0.331583
+      type: 'test'
+      ...
+    # Subtest: membership response must match both verified user and org
+    ok 8 - membership response must match both verified user and org
+      ---
+      duration_ms: 0.58125
+      type: 'test'
+      ...
+    # Subtest: valid authorized user/org succeeds and identity never reaches RentCast
+    ok 9 - valid authorized user/org succeeds and identity never reaches RentCast
+      ---
+      duration_ms: 1.273625
+      type: 'test'
+      ...
+    # Subtest: authorization infrastructure failure is generic and closed ["throwAuth"]
+    not ok 10 - authorization infrastructure failure is generic and closed ["throwAuth"]
+      ---
+      duration_ms: 0.591375
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:84:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input was expected to not match the regular expression /SYNTHETIC-|apikey|stack|Authorization|synthetic-auth/. Input:
+        
+        '{"error":"authorization_unavailable","message":"Authorization unavailable.","rentcast_contacted":false}'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: '{"error":"authorization_unavailable","message":"Authorization unavailable.","rentcast_contacted":false}'
+      operator: 'doesNotMatch'
+      stack: |-
+        Object.denied (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:47:12)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:85:7)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:84:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: authorization infrastructure failure is generic and closed ["authStatus"]
+    not ok 11 - authorization infrastructure failure is generic and closed ["authStatus"]
+      ---
+      duration_ms: 0.2705
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:84:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input was expected to not match the regular expression /SYNTHETIC-|apikey|stack|Authorization|synthetic-auth/. Input:
+        
+        '{"error":"authorization_unavailable","message":"Authorization unavailable.","rentcast_contacted":false}'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: '{"error":"authorization_unavailable","message":"Authorization unavailable.","rentcast_contacted":false}'
+      operator: 'doesNotMatch'
+      stack: |-
+        Object.denied (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:47:12)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:85:7)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:84:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: authorization infrastructure failure is generic and closed ["membershipStatus"]
+    not ok 12 - authorization infrastructure failure is generic and closed ["membershipStatus"]
+      ---
+      duration_ms: 0.669375
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:84:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input was expected to not match the regular expression /SYNTHETIC-|apikey|stack|Authorization|synthetic-auth/. Input:
+        
+        '{"error":"authorization_unavailable","message":"Authorization unavailable.","rentcast_contacted":false}'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: '{"error":"authorization_unavailable","message":"Authorization unavailable.","rentcast_contacted":false}'
+      operator: 'doesNotMatch'
+      stack: |-
+        Object.denied (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:47:12)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:85:7)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:84:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: authorization infrastructure failure is generic and closed ["rows"]
+    not ok 13 - authorization infrastructure failure is generic and closed ["rows"]
+      ---
+      duration_ms: 0.379166
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:84:13'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input was expected to not match the regular expression /SYNTHETIC-|apikey|stack|Authorization|synthetic-auth/. Input:
+        
+        '{"error":"authorization_unavailable","message":"Authorization unavailable.","rentcast_contacted":false}'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: '{"error":"authorization_unavailable","message":"Authorization unavailable.","rentcast_contacted":false}'
+      operator: 'doesNotMatch'
+      stack: |-
+        Object.denied (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:47:12)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:85:7)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:84:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: untrusted Auth response with no user rejects
+    ok 14 - untrusted Auth response with no user rejects
+      ---
+      duration_ms: 0.187041
+      type: 'test'
+      ...
+    # Subtest: missing trusted configuration rejects
+    not ok 15 - missing trusted configuration rejects
+      ---
+      duration_ms: 0.219917
+      type: 'test'
+      location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:89:11'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input was expected to not match the regular expression /SYNTHETIC-|apikey|stack|Authorization|synthetic-auth/. Input:
+        
+        '{"error":"authorization_unavailable","message":"Authorization unavailable.","rentcast_contacted":false}'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: '{"error":"authorization_unavailable","message":"Authorization unavailable.","rentcast_contacted":false}'
+      operator: 'doesNotMatch'
+      stack: |-
+        Object.denied (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:47:12)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:90:60)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (file:///Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:89:3)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: missing RentCast key and address are never metered
+    ok 16 - missing RentCast key and address are never metered
+      ---
+      duration_ms: 0.525375
+      type: 'test'
+      ...
+    # Subtest: unsupported method never contacts Auth or RentCast
+    ok 17 - unsupported method never contacts Auth or RentCast
+      ---
+      duration_ms: 0.1585
+      type: 'test'
+      ...
+    # Subtest: upstream failures cannot expose credentials ["upstreamStatus","upstreamBody"]401
+    ok 18 - upstream failures cannot expose credentials ["upstreamStatus","upstreamBody"]401
+      ---
+      duration_ms: 0.307708
+      type: 'test'
+      ...
+    # Subtest: upstream failures cannot expose credentials ["upstreamStatus","upstreamBody"]403
+    ok 19 - upstream failures cannot expose credentials ["upstreamStatus","upstreamBody"]403
+      ---
+      duration_ms: 0.263458
+      type: 'test'
+      ...
+    # Subtest: upstream failures cannot expose credentials ["upstreamThrow"]
+    ok 20 - upstream failures cannot expose credentials ["upstreamThrow"]
+      ---
+      duration_ms: 0.243791
+      type: 'test'
+      ...
+    # Subtest: server secret and service-role references absent from browser sources
+    ok 21 - server secret and service-role references absent from browser sources
+      ---
+      duration_ms: 6.778167
+      type: 'test'
+      ...
+    # Subtest: membership authorization uses real local authenticated RLS
+    ok 22 - membership authorization uses real local authenticated RLS
+      ---
+      duration_ms: 922.385875
+      type: 'test'
+      ...
+    1..22
+not ok 2 - rent proxy requires trusted user and organization authorization
+  ---
+  duration_ms: 950.592791
+  type: 'test'
+  location: '/Users/davidastone/code/alot-land/alot-land/mfda/security/rent-proxy.test.mjs:55:1'
+  failureType: 'subtestsFailed'
+  error: '5 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..2
+# tests 45
+# suites 0
+# pass 34
+# fail 11
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 32321.882833

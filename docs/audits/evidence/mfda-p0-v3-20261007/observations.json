@@ -1,0 +1,85 @@
+[
+  {
+    "probe": "populated-upgrade",
+    "preserved": true,
+    "foreignKeysAltered": false
+  },
+  {
+    "probe": "author-deletion",
+    "consumed": {
+      "id": "26336c3f-f9c4-4527-a178-68196aa6ca99",
+      "role": "member",
+      "email": "a@example.invalid",
+      "token": "2b9f1503-34aa-4985-aee3-7ad6a228f556",
+      "org_id": "20000000-0000-0000-0000-000000000001",
+      "created_at": "2026-10-07T12:34:46.112274-07:00",
+      "expires_at": "2026-10-21T12:34:46.112274-07:00",
+      "invited_by": null,
+      "accepted_at": "2025-12-31T20:04:05.123456-07:00"
+    },
+    "membershipChanges": "deleted author only"
+  },
+  {
+    "probe": "rent-estimate-deletion",
+    "vulnerableBefore015": true,
+    "vulnerableInV2": true,
+    "invitationOnlyDeletionFixed": true
+  },
+  {
+    "probe": "delayed-pdf-positive",
+    "bytes": 7036,
+    "filename": "a-only-security-canary-report.pdf"
+  },
+  {
+    "probe": "delayed-pdf-auth",
+    "downloads": 0,
+    "publishedUrls": []
+  },
+  {
+    "probe": "pdf-b-positive-after-suppression",
+    "filename": "b-only-independent-positive-report.pdf",
+    "bytes": 6990
+  },
+  {
+    "probe": "delayed-pdf-org",
+    "downloads": 0,
+    "publishedUrls": []
+  },
+  {
+    "probe": "delayed-pdf-auth-roundtrip",
+    "downloads": 0,
+    "publishedUrls": [
+      {
+        "url": "blob:http://127.0.0.1:5173/d90044cf-2bfa-4eb0-a059-b840ff8016c9",
+        "startedEpoch": 2,
+        "publishedEpoch": 2
+      }
+    ]
+  },
+  {
+    "probe": "pdf-auth-publication-race",
+    "publishedUrls": [],
+    "downloads": 0
+  },
+  {
+    "probe": "auth-synchronous-guard",
+    "checks": [
+      {
+        "allowed": false,
+        "body": "MFDA.\nMarkets\nOn-Market\nOff-Market\nDeals\nGoals\nGuide\nSettings\nSynthetic Tenant A\n🌙\na@example.invalid\nSign out\nDeals\n\nUnderwrite, compare scenarios, and pursue the good ones.\n\n+ New deal\n♥ Hearted\n\t\tPROPERTY\tMARKET\tSOURCEI\tUNITS\tPRICE\tNET / MOI\tSTATUS\tUPDATED\n\t♡\tA ONLY SECURITY CANARY\tAZ\tManual\t4\t$500,000\t$1,445\tanalyzing\t10/7/2026"
+      }
+    ]
+  },
+  {
+    "probe": "stale-rentcast-v3",
+    "outbound": [],
+    "writes": [],
+    "externalCallInitiatedAfterB": false
+  },
+  {
+    "probe": "rentcast-handler-no-auth-v3",
+    "status": 401,
+    "upstreamCalls": 0,
+    "synthetic": true
+  }
+]
