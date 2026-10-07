@@ -1,0 +1,91 @@
+project_id = "mfda-p0-local-isolated"
+
+[api]
+enabled = true
+port = 55421
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+# The checked-in SQL was authored for the Supabase SQL Editor/default project
+# model in which public objects are API-visible and RLS is the authorization
+# boundary. Keep that existing assumption explicit for this local acceptance.
+auto_expose_new_tables = true
+
+[db]
+port = 55422
+shadow_port = 55420
+major_version = 17
+
+[db.pooler]
+enabled = false
+
+# MFDA predates the CLI migrations/ directory convention. The acceptance
+# driver applies schema.sql followed by migration_*.sql in lexical order and
+# records that exact source ledger; CLI reset supplies the pristine stack.
+[db.migrations]
+enabled = false
+
+[db.seed]
+enabled = false
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = true
+port = 55423
+api_url = "http://127.0.0.1"
+
+[local_smtp]
+enabled = true
+port = 55424
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[storage.s3_protocol]
+enabled = false
+
+[storage.analytics]
+enabled = false
+max_namespaces = 5
+max_tables = 10
+max_catalogs = 2
+
+[storage.vector]
+enabled = false
+max_buckets = 10
+max_indexes = 5
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:55425"
+additional_redirect_urls = ["http://127.0.0.1:55425"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+secure_password_change = false
+max_frequency = "1s"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+template = "Your code is {{ .Code }}"
+max_frequency = "5s"
+
+[analytics]
+enabled = false
+
+[edge_runtime]
+enabled = false
