@@ -1,4 +1,14 @@
 {
-  "updated": "2026-08-27T19:45:12Z",
-  "open": []
+  "updated": "2026-10-13T23:17:44Z",
+  "open": [
+    {
+      "number": 20,
+      "title": "SEO cycle 4: link the orphaned how-to-buy-land guide",
+      "url": "https://github.com/alot-land/alot-land/pull/20",
+      "opened": "2026-10-13",
+      "additions": 53,
+      "deletions": 6,
+      "isCycle": true
+    }
+  ]
 }
