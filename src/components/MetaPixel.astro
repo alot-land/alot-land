@@ -1,0 +1,57 @@
+---
+/**
+ * Meta Pixel — configurable, and inert until a real ID exists.
+ *
+ * No ID is invented. With PUBLIC_META_PIXEL_ID unset this renders nothing at
+ * all, so the site carries no dead tracking code before the campaign starts.
+ *
+ * Privacy: Meta receives the lot and the event, never a buyer's name, phone,
+ * email or message. Browsers asking not to be tracked (Global Privacy Control,
+ * Do Not Track) are respected — the pixel is not loaded for them.
+ */
+const pixelId = import.meta.env.PUBLIC_META_PIXEL_ID ?? '';
+---
+{pixelId && (
+  <script is:inline define:vars={{ pixelId }}>
+    (function () {
+      try {
+        if (navigator.globalPrivacyControl === true) return;
+        var dnt = navigator.doNotTrack || window.doNotTrack;
+        if (dnt === '1' || dnt === 'yes') return;
+      } catch (e) {}
+
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+      (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+
+      fbq('init', pixelId);
+      fbq('track', 'PageView');
+
+      var ds = document.body.dataset || {};
+      if (ds.lotSlug) {
+        // Lot interest. content_ids is the lot, never anything about the person.
+        fbq('track', 'ViewContent', {
+          content_type: 'product',
+          content_ids: [ds.lotSlug],
+          content_name: ds.lotSlug,
+          content_category: 'sugar-tree-vista',
+        });
+      }
+
+      // Lead fires only when the site's own tracker reports a submission the
+      // server accepted — never on a button click, and de-duplicated with GA4
+      // by sharing one event id.
+      window.addEventListener('alot:conversion', function (e) {
+        var d = (e && e.detail) || {};
+        if (d.name !== 'inquiry_submit') return;
+        fbq('track', 'Lead', {
+          content_ids: [d.lot || ''],
+          content_category: 'sugar-tree-vista',
+          content_name: d.inquiry_type || 'details',
+        }, { eventID: d.eventId });
+      });
+    })();
+  </script>
+)}
