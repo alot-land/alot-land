@@ -1,0 +1,190 @@
+---
+/**
+ * Short, mobile-first enquiry form for one lot.
+ *
+ * Three fields and one consent line, against the six fields and two consent
+ * boxes of the embedded GHL form — this is what a buyer meets after tapping a
+ * Facebook ad, so every extra field costs leads.
+ *
+ * The lot travels with the submission from the server-rendered markup, so it
+ * cannot be lost or mistyped, and attribution is read from the tracker.
+ */
+interface Props { lot: string; lotName: string; lotPrice?: string; compact?: boolean }
+const { lot, lotName, lotPrice = '', compact = false } = Astro.props;
+
+const CONSENT = 'I agree to be contacted about this property by phone, text or email. Message and data rates may apply. Reply STOP to opt out.';
+---
+
+<section id={`inquire-${lot}`} class={`lot-inquiry ${compact ? 'is-compact' : ''}`} data-lot={lot}>
+  <h2 class="li-heading">Get details on {lotName}</h2>
+  <p class="li-sub">{lotPrice ? `${lotPrice} · ` : ''}Tony Alcott, our listing agent, replies personally — usually the same day.</p>
+
+  <form class="li-form" novalidate data-lot={lot} data-lot-name={lotName} data-lot-price={lotPrice}>
+    <div class="li-row">
+      <label class="li-field">
+        <span>Your name</span>
+        <input name="name" type="text" autocomplete="name" required placeholder="Jane Fielding" />
+      </label>
+      <label class="li-field">
+        <span>Phone</span>
+        <input name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(615) 555-0188" />
+      </label>
+    </div>
+    <label class="li-field">
+      <span>Email</span>
+      <input name="email" type="email" autocomplete="email" inputmode="email" placeholder="jane@example.com" />
+    </label>
+    <p class="li-hint">Phone or email — whichever you'd rather we used.</p>
+
+    <fieldset class="li-choice">
+      <legend>What would you like?</legend>
+      <label><input type="radio" name="inquiryType" value="details" checked /> <span>Property details</span></label>
+      <label><input type="radio" name="inquiryType" value="showing" /> <span>To see it in person</span></label>
+    </fieldset>
+
+    <label class="li-field">
+      <span>Anything you want to ask? <em>(optional)</em></span>
+      <textarea name="message" rows="2" placeholder="Road frontage, septic, build site…"></textarea>
+    </label>
+
+    <label class="li-consent">
+      <input type="checkbox" name="consent" required />
+      <span>{CONSENT}</span>
+    </label>
+
+    <!-- Bot traps: hidden from people, and never focusable. -->
+    <div class="li-hp" aria-hidden="true"><label>Company<input name="company" type="text" tabindex="-1" autocomplete="off" /></label></div>
+
+    <button type="submit" class="li-submit">Send me the details</button>
+    <p class="li-privacy">We never sell or share your details. <a href="/privacy">Privacy policy</a>.</p>
+    <p class="li-status" role="status" aria-live="polite"></p>
+  </form>
+</section>
+
+<style is:global>
+  .lot-inquiry{background:#0e1a2e;color:#fff;border-radius:16px;padding:26px 24px 22px;max-width:560px}
+  .lot-inquiry .li-heading{font-family:"Fraunces",Georgia,serif;font-size:1.55rem;font-weight:600;margin:0 0 6px;line-height:1.15}
+  .lot-inquiry .li-sub{color:#b9c4d6;font-size:.9rem;margin:0 0 18px;line-height:1.5}
+  .lot-inquiry .li-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .lot-inquiry .li-field{display:block;margin-bottom:12px}
+  .lot-inquiry .li-field>span{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:#9fb0c9;margin-bottom:6px}
+  .lot-inquiry .li-field em{text-transform:none;letter-spacing:0;color:#7e8ea6}
+  .lot-inquiry input[type=text],.lot-inquiry input[type=tel],.lot-inquiry input[type=email],.lot-inquiry textarea{
+    width:100%;box-sizing:border-box;background:#fff;border:2px solid transparent;border-radius:10px;
+    padding:13px 14px;font:inherit;font-size:16px;color:#0e1a2e}  /* 16px: stops iOS zooming on focus */
+  .lot-inquiry input:focus,.lot-inquiry textarea:focus{outline:none;border-color:#F5B800}
+  .lot-inquiry .li-field.has-error input,.lot-inquiry .li-field.has-error textarea{border-color:#ff8080}
+  .lot-inquiry .li-err{display:block;color:#ffb3b3;font-size:.8rem;margin-top:5px}
+  .lot-inquiry .li-hint{color:#8c9cb5;font-size:.78rem;margin:-6px 0 14px}
+  .lot-inquiry .li-choice{border:0;padding:0;margin:0 0 14px}
+  .lot-inquiry .li-choice legend{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:#9fb0c9;margin-bottom:8px;padding:0}
+  .lot-inquiry .li-choice label{display:inline-flex;align-items:center;gap:8px;margin-right:16px;font-size:.95rem;cursor:pointer;min-height:44px}
+  .lot-inquiry .li-consent{display:flex;gap:10px;align-items:flex-start;font-size:.78rem;color:#9fb0c9;line-height:1.45;margin:4px 0 16px;cursor:pointer}
+  .lot-inquiry .li-consent input{margin-top:2px;width:18px;height:18px;flex:none}
+  .lot-inquiry .li-consent.has-error span{color:#ffb3b3}
+  .lot-inquiry .li-submit{width:100%;background:#F5B800;color:#0e1a2e;border:0;border-radius:12px;
+    padding:16px;font:inherit;font-weight:700;font-size:1.02rem;cursor:pointer;min-height:52px}
+  .lot-inquiry .li-submit:hover{background:#ffc61a}
+  .lot-inquiry .li-submit[disabled]{opacity:.6;cursor:default}
+  .lot-inquiry .li-privacy{color:#7e8ea6;font-size:.72rem;margin:10px 0 0;text-align:center}
+  .lot-inquiry .li-privacy a{color:#9fb0c9}
+  .lot-inquiry .li-status{margin:12px 0 0;font-size:.9rem;line-height:1.5;min-height:1px}
+  .lot-inquiry .li-status.ok{color:#8ce39b}
+  .lot-inquiry .li-status.bad{color:#ffb3b3}
+  .lot-inquiry .li-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .lot-inquiry.is-compact{padding:20px 18px 18px}
+  @media(max-width:520px){ .lot-inquiry .li-row{grid-template-columns:1fr} }
+</style>
+
+<script is:inline>
+(function () {
+  document.querySelectorAll('.lot-inquiry .li-form').forEach(function (form) {
+    var rendered = Date.now();
+    var status = form.querySelector('.li-status');
+    var btn = form.querySelector('.li-submit');
+    var opened = false;
+
+    form.addEventListener('focusin', function () {
+      if (opened) return; opened = true;
+      if (window.alotTrack) window.alotTrack('inquiry_open', { lot: form.dataset.lot });
+    });
+
+    function clearErrors() {
+      form.querySelectorAll('.has-error').forEach(function (el) { el.classList.remove('has-error'); });
+      form.querySelectorAll('.li-err').forEach(function (el) { el.remove(); });
+    }
+    function showError(field, msg) {
+      var el = form.querySelector('[name="' + field + '"]');
+      var wrap = el ? el.closest('.li-field, .li-consent, .li-choice') : null;
+      if (wrap) {
+        wrap.classList.add('has-error');
+        var s = document.createElement('span'); s.className = 'li-err'; s.textContent = msg;
+        wrap.appendChild(s);
+      }
+      return wrap;
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      clearErrors();
+      status.className = 'li-status';
+      status.textContent = '';
+
+      var fd = new FormData(form);
+      var attr = {};
+      try { attr = JSON.parse(localStorage.getItem('alot_attr') || '{}'); } catch (err) {}
+
+      var payload = {
+        name: fd.get('name'), phone: fd.get('phone'), email: fd.get('email'),
+        message: fd.get('message'), inquiryType: fd.get('inquiryType'),
+        consent: form.querySelector('[name=consent]').checked,
+        consentText: form.querySelector('.li-consent span').textContent.trim(),
+        company: fd.get('company'),                 // honeypot
+        renderedAt: rendered,
+        lot: form.dataset.lot, lotName: form.dataset.lotName, lotPrice: form.dataset.lotPrice,
+        attribution: Object.assign({}, attr.last || {}, attr.first ? { first_source: (attr.first || {}).utm_source } : {}),
+      };
+
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      try {
+        var res = await fetch('/api/lead', {
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
+        });
+        var data = await res.json().catch(function () { return {}; });
+
+        if (res.status === 422 && data.fields) {
+          Object.keys(data.fields).forEach(function (k) { showError(k === 'contact' ? 'phone' : k, data.fields[k]); });
+          status.className = 'li-status bad';
+          status.textContent = 'Please check the highlighted fields.';
+          return;
+        }
+        if (!res.ok || !data.ok) {
+          // Never pretend this worked. Give them a way through.
+          status.className = 'li-status bad';
+          status.innerHTML = (data.error || 'Something went wrong on our end.') +
+            ' <a href="tel:+16155386878" style="color:#F5B800">Call or text (615) 538-6878</a> and we will pick it up.';
+          return;
+        }
+
+        form.querySelectorAll('input,textarea,button').forEach(function (el) { el.disabled = true; });
+        status.className = 'li-status ok';
+        status.textContent = data.deduped
+          ? "We already have your enquiry on this lot — Tony will be in touch shortly."
+          : "Got it. Tony will be in touch shortly, usually the same day.";
+        // Only now is it a real conversion.
+        if (window.alotTrack && !data.deduped) {
+          window.alotTrack('inquiry_submit', { lot: form.dataset.lot, inquiry_type: payload.inquiryType });
+          if (payload.inquiryType === 'showing') window.alotTrack('tour_request', { lot: form.dataset.lot });
+        }
+      } catch (err) {
+        status.className = 'li-status bad';
+        status.innerHTML = 'We could not send that — you may be offline. ' +
+          '<a href="tel:+16155386878" style="color:#F5B800">Call or text (615) 538-6878</a>.';
+      } finally {
+        if (!btn.disabled || status.className.indexOf('ok') === -1) { btn.disabled = false; btn.textContent = 'Send me the details'; }
+      }
+    });
+  });
+})();
+</script>
