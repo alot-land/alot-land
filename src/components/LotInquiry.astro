@@ -134,48 +134,69 @@ const CONSENT = 'I agree to be contacted about this property by phone, text or e
       var attr = {};
       try { attr = JSON.parse(localStorage.getItem('alot_attr') || '{}'); } catch (err) {}
 
-      var payload = {
-        name: fd.get('name'), phone: fd.get('phone'), email: fd.get('email'),
-        message: fd.get('message'), inquiryType: fd.get('inquiryType'),
-        consent: form.querySelector('[name=consent]').checked,
-        consentText: form.querySelector('.li-consent span').textContent.trim(),
-        company: fd.get('company'),                 // honeypot
-        renderedAt: rendered,
-        lot: form.dataset.lot, lotName: form.dataset.lotName, lotPrice: form.dataset.lotPrice,
-        attribution: Object.assign({}, attr.last || {}, attr.first ? { first_source: (attr.first || {}).utm_source } : {}),
-      };
+      // Netlify Forms is the primary record. The browser posts straight to
+      // Netlify, which stores the submission before any of our code runs — so
+      // a bug in our processing cannot lose a buyer. Our working record is
+      // built afterwards by the submission-created function.
+      var body = new URLSearchParams();
+      body.set('form-name', 'stv-lead');
+      body.set('name', fd.get('name') || '');
+      body.set('phone', fd.get('phone') || '');
+      body.set('email', fd.get('email') || '');
+      body.set('message', fd.get('message') || '');
+      body.set('inquiryType', fd.get('inquiryType') || 'details');
+      body.set('consent', form.querySelector('[name=consent]').checked ? 'true' : 'false');
+      body.set('consentText', form.querySelector('.li-consent span').textContent.trim());
+      body.set('company', fd.get('company') || '');
+      body.set('renderedAt', String(rendered));
+      body.set('lot', form.dataset.lot);
+      body.set('lotName', form.dataset.lotName);
+      body.set('lotPrice', form.dataset.lotPrice || '');
+      body.set('pageUrl', location.pathname);
+      body.set('attribution', JSON.stringify(
+        Object.assign({}, attr.last || {}, (attr.first || {}).utm_source ? { first_source: attr.first.utm_source } : {})
+      ));
+
+      // Client-side checks are courtesy only — the server validates again.
+      var localErrors = {};
+      if (!(fd.get('name') || '').trim()) localErrors.name = 'Please give us a name.';
+      if (!(fd.get('phone') || '').trim() && !(fd.get('email') || '').trim())
+        localErrors.phone = 'We need a phone number or an email so we can reply.';
+      if (!form.querySelector('[name=consent]').checked)
+        localErrors.consent = 'Please tick the box so we may contact you.';
+      if (Object.keys(localErrors).length) {
+        Object.keys(localErrors).forEach(function (k) { showError(k, localErrors[k]); });
+        status.className = 'li-status bad';
+        status.textContent = 'Please check the highlighted fields.';
+        return;
+      }
 
       btn.disabled = true;
       btn.textContent = 'Sending…';
       try {
-        var res = await fetch('/api/lead', {
-          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
+        var res = await fetch('/', {
+          method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          body: body.toString(),
         });
-        var data = await res.json().catch(function () { return {}; });
 
-        if (res.status === 422 && data.fields) {
-          Object.keys(data.fields).forEach(function (k) { showError(k === 'contact' ? 'phone' : k, data.fields[k]); });
-          status.className = 'li-status bad';
-          status.textContent = 'Please check the highlighted fields.';
-          return;
-        }
-        if (!res.ok || !data.ok) {
+        if (!res.ok) {
           // Never pretend this worked. Give them a way through.
           status.className = 'li-status bad';
-          status.innerHTML = (data.error || 'Something went wrong on our end.') +
-            ' <a href="tel:+16155386878" style="color:#F5B800">Call or text (615) 538-6878</a> and we will pick it up.';
+          // Primary intake refused it — never claim success.
+          status.innerHTML = 'We could not send that just now. ' +
+            '<a href="tel:+16155386878" style="color:#F5B800">Call or text (615) 538-6878</a> and we will pick it up.';
           return;
         }
 
         form.querySelectorAll('input,textarea,button').forEach(function (el) { el.disabled = true; });
         status.className = 'li-status ok';
-        status.textContent = data.deduped
-          ? "We already have your enquiry on this lot — Tony will be in touch shortly."
-          : "Got it. Tony will be in touch shortly, usually the same day.";
-        // Only now is it a real conversion.
-        if (window.alotTrack && !data.deduped) {
-          window.alotTrack('inquiry_submit', { lot: form.dataset.lot, inquiry_type: payload.inquiryType });
-          if (payload.inquiryType === 'showing') window.alotTrack('tour_request', { lot: form.dataset.lot });
+        status.textContent = 'Got it. Tony will be in touch shortly, usually the same day.';
+        // Fired only after the primary intake accepted it — never on button click.
+        if (window.alotTrack) {
+          var kind = fd.get('inquiryType') || 'details';
+          window.alotTrack('inquiry_submit', { lot: form.dataset.lot, inquiry_type: kind });
+          if (kind === 'showing') window.alotTrack('tour_request', { lot: form.dataset.lot });
         }
       } catch (err) {
         status.className = 'li-status bad';

@@ -1,0 +1,200 @@
+---
+// Secure lead view for the listing agents. Private: noindex, out of the
+// sitemap, and every byte of buyer information comes from an authorised API
+// call — nothing is rendered at build time, and the id in the URL grants
+// nothing on its own.
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Lead" description="Private lead view." noindex={true} bare={true}>
+  <div id="app" class="wrap">
+    <div id="signin" class="card hidden">
+      <h1>Sugar Tree leads</h1>
+      <p class="muted">Sign in with your invited email to view buyer details.</p>
+      <button id="btn-signin" class="primary">Sign in</button>
+      <p id="signin-err" class="err"></p>
+    </div>
+    <div id="loading" class="card"><p class="muted">Checking your sign-in…</p></div>
+    <div id="content" class="hidden"></div>
+  </div>
+
+  <script is:inline src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script is:inline>
+  (function () {
+    var $ = function (id) { return document.getElementById(id); };
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var leadId = new URLSearchParams(location.search).get('id');
+    var token = null, me = null, labels = {}, stages = [];
+
+    function show(which) {
+      ['signin', 'loading', 'content'].forEach(function (k) { $(k).classList.toggle('hidden', k !== which); });
+    }
+    function when(iso) {
+      var d = new Date(iso);
+      return isNaN(d) ? '' : d.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+    function ago(iso) {
+      var m = Math.floor((Date.now() - new Date(iso)) / 60000);
+      if (isNaN(m)) return '';
+      if (m < 60) return m + 'm ago';
+      var h = Math.floor(m / 60); if (h < 24) return h + 'h ago';
+      return Math.floor(h / 24) + 'd ago';
+    }
+
+    async function api(opts) {
+      var res = await fetch('/api/lead-admin' + (opts.query || ''), {
+        method: opts.method || 'GET',
+        headers: Object.assign({ Authorization: 'Bearer ' + token }, opts.body ? { 'content-type': 'application/json' } : {}),
+        body: opts.body ? JSON.stringify(opts.body) : undefined,
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (res.status === 401) { token = null; show('signin'); $('signin-err').textContent = data.error || 'Please sign in.'; return null; }
+      if (!res.ok) throw new Error(data.error || ('Error ' + res.status));
+      return data;
+    }
+
+    function renderLead(l) {
+      var tel = l.phone ? 'tel:' + l.phone : null;
+      var mail = l.email ? 'mailto:' + l.email : null;
+      var flags = (l.flags || []).map(function (f) {
+        return '<span class="flag ' + f + '">' + (f === 'unacknowledged' ? 'Not acknowledged' : 'No contact in 24h') + '</span>';
+      }).join('');
+      $('content').innerHTML =
+        '<div class="card">' +
+          '<a class="back" href="/lead/">← All leads</a>' +
+          '<div class="stagerow"><span class="stage s-' + l.stage + '">' + esc(l.stageLabel) + '</span>' + flags + '</div>' +
+          '<h1>' + esc(l.name) + '</h1>' +
+          '<p class="muted">' + esc(l.lotName || l.lot) + (l.lotPrice ? ' · ' + esc(l.lotPrice) : '') + '</p>' +
+          '<p class="muted small">' + esc({details:'Requested property details',showing:'Requested a showing',packet:'Downloaded the buyer packet',question:'Asked a question'}[l.inquiryType] || l.inquiryType) +
+            ' · ' + when(l.createdAt) + ' (' + ago(l.createdAt) + ')</p>' +
+          (l.message ? '<blockquote>' + esc(l.message) + '</blockquote>' : '') +
+          '<div class="actions">' +
+            (tel ? '<a class="primary" href="' + tel + '" data-attempt="called">📞 Call ' + esc(l.phone) + '</a>' : '') +
+            (mail ? '<a class="secondary" href="' + mail + '" data-attempt="emailed">✉︎ Email</a>' : '') +
+          '</div>' +
+          '<p class="muted small">Calling or emailing does not record a conversation — use the buttons below to say what happened.</p>' +
+          '<div class="actions wrapped">' +
+            '<button class="secondary" data-act="attempt" data-how="called" data-reached="false">No answer</button>' +
+            '<button class="primary" data-act="attempt" data-how="called" data-reached="true">Spoke with them</button>' +
+            '<button class="secondary" data-act="stage" data-stage="showing_scheduled">Showing scheduled</button>' +
+            '<button class="secondary" data-act="stage" data-stage="qualified">Qualified</button>' +
+            '<button class="secondary" data-act="stage" data-stage="lost">Lost</button>' +
+          '</div>' +
+          '<label class="fu">Follow up on <input type="date" id="fu-date" value="' + esc((l.followUpAt || '').slice(0,10)) + '" /></label>' +
+          '<div class="actions"><button class="secondary" data-act="followup">Save follow-up</button></div>' +
+          '<details><summary>Add a note</summary><textarea id="note" rows="3" placeholder="What happened?"></textarea>' +
+            '<div class="actions"><button class="secondary" data-act="note">Save note</button></div></details>' +
+          '<dl class="meta">' +
+            (l.email ? '<dt>Email</dt><dd>' + esc(l.email) + '</dd>' : '') +
+            '<dt>Source</dt><dd>' + esc(l.source) + (l.campaign ? ' / ' + esc(l.campaign) : '') + '</dd>' +
+            '<dt>Consent</dt><dd>' + (l.consent && l.consent.given ? 'Given ' + when(l.consent.at) : 'none recorded') + '</dd>' +
+            '<dt>Notified</dt><dd>' + ((l.notifications || []).map(function (n) {
+                return esc(n.channel) + ': ' + esc(n.status) + (n.reason ? ' (' + esc(n.reason) + ')' : '') + (n.error ? ' — ' + esc(n.error) : ''); }).join('<br>') || 'nothing sent') + '</dd>' +
+          '</dl>' +
+          '<h2>History</h2><ol class="hist">' + (l.history || []).slice().reverse().map(function (h) {
+            return '<li><strong>' + esc(h.byName || h.by) + '</strong> ' +
+              esc(h.action === 'stage' ? ('→ ' + (labels[h.to] || h.to)) : h.action === 'attempt' ? (h.how + ' — ' + h.outcome) : h.action) +
+              (h.note ? ' · ' + esc(h.note) : '') + '<span class="muted small"> ' + when(h.at) + '</span></li>'; }).join('') + '</ol>' +
+        '</div>';
+      $('content').dataset.leadId = l.id;
+      show('content');
+    }
+
+    function renderList(d) {
+      var rows = d.leads.map(function (l) {
+        var flags = (l.flags || []).map(function (f) { return '<span class="flag ' + f + '"></span>'; }).join('');
+        return '<a class="row" href="/lead/?id=' + encodeURIComponent(l.id) + '">' +
+          '<span class="stage s-' + l.stage + '">' + esc(l.stageLabel) + '</span>' + flags +
+          '<strong>' + esc(l.name) + '</strong>' +
+          '<span class="muted">' + esc(l.lotName || l.lot) + '</span>' +
+          '<span class="muted small">' + ago(l.createdAt) + '</span></a>'; }).join('');
+      $('content').innerHTML = '<div class="card"><h1>Leads</h1>' +
+        '<p class="muted">Signed in as ' + esc(d.me.name) + ' · <button id="out" class="link">sign out</button></p>' +
+        (rows || '<p class="muted">No leads yet.</p>') + '</div>';
+      show('content');
+    }
+
+    async function load() {
+      try {
+        var d = leadId ? await api({ query: '?id=' + encodeURIComponent(leadId) }) : await api({});
+        if (!d) return;
+        me = d.me; labels = d.labels || {}; stages = d.stages || [];
+        if (leadId) renderLead(d.lead); else renderList(d);
+      } catch (e) {
+        $('content').innerHTML = '<div class="card"><p class="err">' + esc(e.message) + '</p>' +
+          '<p class="muted"><a href="/lead/">Back to all leads</a></p></div>';
+        show('content');
+      }
+    }
+
+    document.addEventListener('click', async function (e) {
+      if (e.target.id === 'out') { window.netlifyIdentity.logout(); return; }
+      if (e.target.id === 'btn-signin') { window.netlifyIdentity.open(); return; }
+      var a = e.target.closest('[data-act]');
+      if (!a) return;
+      var id = $('content').dataset.leadId; if (!id) return;
+      var body = { id: id, action: a.dataset.act };
+      if (a.dataset.act === 'attempt') { body.how = a.dataset.how; body.reached = a.dataset.reached === 'true'; }
+      if (a.dataset.act === 'stage') body.stage = a.dataset.stage;
+      if (a.dataset.act === 'note') { body.note = ($('note') || {}).value || ''; if (!body.note.trim()) return; }
+      if (a.dataset.act === 'followup') body.when = ($('fu-date') || {}).value || '';
+      a.disabled = true;
+      try { var d = await api({ method: 'POST', body: body }); if (d) renderLead(d.lead); }
+      catch (err) { alert(err.message); }
+      finally { a.disabled = false; }
+    });
+
+    window.netlifyIdentity.on('init', function (user) {
+      if (!user) { show('signin'); return; }
+      user.jwt().then(function (t) { token = t; load(); });
+    });
+    window.netlifyIdentity.on('login', function (user) {
+      window.netlifyIdentity.close();
+      user.jwt().then(function (t) { token = t; load(); });
+    });
+    window.netlifyIdentity.on('logout', function () { token = null; show('signin'); });
+    window.netlifyIdentity.init();
+  })();
+  </script>
+
+  <style is:global>
+    body{background:#0e1a2e}
+    .wrap{max-width:620px;margin:0 auto;padding:18px 14px 60px;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#fff}
+    .hidden{display:none}
+    .card{background:#fff;color:#0e1a2e;border-radius:16px;padding:22px 20px;margin-bottom:14px}
+    .card h1{font-size:1.5rem;margin:6px 0 4px;font-weight:700}
+    .card h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;color:#6b7a94;margin:22px 0 8px}
+    .muted{color:#6b7a94;margin:0 0 8px}
+    .small{font-size:.82rem}
+    .err{color:#b42318}
+    blockquote{margin:12px 0;padding:12px 14px;background:#f2f4f8;border-radius:10px;font-size:.95rem}
+    .actions{display:flex;gap:10px;margin:14px 0 4px}
+    .actions.wrapped{flex-wrap:wrap}
+    .actions a,.actions button{flex:1 1 auto;min-height:52px;display:inline-flex;align-items:center;justify-content:center;
+      border-radius:12px;font:inherit;font-weight:700;font-size:1rem;text-decoration:none;cursor:pointer;border:0;padding:0 16px}
+    .primary{background:#F5B800;color:#0e1a2e}
+    .secondary{background:#eef1f6;color:#0e1a2e}
+    button[disabled]{opacity:.5}
+    .link{background:none;border:0;color:#34508f;text-decoration:underline;cursor:pointer;font:inherit;padding:0;min-height:0}
+    .stagerow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+    .stage{display:inline-block;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+      padding:4px 9px;border-radius:99px;background:#0e1a2e;color:#fff}
+    .stage.s-new{background:#F5B800;color:#0e1a2e}
+    .stage.s-contacted,.stage.s-qualified{background:#2e6b34;color:#fff}
+    .stage.s-lost{background:#8a94a6;color:#fff}
+    .flag{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:4px 8px;border-radius:99px;background:#fde2e1;color:#b42318}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid #eef1f6;text-decoration:none;color:inherit}
+    .row:last-child{border-bottom:0}
+    .row .muted{margin:0}
+    .meta{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.85rem;margin:18px 0 0}
+    .meta dt{color:#6b7a94}
+    .meta dd{margin:0}
+    .hist{list-style:none;padding:0;margin:0;font-size:.88rem}
+    .hist li{padding:8px 0;border-bottom:1px solid #eef1f6}
+    .fu{display:block;font-size:.85rem;color:#6b7a94;margin-top:16px}
+    .fu input{display:block;margin-top:6px;padding:12px;border:2px solid #eef1f6;border-radius:10px;font:inherit;font-size:16px;width:100%;box-sizing:border-box}
+    textarea{width:100%;box-sizing:border-box;padding:12px;border:2px solid #eef1f6;border-radius:10px;font:inherit;font-size:16px;margin-top:8px}
+    details summary{cursor:pointer;color:#34508f;margin-top:16px;font-size:.9rem}
+    .back{color:#34508f;font-size:.85rem;text-decoration:none}
+  </style>
+</BaseLayout>

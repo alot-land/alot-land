@@ -16,6 +16,13 @@ import { getStore } from '@netlify/blobs';
 const LEADS = 'stv-leads';
 const INDEX = 'stv-lead-index';
 
+/**
+ * Netlify injects the Blobs environment into v2 functions automatically. The
+ * classic `handler` style does NOT get it, which is why every function touching
+ * this store uses the v2 signature — a personal API token cannot stand in,
+ * because tokens are treated as a build context and may only write
+ * deploy-scoped stores.
+ */
 const store = (name) => getStore({ name, consistency: 'strong' });
 
 /** Random, unguessable id — these appear in URLs sent by text message. */
@@ -63,6 +70,25 @@ export async function claimDedupe(key, id, windowHours = 72) {
 export async function confirmDedupe(key, id) {
   if (!key) return;
   await store(INDEX).setJSON('dedupe:' + encodeURIComponent(key), { id, t: Date.now() });
+}
+
+/**
+ * Netlify's submission id → our lead id.
+ *
+ * Two jobs. It makes this function idempotent, because Netlify can retry a
+ * submission-created event and a retry must not make a second lead or a second
+ * text to Tony. And it is the join reconciliation uses to find submissions
+ * Netlify accepted that never became a lead.
+ */
+export async function linkSubmission(submissionId, leadId) {
+  if (!submissionId) return;
+  await store(INDEX).setJSON('sub:' + submissionId, { leadId, t: Date.now() });
+}
+
+export async function leadBySubmission(submissionId) {
+  if (!submissionId) return null;
+  const v = await store(INDEX).get('sub:' + submissionId, { type: 'json' });
+  return v?.leadId ?? null;
 }
 
 /** Append-only id list, so listing never has to scan the blob store. */
