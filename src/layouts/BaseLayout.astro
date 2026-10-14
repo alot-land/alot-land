@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import MetaPixel from '../components/MetaPixel.astro';
 import HeartScript from '../components/HeartScript.astro';
 import { siteConfig } from '../config/site.js';
 
@@ -183,6 +184,7 @@ const globalSchema = {
     <!-- GHL Chat Widget (hidden on pages with contact forms) -->
     <!-- Campaign attribution + funnel events. Public pages only. -->
     {!bare && <script is:inline defer src="/js/track.js"></script>}
+    {!bare && <MetaPixel />}
     {!noChat && !bare && <script defer src="https://widgets.leadconnectorhq.com/loader.js" data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js" data-widget-id="6a0b46a5c2e5331bb3f4cd6b"></script>}
 
     <script>

@@ -92,11 +92,28 @@
   }
 
   // ── GA4 ──────────────────────────────────────────────────────────────────
+  var seen = {};
   function send(name, params) {
     var payload = params || {};
     var a = attrParams();
     Object.keys(a).forEach(function (k) { if (!(k in payload)) payload[k] = a[k]; });
+
+    // One id per conversion, shared with the Meta Pixel so the same enquiry is
+    // never counted twice across the two systems.
+    var eventId = name + ':' + (payload.lot || '') + ':' + Date.now();
+    if (name === 'inquiry_submit' || name === 'tour_request') {
+      var guard = name + ':' + (payload.lot || '');
+      if (seen[guard]) return;          // a double-tap must not double-count
+      seen[guard] = true;
+      payload.event_id = eventId;
+    }
+
     if (typeof window.gtag === 'function') window.gtag('event', name, payload);
+    try {
+      window.dispatchEvent(new CustomEvent('alot:conversion', {
+        detail: Object.assign({ name: name, eventId: eventId }, payload),
+      }));
+    } catch (e) {}
     if (window.__alotTrackDebug) console.log('[track]', name, payload);
   }
   window.alotTrack = send;

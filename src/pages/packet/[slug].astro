@@ -1,0 +1,144 @@
+---
+/**
+ * Buyer information sheet, one per available lot.
+ *
+ * Printable HTML rather than a generated PDF so it updates itself when a price
+ * or a photo changes in the CMS — a stale PDF in someone's inbox is worse than
+ * no PDF.
+ *
+ * Everything here is drawn from the listing record. Nothing about surveys,
+ * septic suitability, utility connections, boundaries or building permissions
+ * is asserted: those are listed as documents to request, because inventing
+ * them would be the single most damaging thing this page could do.
+ */
+import { getCollection } from 'astro:content';
+import { siteConfig } from '../../config/site.js';
+
+export async function getStaticPaths() {
+  const lots = await getCollection('listings', l => l.data.visible !== false && l.data.status === 'available');
+  return lots.map(l => ({ params: { slug: l.slug }, props: { lot: l } }));
+}
+
+const { lot } = Astro.props;
+const d = lot.data;
+const site = `https://${siteConfig.domain}`;
+const price = d.hidePrice ? 'Call for pricing and availability' : (d.price || 'Contact for price');
+const photos = (d.photos || []).slice(0, 6);
+const body = lot.body.split('\n').map(s => s.trim()).filter(Boolean).filter(l => !l.startsWith('***'));
+const glance = (lot.body.match(/\*\*\*At a glance:([^*]+)\*\*/) || [])[1]?.trim();
+
+// Stated on the listing, so safe to repeat. Anything absent is simply absent.
+const known = [
+  ['Acreage', `${d.acreage} acres`],
+  ['Price', price],
+  ['County', `${d.county} County, ${d.state}`],
+  ['Status', 'Available'],
+  ['Zoning', d.zoning],
+  ['Road access', d.roadAccess],
+  ['Water', d.water],
+  ['Utilities', d.power],
+  ['GPS', d.gps],
+].filter(([, v]) => v);
+
+// Named, not invented. The owner supplies these and they get attached.
+const toRequest = [
+  ['Recorded survey / plat', 'Exact boundaries, dimensions and recorded acreage'],
+  ['Soil map or perc results', 'Where a septic system may be placed, and of what type'],
+  ['Septic permit status', 'Whether a permit has been issued or applied for'],
+  ['Utility availability letters', 'Electric, water and internet at the road'],
+  ['Deed and title commitment', 'Ownership, easements and any restrictions of record'],
+  ['Road maintenance agreement', 'Who maintains access, and at whose cost'],
+];
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>{d.title} — Buyer Information | Sugar Tree Vista</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:"Helvetica Neue",Arial,sans-serif;color:#14233c;margin:0;background:#eef1f6;line-height:1.5}
+  .sheet{max-width:840px;margin:0 auto;background:#fff;padding:40px 44px 56px}
+  header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #14233c;padding-bottom:18px;margin-bottom:24px;gap:20px}
+  h1{font-size:1.9rem;margin:0 0 4px}
+  .sub{color:#5b6b85;margin:0;font-size:.95rem}
+  .price{font-size:1.7rem;font-weight:700;white-space:nowrap}
+  h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.12em;color:#5b6b85;margin:32px 0 12px;border-bottom:1px solid #dde3ec;padding-bottom:6px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 28px}
+  .row{display:flex;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px dotted #dde3ec;font-size:.93rem}
+  .row dt{color:#5b6b85}
+  .row dd{margin:0;font-weight:600;text-align:right}
+  .photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .photos img{width:100%;height:150px;object-fit:cover;border-radius:6px;display:block}
+  p{font-size:.95rem}
+  .glance{background:#f4f6fa;border-left:4px solid #F5B800;padding:12px 16px;font-size:.92rem;margin:16px 0}
+  .request li{margin-bottom:9px;font-size:.93rem}
+  .request strong{display:block}
+  .request span{color:#5b6b85;font-size:.88rem}
+  .notice{background:#fff8e6;border:1px solid #f0d58a;border-radius:8px;padding:14px 16px;font-size:.88rem;margin-top:14px}
+  footer{margin-top:40px;border-top:3px solid #14233c;padding-top:16px;display:flex;justify-content:space-between;gap:20px;font-size:.9rem}
+  .cta{background:#14233c;color:#fff;border-radius:10px;padding:18px 22px;margin-top:28px}
+  .cta a{color:#F5B800;font-weight:700}
+  .print{position:fixed;top:14px;right:14px;background:#F5B800;border:0;border-radius:8px;padding:11px 16px;font-weight:700;cursor:pointer;font-size:.9rem}
+  @media print{ body{background:#fff} .sheet{max-width:none;padding:0} .print{display:none} .photos img{height:120px} }
+  @media(max-width:640px){ .sheet{padding:24px 18px 40px} .grid,.photos{grid-template-columns:1fr} header{flex-direction:column} }
+</style>
+</head>
+<body>
+<button class="print" onclick="window.print()">Print / Save as PDF</button>
+<div class="sheet">
+  <header>
+    <div>
+      <h1>{d.title}</h1>
+      <p class="sub">Sugar Tree Vista · {d.county} County, Tennessee</p>
+    </div>
+    <div class="price">{price}</div>
+  </header>
+
+  {photos.length > 0 && (
+    <>
+      <h2>The property</h2>
+      <div class="photos">{photos.map(p => (<img src={p} alt={`${d.title} — Sugar Tree Vista`} loading="lazy" />))}</div>
+    </>
+  )}
+
+  {body.length > 0 && (<><h2>About this lot</h2>{body.slice(0, 4).map(t => (<p>{t}</p>))}</>)}
+  {glance && <div class="glance"><strong>At a glance:</strong> {glance}</div>}
+
+  <h2>What we can confirm</h2>
+  <div class="grid">
+    {known.map(([k, v]) => (<dl class="row"><dt>{k}</dt><dd>{v}</dd></dl>))}
+  </div>
+
+  <h2>Documents to request before you buy</h2>
+  <p>These are the papers that answer what a lot can actually be used for. Ask for the
+     ones that matter to you and we will send what exists for this parcel.</p>
+  <ul class="request">
+    {toRequest.map(([k, why]) => (<li><strong>{k}</strong><span>{why}</span></li>))}
+  </ul>
+  <div class="notice">
+    <strong>Nothing on this sheet asserts a survey, septic approval, utility connection,
+    boundary or building permission.</strong> Those depend on documents and on county
+    approval, and anyone who tells you otherwise before showing you the paperwork is
+    guessing. Verify with Decatur County and your own inspections before you commit.
+  </div>
+
+  <div class="cta">
+    <strong>Want to walk it?</strong><br />
+    Tony Alcott, Principal Broker — <a href="tel:+17316072221">(731) 607-2221</a><br />
+    Lot page: <a href={`${site}/listings/${lot.slug}/`}>{`${site}/listings/${lot.slug}/`}</a>
+  </div>
+
+  <footer>
+    <div><strong>Alot of Land LLC</strong><br />Serving Middle Tennessee<br />
+      <a href={`tel:+1${siteConfig.phoneRaw}`}>{siteConfig.phone}</a> · {siteConfig.email}</div>
+    <div style="text-align:right;color:#5b6b85">
+      Prepared {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}<br />
+      Prices and availability subject to change.
+    </div>
+  </footer>
+</div>
+</body>
+</html>

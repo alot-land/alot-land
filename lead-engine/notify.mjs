@@ -112,7 +112,8 @@ export async function acknowledgeBuyer(lead, { siteUrl }) {
     'Tony Alcott, our listing agent, will be in touch shortly. If you would rather',
     'not wait, call or text him on (731) 607-2221.',
     '',
-    `Lot details: ${siteUrl}/listings/${lead.lot}/`,
+    `Lot details:     ${siteUrl}/listings/${lead.lot}/`,
+    `Information sheet: ${siteUrl}/packet/${lead.lot}/`,
     '',
     'Questions about access, septic suitability, utilities or financing are best',
     'answered for your specific lot — ask Tony and he will get you the documents',
@@ -126,5 +127,37 @@ export async function acknowledgeBuyer(lead, { siteUrl }) {
     return { ...out, at: new Date().toISOString() };
   } catch (e) {
     return { status: 'failed', error: String(e.message ?? e).slice(0, 300), at: new Date().toISOString() };
+  }
+}
+
+
+/** Nobody picked a lead up inside the window — tell the owner, not just the agent. */
+export async function escalate(lead, { siteUrl }) {
+  const r = recipients();
+  const to = [...r.owner, ...r.agents];
+  if (!to.length) return { status: 'skipped', reason: 'no recipients' };
+  const text = [
+    `Nobody has picked this lead up.`,
+    '',
+    leadSummary(lead, siteUrl),
+    '',
+    'This is the one-business-hour escalation. Opening the lead and marking it',
+    'acknowledged stops these.',
+  ].join('\n');
+  try {
+    return await sendEmail({ to, subject: `UNACKNOWLEDGED — ${lead.name} · ${lead.lotName || lead.lot}`, text });
+  } catch (e) {
+    return { status: 'failed', error: String(e.message ?? e).slice(0, 300) };
+  }
+}
+
+/** The daily exception summary. */
+export async function sendReport(text) {
+  const r = recipients();
+  if (!r.owner.length) return { status: 'skipped', reason: 'no owner address' };
+  try {
+    return await sendEmail({ to: r.owner, subject: 'Sugar Tree leads — daily exception report', text });
+  } catch (e) {
+    return { status: 'failed', error: String(e.message ?? e).slice(0, 300) };
   }
 }

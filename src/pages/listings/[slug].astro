@@ -305,6 +305,9 @@ const listingSchema = {
         {status === 'available' && (
           <div id="inquire" class="scroll-mt-24">
             <LotInquiry lot={listing.slug} lotName={title} lotPrice={hidePrice ? '' : (recordedPrice || '')} />
+            <p class="text-center text-sm text-text-muted mt-3">
+              Or <a href={`/packet/${listing.slug}/`} target="_blank" rel="noopener" class="underline font-semibold text-bg-dark">open the buyer information sheet</a> — acreage, photos and the documents to ask for.
+            </p>
           </div>
         )}
 
