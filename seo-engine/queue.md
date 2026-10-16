@@ -80,3 +80,4 @@ changes that page. Tick something off by moving its row to **Done**.
 | Every back-office page links to every other, and to the CMS | 3 |
 | Netlify credit burn fixed — sub-apps off main (158 wasted deploys/cycle), video refresh conditional (27) | 3 |
 | Call menu on 615-538-6878 — press 1 → realtor (roll to David), silence → David; voicemail on both | 3 |
+| `/guides/how-to-buy-land` de-orphaned — linked from /listings, /find-land, all listing pages, llms.txt | 4 |
