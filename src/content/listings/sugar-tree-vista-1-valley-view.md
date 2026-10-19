@@ -15,7 +15,7 @@ showAddress: false
 zoning: Unrestricted / No HOA
 roadAccess: Graded driveway installed
 water: Drill your own well
-power: Power being run to the road
+power: "Power is at the road - High Speed Internet available "
 gps: 35.806280, -88.025285
 showSellerFinance: false
 photos:
@@ -33,4 +33,4 @@ There's a building pad already sitting near the front of this lot — ready, and
 This is the easiest way into Sugar Tree Vista — a real view and a ready homesite, without the premium the bigger ridge lots carry. The kind of lot that doesn't sit long.
 ***At a glance:* 5.66 acres · front building pad · valley overlook · Decatur County, TN**
 
-Part of **Sugar Tree Vista** — ten unrestricted ridgeline view tracts near the Tennessee River at Kentucky Lake in Decatur County, TN. Every lot includes a graded driveway, a soil map marking approved septic locations, wide road frontage, a new survey, and a warranty deed. Power is being run to the road. Unrestricted — no HOA, no build time-limit.
+Part of **Sugar Tree Vista** — ten unrestricted ridgeline view tracts near the Tennessee River at Kentucky Lake in Decatur County, TN. Every lot includes a graded driveway, a soil map marking approved septic locations, wide road frontage, a new survey, and a warranty deed. Power is at the road - High Speed Internet available. Unrestricted — no HOA, no build time-limit.
