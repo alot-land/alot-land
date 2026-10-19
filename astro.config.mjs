@@ -24,7 +24,9 @@ export default defineConfig({
         !page.includes('/media') &&
         !page.includes('/seo') &&
         !page.includes('/handbook') &&
-        !page.includes('/crm'),
+        !page.includes('/crm') &&
+        !page.includes('/lead') &&
+        !page.includes('/packet'),
     }),
   ],
 });

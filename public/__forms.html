@@ -1,0 +1,29 @@
+<!doctype html>
+<!--
+  Netlify Forms detection.
+
+  Netlify finds forms by parsing deployed HTML at build time. The real enquiry
+  form is rendered by Astro and submitted with fetch(), which Netlify never
+  sees, so this file declares the shape instead. It is never linked and never
+  visited by anyone.
+
+  Every field the client posts must appear here or Netlify discards it.
+-->
+<html lang="en"><head><meta name="robots" content="noindex" /><title>Form definitions</title></head>
+<body>
+  <form name="stv-lead" data-netlify="true" netlify-honeypot="company" hidden>
+    <input type="text" name="name" />
+    <input type="tel" name="phone" />
+    <input type="email" name="email" />
+    <input type="text" name="lot" />
+    <input type="text" name="lotName" />
+    <input type="text" name="lotPrice" />
+    <input type="text" name="inquiryType" />
+    <textarea name="message"></textarea>
+    <input type="text" name="consent" />
+    <input type="text" name="consentText" />
+    <input type="text" name="attribution" />
+    <input type="text" name="pageUrl" />
+    <input type="text" name="company" />
+  </form>
+</body></html>

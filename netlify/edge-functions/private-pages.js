@@ -68,13 +68,18 @@ export default async (request, context) => {
 };
 
 export const config = {
-  // /api/* is gated too, and that is not optional: those endpoints return real
-  // customer names, phone numbers and message history. Gating only the page
-  // would leave the data one fetch away for anyone who guessed the URL.
+  // The CRM API is gated: it returns real customer names, phone numbers and
+  // message history, and gating only the page would leave that one fetch away.
+  //
+  // NOT /api/* as a whole. /api/lead is the public form endpoint every buyer
+  // posts to — behind this gate it would answer a paid Facebook click with a
+  // password prompt. The lead-reading endpoints are protected by Netlify
+  // Identity inside the function instead, because the agents sign in as
+  // themselves rather than sharing one password.
   path: [
     '/seo', '/seo/', '/seo/*',
     '/handbook', '/handbook/', '/handbook/*',
     '/crm', '/crm/', '/crm/*',
-    '/api/*',
+    '/api/crm/*',
   ],
 };

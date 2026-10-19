@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import MetaPixel from '../components/MetaPixel.astro';
 import HeartScript from '../components/HeartScript.astro';
 import { siteConfig } from '../config/site.js';
 
@@ -15,6 +16,8 @@ interface Props {
   noindex?: boolean;
   /** Back-office pages: no marketing header, footer or customer chat widget. */
   bare?: boolean;
+  /** data-* attributes for <body>, read by the tracker for event context. */
+  bodyData?: Record<string, string | undefined>;
 }
 
 const {
@@ -27,6 +30,7 @@ const {
   noChat = false,
   noindex = false,
   bare = false,
+  bodyData = {},
 } = Astro.props;
 
 const pageTitle = title ? `${title} | alot.land` : `alot.land — ${siteConfig.tagline}`;
@@ -167,7 +171,7 @@ const globalSchema = {
       gtag('config', gaMeasurementId);
     </script>
   </head>
-  <body class="font-body bg-bg-light text-bg-dark antialiased">
+  <body class="font-body bg-bg-light text-bg-dark antialiased" {...Object.fromEntries(Object.entries(bodyData).filter(([, v]) => v != null).map(([k, v]) => [`data-${k}`, String(v)]))}>
     {!bare && <Header />}
     <main>
       <slot />
@@ -178,6 +182,9 @@ const globalSchema = {
     <HeartScript />
 
     <!-- GHL Chat Widget (hidden on pages with contact forms) -->
+    <!-- Campaign attribution + funnel events. Public pages only. -->
+    {!bare && <script is:inline defer src="/js/track.js"></script>}
+    {!bare && <MetaPixel />}
     {!noChat && !bare && <script defer src="https://widgets.leadconnectorhq.com/loader.js" data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js" data-widget-id="6a0b46a5c2e5331bb3f4cd6b"></script>}
 
     <script>

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import LotInquiry from '../../components/LotInquiry.astro';
 import ListingGallery from '../../components/ListingGallery.astro';
 import VideoEmbed from '../../components/VideoEmbed.astro';
 import ShareButtons from '../../components/ShareButtons.astro';
@@ -146,6 +147,7 @@ const listingSchema = {
   ogImageHeight={630}
   ogType="article"
   noChat={true}
+  bodyData={{ 'page-kind': 'listing', 'lot-slug': listing.slug, 'lot-status': status, 'lot-price': hidePrice ? 'hidden' : (recordedPrice || '') }}
 >
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(listingSchema)} />
@@ -297,7 +299,21 @@ const listingSchema = {
 
         </div>
 
-        <!-- Inquiry Form -->
+        <!-- ONE form per page. An available lot gets the short three-field form,
+             because it is what someone meets after tapping an ad and every extra
+             field costs a lead. Two forms asking the same thing read as broken.
+             Coming-soon lots keep the original GHL form — no short form is shown
+             there, so nothing is left without an intake path. -->
+        {status === 'available' && (
+          <div id="inquire" class="scroll-mt-24">
+            <LotInquiry lot={listing.slug} lotName={title} lotPrice={hidePrice ? '' : (recordedPrice || '')} />
+            <p class="text-center text-sm text-text-muted mt-3">
+              Or <a href={`/packet/${listing.slug}/`} target="_blank" rel="noopener" class="underline font-semibold text-bg-dark">open the buyer information sheet</a> — acreage, photos and the documents to ask for.
+            </p>
+          </div>
+        )}
+
+        {status !== 'available' && (
         <div id="inquire" class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm scroll-mt-24">
           <h3 class="font-display font-bold text-lg text-bg-dark mb-2">Inquire About This Property</h3>
           <iframe
@@ -319,6 +335,7 @@ const listingSchema = {
           ></iframe>
           <script src="https://brand.alot.land/js/form_embed.js"></script>
         </div>
+        )}
 
         <!-- Buyer Testimonial (sold listings) -->
         {buyerTestimonial && (
