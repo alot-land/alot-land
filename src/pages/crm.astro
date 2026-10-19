@@ -142,11 +142,16 @@ import BackendNav from '../components/BackendNav.astro';
         '<div class="flex flex-wrap items-center gap-2 mb-2">' + badges +
           '<span class="text-xs text-gray-400 ml-auto">' + ago(item.sortAt) + '</span></div>' +
         '<p class="font-display font-bold text-lg text-bg-dark">' + esc(c.name || 'Unnamed contact') + '</p>' +
-        '<p class="text-xs text-gray-500 mb-3">' + esc(c.phone || '') + (c.phone && c.email ? ' · ' : '') + esc(c.email || '') + '</p>' +
+        '<p class="text-xs text-gray-500 mb-3">' + esc(c.phone || '') + (c.phone && c.email ? ' · ' : '') + esc(c.email || '') +
+          (item.lot ? ' · <span class="font-semibold text-bg-dark">' + esc(item.lot) + '</span>' : '') + '</p>' +
         why(item).map(function (w) { return '<p class="text-sm text-gray-600 leading-relaxed">' + w + '</p>'; }).join('') +
         '<div class="flex flex-wrap gap-2 mt-4">' +
           (c.phone ? '<a href="tel:' + esc(c.phone) + '" class="bg-bg-dark text-white font-bold px-4 py-2 rounded-xl text-sm">📞 Call</a>' : '') +
-          '<button data-open="' + esc(c.id) + '" class="bg-gold text-bg-dark font-bold px-4 py-2 rounded-xl text-sm">Open &amp; reply</button>' +
+          // A website lead lives in the lead system, with its own audit trail —
+          // link there rather than opening the GHL drawer, which has no record of it.
+          (item.href
+            ? '<a href="' + esc(item.href) + '" class="bg-gold text-bg-dark font-bold px-4 py-2 rounded-xl text-sm">Open the lead →</a>'
+            : '<button data-open="' + esc(c.id) + '" class="bg-gold text-bg-dark font-bold px-4 py-2 rounded-xl text-sm">Open &amp; reply</button>') +
         '</div></div>';
     }
 

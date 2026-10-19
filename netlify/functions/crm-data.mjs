@@ -6,6 +6,8 @@
  * keeps the API's quirks in one file.
  */
 import * as ghl from '../../crm-engine/ghl.mjs';
+import * as leadStore from '../../lead-engine/store.mjs';
+import { isUnacknowledged, isOverdue, STAGE_LABEL, CLOSED_STAGES } from '../../lead-engine/lead.mjs';
 import { triage } from '../../crm-engine/triage.mjs';
 import { parseEnrolment } from '../../crm-engine/cadence.mjs';
 import cadenceFile from '../../crm-engine/cadences.json' with { type: 'json' };
@@ -18,12 +20,51 @@ const pickArray = (o, ...keys) => { for (const k of keys) if (Array.isArray(o?.[
 
 const name = c => str(c.contactName || [c.firstName, c.lastName].filter(Boolean).join(' ') || c.email || c.phone).trim();
 
+/**
+ * Website leads, shaped like the GHL triage items the page already renders.
+ *
+ * These are the leads the site captured itself. They show whether or not
+ * GoHighLevel is connected — the page used to be empty without GHL, which is
+ * exactly backwards now that the site has its own intake.
+ */
+async function websiteLeads() {
+  let leads = [];
+  try { leads = await leadStore.listLeads({ limit: 200 }); } catch { return { today: [], followUp: [], all: [] }; }
+
+  const card = (l, reasons, details) => ({
+    contact: { id: l.id, name: l.name, phone: l.phone, email: l.email, source: 'website' },
+    reasons, details, sortAt: l.createdAt, href: `/lead/?id=${l.id}`,
+    lot: l.lotName || l.lot, stage: STAGE_LABEL[l.stage] || l.stage,
+  });
+
+  const today = [], followUp = [];
+  for (const l of leads) {
+    if (CLOSED_STAGES.has(l.stage)) continue;
+    if (l.stage === 'new') {
+      today.push(card(l, ['new-lead'], { 'new-lead': {
+        ageHours: Math.round((Date.now() - new Date(l.createdAt)) / 36e5),
+        source: l.attribution?.utm_source || 'direct',
+        overdue: isUnacknowledged(l),
+      } }));
+    } else if (isOverdue(l)) {
+      followUp.push(card(l, ['quiet'], { quiet: {
+        quietDays: Math.round((Date.now() - new Date(l.createdAt)) / 864e5),
+        stage: STAGE_LABEL[l.stage] || l.stage, value: null,
+      } }));
+    }
+  }
+  return { today, followUp, all: leads };
+}
+
 export default async (req) => {
+  const site = await websiteLeads();
+
   if (!ghl.isConfigured()) {
     return ok({
       connected: false,
-      message: 'GHL is not connected. Add GHL_TOKEN and GHL_LOCATION_ID in Netlify, then redeploy.',
-      today: [], followUp: [], counts: { today: 0, unanswered: 0, newLeads: 0, appointments: 0, followUp: 0 },
+      message: 'Showing website leads. GoHighLevel is not connected, so phone and SMS conversations are not included here yet.',
+      today: site.today, followUp: site.followUp,
+      counts: { today: site.today.length, unanswered: 0, newLeads: site.today.length, appointments: 0, followUp: site.followUp.length },
       cadences: cadenceFile.cadences.map(({ id, name, for: forWho, steps }) => ({ id, name, for: forWho, steps: steps.length })),
     });
   }
@@ -94,6 +135,12 @@ export default async (req) => {
     }));
 
     const result = triage({ contacts, conversations, opportunities, appointments, humanTouches }, now);
+    // Website leads sit alongside GHL conversations — one list, two sources.
+    result.today = [...site.today, ...result.today];
+    result.followUp = [...site.followUp, ...result.followUp];
+    result.counts = { ...result.counts,
+      today: result.today.length, newLeads: result.counts.newLeads + site.today.length,
+      followUp: result.followUp.length };
 
     return ok({
       connected: true,
