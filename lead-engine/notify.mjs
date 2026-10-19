@@ -14,6 +14,8 @@
  * cost incurred, until the owner turns it on.
  */
 
+import { agentAlertHtml, buyerAckHtml, escalationHtml, reportHtml } from './email.mjs';
+
 const env = (k, d = '') => (process.env[k] ?? d).trim();
 
 export const recipients = () => ({
@@ -90,8 +92,9 @@ export async function notifyAll(lead, { siteUrl }) {
 
   const subject = `New Sugar Tree lead — ${lead.lotName || lead.lot} — ${lead.name}`;
   const text = leadSummary(lead, siteUrl);
+  const html = agentAlertHtml(lead, siteUrl);
   const to = [...r.owner, ...r.agents];
-  if (to.length) await record('email', to.join(','), () => sendEmail({ to, subject, text, replyTo: lead.email || undefined }));
+  if (to.length) await record('email', to.join(','), () => sendEmail({ to, subject, text, html, replyTo: lead.email || undefined }));
 
   if (r.agentSms) {
     const sms = `New Sugar Tree Vista lead — ${lead.lotName || lead.lot}. ${lead.name} ${lead.inquiryType === 'showing' ? 'requested a showing' : 'requested property details'}. View and respond: ${siteUrl}/lead/?id=${lead.id}`;
@@ -130,6 +133,7 @@ export async function acknowledgeBuyer(lead, { siteUrl }) {
       to: [lead.email],
       subject: `Sugar Tree Vista — ${lot}`,
       text,
+      html: buyerAckHtml(lead, siteUrl),
       replyTo: env('LEAD_REPLY_TO', 'David@alot.land'),
     });
     return { ...out, at: new Date().toISOString() };
@@ -153,7 +157,8 @@ export async function escalate(lead, { siteUrl }) {
     'acknowledged stops these.',
   ].join('\n');
   try {
-    return await sendEmail({ to, subject: `UNACKNOWLEDGED — ${lead.name} · ${lead.lotName || lead.lot}`, text });
+    return await sendEmail({ to, subject: `UNACKNOWLEDGED — ${lead.name} · ${lead.lotName || lead.lot}`,
+      text, html: escalationHtml(lead, siteUrl) });
   } catch (e) {
     return { status: 'failed', error: String(e.message ?? e).slice(0, 300) };
   }
@@ -164,7 +169,8 @@ export async function sendReport(text) {
   const r = recipients();
   if (!r.owner.length) return { status: 'skipped', reason: 'no owner address' };
   try {
-    return await sendEmail({ to: r.owner, subject: 'Sugar Tree leads — daily exception report', text });
+    return await sendEmail({ to: r.owner, subject: 'Sugar Tree leads — daily exception report',
+      text, html: reportHtml(text, (process.env.URL || 'https://alot.land').replace(/\/$/, '')) });
   } catch (e) {
     return { status: 'failed', error: String(e.message ?? e).slice(0, 300) };
   }
