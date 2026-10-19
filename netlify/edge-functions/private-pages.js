@@ -80,6 +80,7 @@ export const config = {
     '/seo', '/seo/', '/seo/*',
     '/handbook', '/handbook/', '/handbook/*',
     '/crm', '/crm/', '/crm/*',
+    '/links', '/links/', '/links/*',
     '/api/crm/*',
   ],
 };

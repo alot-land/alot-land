@@ -1,0 +1,133 @@
+---
+/**
+ * Campaign links. Private working page — gated, noindex, out of the sitemap.
+ *
+ * Every link carries UTMs so a lead can be traced back to the channel that
+ * produced it. The lot is already recorded by the form, so the tags describe
+ * WHERE the click came from, not which lot — tagging both would double up and
+ * make the reports harder to read, not easier.
+ *
+ * Convention:
+ *   utm_source   where it was posted      facebook · marketplace · tony
+ *   utm_medium   what kind of placement   paid_social · social · agent · qr
+ *   utm_campaign the push                 sugartree-launch
+ *   utm_content  which lot                lot-4
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BackendNav from '../components/BackendNav.astro';
+import { getCollection } from 'astro:content';
+
+const CAMPAIGN = 'sugartree-launch';
+const SITE = 'https://alot.land';
+
+const lots = (await getCollection('listings', l => l.data.visible !== false && l.data.status === 'available'))
+  .sort((a, b) => {
+    const n = (x: any) => parseInt((x.data.title.match(/Lot\s+(\d+)/) || [])[1] ?? '99', 10);
+    return n(a) - n(b);
+  });
+
+const CHANNELS = [
+  { key: 'meta-paid',   label: 'Meta ads (Facebook / Instagram)', source: 'facebook',  medium: 'paid_social',
+    note: 'Paste as the destination URL in Ads Manager. Keeps paid traffic separate from organic.' },
+  { key: 'marketplace', label: 'Facebook Marketplace',            source: 'marketplace', medium: 'social',
+    note: 'Marketplace listings do not allow links in every field — put this in the description.' },
+  { key: 'group',       label: 'Facebook groups',                 source: 'facebook-group', medium: 'social',
+    note: 'Land, hunting and homestead groups. Post as yourself, follow each group’s rules.' },
+  { key: 'organic',     label: 'Your own social posts',           source: 'instagram', medium: 'social',
+    note: 'Instagram bio, stories, your own page.' },
+  { key: 'tony',        label: 'Tony — to send buyers',           source: 'tony',      medium: 'agent',
+    note: 'Give Tony his own link so you can see what the agent network produces.' },
+  { key: 'ryan',        label: 'Ryan — to send buyers',           source: 'ryan',      medium: 'agent',
+    note: 'Same, for Ryan.' },
+  { key: 'email',       label: 'Email / newsletter',              source: 'newsletter', medium: 'email',
+    note: 'Your buyer list.' },
+  { key: 'sign',        label: 'The sign / QR code',              source: 'sign',      medium: 'qr',
+    note: 'For a QR on the Sugar Tree sign. Walk-up traffic shows as its own source.' },
+];
+
+const lotNum = (l: any) => (l.data.title.match(/Lot\s+(\d+)/) || [])[1] ?? '';
+const shortName = (l: any) => l.data.title.replace(/^Lot\s+\d+\s*[—-]\s*/i, '').trim();
+
+const build = (path: string, c: any, content: string) =>
+  `${SITE}${path}?utm_source=${c.source}&utm_medium=${c.medium}&utm_campaign=${CAMPAIGN}&utm_content=${content}`;
+
+const targets = [
+  { id: 'all',  label: 'The sales page', path: '/sugar-tree-vista/', content: 'all-lots' },
+  ...lots.map(l => ({ id: l.slug, label: `Lot ${lotNum(l)} — ${shortName(l)}`, path: `/listings/${l.slug}/`, content: `lot-${lotNum(l)}` })),
+];
+---
+
+<BaseLayout title="Campaign links" description="Private campaign link builder." noindex={true} bare={true}>
+  <BackendNav />
+  <div class="bg-bg-dark text-white py-9">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <p class="text-xs font-bold uppercase tracking-widest text-gold mb-2">alot.land · private</p>
+      <h1 class="font-display font-black text-3xl sm:text-4xl mb-2">Campaign links</h1>
+      <p class="text-gray-400 max-w-2xl">Every link is tagged, so a lead that arrives can be traced to the channel that produced it. Use the right one for each place you post — an untagged link shows up as "direct" and tells you nothing.</p>
+    </div>
+  </div>
+
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 mb-7">
+      <p class="text-sm text-gray-600 leading-relaxed">
+        <strong class="text-bg-dark">How to read the reports.</strong> After a week, open
+        <a href="/crm/" class="underline font-semibold text-bg-dark">Leads</a> and look at the Source on each
+        card, or GA4 → Reports → Acquisition. The channel that produces <em>enquiries</em> is the one to
+        spend on — not the one producing clicks.
+      </p>
+    </div>
+
+    {targets.map(t => (
+      <section class="mb-8">
+        <h2 class="font-display font-black text-xl text-bg-dark mb-1">{t.label}</h2>
+        <p class="text-xs text-text-muted mb-3 font-mono">{t.path}</p>
+        <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+          {CHANNELS.map((c, i) => (
+            <div class={`p-4 flex flex-wrap items-start gap-3 ${i ? 'border-t border-gray-100' : ''}`}>
+              <div class="min-w-[180px]">
+                <div class="font-semibold text-bg-dark text-sm">{c.label}</div>
+                <div class="text-xs text-text-muted leading-snug mt-0.5">{c.note}</div>
+              </div>
+              <input readonly value={build(t.path, c, t.content)}
+                     class="flex-1 min-w-[260px] text-xs font-mono bg-bg-light border border-gray-200 rounded-lg px-3 py-2 text-gray-700" />
+              <button type="button" data-copy={build(t.path, c, t.content)}
+                      class="copy bg-bg-dark text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-gray-800">Copy</button>
+            </div>
+          ))}
+        </div>
+        {t.id !== 'all' && (
+          <div class="mt-3 flex flex-wrap gap-3 text-sm">
+            <a href={`/packet/${t.id}/`} target="_blank" rel="noopener" class="underline font-semibold text-bg-dark">Buyer information sheet →</a>
+            <a href={`/og/${t.id}.jpg`} target="_blank" rel="noopener" class="underline font-semibold text-bg-dark">Share image →</a>
+          </div>
+        )}
+      </section>
+    ))}
+
+    <p class="text-xs text-gray-400">
+      Campaign tag: <code class="bg-gray-100 px-1 rounded">{CAMPAIGN}</code>. Links are built from the
+      available lots, so a lot that sells out or is hidden disappears from this page by itself.
+    </p>
+  </div>
+
+  <script is:inline>
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('.copy');
+      if (!b) return;
+      var link = b.getAttribute('data-copy');
+      var ok = function () {
+        b.textContent = 'Copied'; b.classList.add('bg-gold', 'text-bg-dark');
+        setTimeout(function () { b.textContent = 'Copy'; b.classList.remove('bg-gold', 'text-bg-dark'); }, 1400);
+      };
+      // The clipboard API needs a secure context and can be refused. If it is,
+      // select the text so there is always a way to get the link out.
+      var field = b.parentElement.querySelector('input[readonly]');
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(link).then(ok, function () { if (field) { field.select(); } b.textContent = 'Press ⌘C'; });
+      } else if (field) {
+        field.select(); field.setSelectionRange(0, 99999);
+        try { document.execCommand('copy'); ok(); } catch (err) { b.textContent = 'Press ⌘C'; }
+      }
+    });
+  </script>
+</BaseLayout>

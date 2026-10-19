@@ -26,7 +26,8 @@ export default defineConfig({
         !page.includes('/handbook') &&
         !page.includes('/crm') &&
         !page.includes('/lead') &&
-        !page.includes('/packet'),
+        !page.includes('/packet') &&
+        !page.includes('/links'),
     }),
   ],
 });
