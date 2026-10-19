@@ -1,13 +1,22 @@
 {
-  "updated": "2026-10-14T17:36:09Z",
+  "updated": "2026-10-19T23:20:01Z",
   "open": [
+    {
+      "number": 22,
+      "title": "Branded lead emails, and one leads page instead of two",
+      "url": "https://github.com/alot-land/alot-land/pull/22",
+      "opened": "2026-10-19",
+      "additions": 181,
+      "deletions": 7,
+      "isCycle": false
+    },
     {
       "number": 21,
       "title": "Sugar Tree Vista sales funnel — lead capture, agent workflow, campaign tracking",
       "url": "https://github.com/alot-land/alot-land/pull/21",
       "opened": "2026-10-14",
-      "additions": 2574,
-      "deletions": 12,
+      "additions": 2585,
+      "deletions": 11,
       "isCycle": true
     },
     {
