@@ -299,9 +299,11 @@ const listingSchema = {
 
         </div>
 
-        <!-- Short enquiry form: three fields, for people arriving from an ad.
-             The full GHL form stays below it rather than being replaced, so a
-             working intake path is never removed. -->
+        <!-- ONE form per page. An available lot gets the short three-field form,
+             because it is what someone meets after tapping an ad and every extra
+             field costs a lead. Two forms asking the same thing read as broken.
+             Coming-soon lots keep the original GHL form — no short form is shown
+             there, so nothing is left without an intake path. -->
         {status === 'available' && (
           <div id="inquire" class="scroll-mt-24">
             <LotInquiry lot={listing.slug} lotName={title} lotPrice={hidePrice ? '' : (recordedPrice || '')} />
@@ -311,9 +313,9 @@ const listingSchema = {
           </div>
         )}
 
-        <!-- Inquiry Form -->
-        <div id={status === 'available' ? 'inquire-full' : 'inquire'} class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm scroll-mt-24">
-          <h3 class="font-display font-bold text-lg text-bg-dark mb-2">{status === 'available' ? 'Prefer the longer form?' : 'Inquire About This Property'}</h3>
+        {status !== 'available' && (
+        <div id="inquire" class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm scroll-mt-24">
+          <h3 class="font-display font-bold text-lg text-bg-dark mb-2">Inquire About This Property</h3>
           <iframe
             src={`https://brand.alot.land/widget/form/f9D0fKTeKcjbc5H0aCab?single_line_7lu6=${encodeURIComponent(title)}`}
             style="width:100%;height:941px;border:none;border-radius:8px"
@@ -333,6 +335,7 @@ const listingSchema = {
           ></iframe>
           <script src="https://brand.alot.land/js/form_embed.js"></script>
         </div>
+        )}
 
         <!-- Buyer Testimonial (sold listings) -->
         {buyerTestimonial && (
