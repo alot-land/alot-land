@@ -1,15 +1,6 @@
 {
-  "updated": "2026-10-19T23:31:01Z",
+  "updated": "2026-10-19T23:32:04Z",
   "open": [
-    {
-      "number": 23,
-      "title": "Packet facts corrected; power is in to every lot",
-      "url": "https://github.com/alot-land/alot-land/pull/23",
-      "opened": "2026-10-19",
-      "additions": 30,
-      "deletions": 27,
-      "isCycle": false
-    },
     {
       "number": 21,
       "title": "Sugar Tree Vista sales funnel — lead capture, agent workflow, campaign tracking",
