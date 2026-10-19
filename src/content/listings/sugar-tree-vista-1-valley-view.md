@@ -15,7 +15,7 @@ showAddress: false
 zoning: Unrestricted / No HOA
 roadAccess: Graded driveway installed
 water: Drill your own well
-power: "Power is at the road - High Speed Internet available "
+power: "Power is at the road - High Speed Internet available"
 gps: 35.806280, -88.025285
 showSellerFinance: false
 photos:

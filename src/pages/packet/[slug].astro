@@ -42,13 +42,10 @@ const known = [
 // they live apart from the one genuine "go and get this" item below — a page
 // that mixes the two reads as though everything is guaranteed.
 const included = [
+  ['Recorded survey', 'The survey is among the photos on the lot page — boundaries, dimensions and recorded acreage.'],
   ['Soil map', 'This lot has a soil map, so you can place a septic system where you decide to build.'],
-  ['Utility availability', 'Electric and internet available at the road.'],
-];
-
-// Still worth a buyer obtaining for themselves.
-const toRequest = [
-  ['Recorded survey / plat', 'Exact boundaries, dimensions and recorded acreage'],
+  ['Utilities', 'Power at the road, and high-speed internet available.'],
+  ['Water', 'Drill your own well. We keep a list of local drillers.'],
 ];
 ---
 <!doctype html>
@@ -118,14 +115,11 @@ const toRequest = [
     {included.map(([k, v]) => (<li><strong>{k}</strong><span>{v}</span></li>))}
   </ul>
 
-  <h2>Worth getting yourself</h2>
-  <ul class="request">
-    {toRequest.map(([k, why]) => (<li><strong>{k}</strong><span>{why}</span></li>))}
-  </ul>
   <div class="notice">
-    A soil map shows where a septic system <em>can</em> go — it is not a permit, and the
-    permit comes from the county when you apply. Confirm utility connection costs with the
-    provider, and verify boundaries against the recorded survey before you commit.
+    A soil map shows where a septic system <em>can</em> go — it is not a permit, and the permit
+    comes from the county when you apply. Confirm connection costs with the utility, and read the
+    survey yourself before you commit. We would rather show you the paperwork than have you take
+    our word for it.
   </div>
 
   <div class="cta">
