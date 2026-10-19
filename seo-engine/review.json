@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-19T23:25:01Z",
+  "updated": "2026-10-19T23:31:01Z",
   "open": [
     {
       "number": 23,
@@ -8,15 +8,6 @@
       "opened": "2026-10-19",
       "additions": 30,
       "deletions": 27,
-      "isCycle": false
-    },
-    {
-      "number": 22,
-      "title": "Branded lead emails, and one leads page instead of two",
-      "url": "https://github.com/alot-land/alot-land/pull/22",
-      "opened": "2026-10-19",
-      "additions": 181,
-      "deletions": 7,
       "isCycle": false
     },
     {
