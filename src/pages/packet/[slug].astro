@@ -35,19 +35,17 @@ const known = [
   ['Status', 'Available'],
   ['Zoning', d.zoning],
   ['Road access', d.roadAccess],
-  ['Water', d.water],
-  ['Utilities', d.power],
   ['GPS', d.gps],
 ].filter(([, v]) => v);
 
-// Named, not invented. The owner supplies these and they get attached.
-const toRequest = [
-  ['Recorded survey / plat', 'Exact boundaries, dimensions and recorded acreage'],
-  ['Soil map or perc results', 'Where a septic system may be placed, and of what type'],
-  ['Septic permit status', 'Whether a permit has been issued or applied for'],
-  ['Utility availability letters', 'Electric, water and internet at the road'],
-  ['Deed and title commitment', 'Ownership, easements and any restrictions of record'],
-  ['Road maintenance agreement', 'Who maintains access, and at whose cost'],
+// Sugar Tree Vista facts, confirmed by the developer. These are assertions, so
+// they live apart from the one genuine "go and get this" item below — a page
+// that mixes the two reads as though everything is guaranteed.
+const included = [
+  ['Recorded survey', 'The survey is among the photos on the lot page — boundaries, dimensions and recorded acreage.'],
+  ['Soil map', 'This lot has a soil map, so you can place a septic system where you decide to build.'],
+  ['Utilities', 'Power at the road, and high-speed internet available.'],
+  ['Water', 'Drill your own well. We keep a list of local drillers.'],
 ];
 ---
 <!doctype html>
@@ -112,17 +110,16 @@ const toRequest = [
     {known.map(([k, v]) => (<dl class="row"><dt>{k}</dt><dd>{v}</dd></dl>))}
   </div>
 
-  <h2>Documents to request before you buy</h2>
-  <p>These are the papers that answer what a lot can actually be used for. Ask for the
-     ones that matter to you and we will send what exists for this parcel.</p>
+  <h2>What comes with this lot</h2>
   <ul class="request">
-    {toRequest.map(([k, why]) => (<li><strong>{k}</strong><span>{why}</span></li>))}
+    {included.map(([k, v]) => (<li><strong>{k}</strong><span>{v}</span></li>))}
   </ul>
+
   <div class="notice">
-    <strong>Nothing on this sheet asserts a survey, septic approval, utility connection,
-    boundary or building permission.</strong> Those depend on documents and on county
-    approval, and anyone who tells you otherwise before showing you the paperwork is
-    guessing. Verify with Decatur County and your own inspections before you commit.
+    A soil map shows where a septic system <em>can</em> go — it is not a permit, and the permit
+    comes from the county when you apply. Confirm connection costs with the utility, and read the
+    survey yourself before you commit. We would rather show you the paperwork than have you take
+    our word for it.
   </div>
 
   <div class="cta">
