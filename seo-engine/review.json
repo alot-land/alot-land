@@ -1,6 +1,15 @@
 {
-  "updated": "2026-10-19T23:32:04Z",
+  "updated": "2026-10-19T23:38:24Z",
   "open": [
+    {
+      "number": 24,
+      "title": "Campaign links for every channel",
+      "url": "https://github.com/alot-land/alot-land/pull/24",
+      "opened": "2026-10-19",
+      "additions": 137,
+      "deletions": 1,
+      "isCycle": false
+    },
     {
       "number": 21,
       "title": "Sugar Tree Vista sales funnel — lead capture, agent workflow, campaign tracking",
