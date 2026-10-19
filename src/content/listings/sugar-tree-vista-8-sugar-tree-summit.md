@@ -13,7 +13,7 @@ address: 1960 Low Gap Road, Sugar Tree, TN 38380
 zoning: Unrestricted / No HOA
 roadAccess: Graded driveway installed
 water: Drill your own well
-power: Power being run to the road
+power: Power is at the road - High Speed Internet available
 gps: 35.802493, -88.030716
 showSellerFinance: false
 photos:
@@ -32,4 +32,4 @@ This is the flagship — over eleven acres of high ridgeline meadow, open and ro
 There is exactly one lot like this in the community, and this is it — the biggest, the highest, the most complete.
 ***At a glance:* 11.41 acres · expansive ridgeline meadow · full hardwood perimeter · family-compound scale · Decatur County, TN**
 
-Part of **Sugar Tree Vista** — ten unrestricted ridgeline view tracts near the Tennessee River at Kentucky Lake in Decatur County, TN. Every lot includes a graded driveway, a soil map marking approved septic locations, wide road frontage, a new survey, and a warranty deed. Power is being run to the road. Unrestricted — no HOA, no build time-limit.
+Part of **Sugar Tree Vista** — ten unrestricted ridgeline view tracts near the Tennessee River at Kentucky Lake in Decatur County, TN. Every lot includes a graded driveway, a soil map marking approved septic locations, wide road frontage, a new survey, and a warranty deed. Power is at the road - High Speed Internet available. Unrestricted — no HOA, no build time-limit.
