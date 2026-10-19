@@ -33,7 +33,8 @@ Set in Netlify → Site configuration → Environment variables. Never in code.
 | Variable | Required | What it does |
 |---|---|---|
 | `RESEND_API_KEY` | **yes, to notify anyone** | Sends agent alerts, the buyer acknowledgment, escalations and the daily report. Without it every send is recorded as `skipped` and **nobody is told a lead arrived**. |
-| `LEAD_FROM_EMAIL` | recommended | e.g. `Alot of Land <leads@alot.land>`. The domain must be verified in Resend. |
+| `LEAD_FROM_EMAIL` | recommended | e.g. `Alot of Land <leads@alot.land>`. The domain must be verified in Resend. This address only needs to *send*. |
+| `LEAD_REPLY_TO` | recommended | Where a buyer's reply lands. Defaults to `David@alot.land`. Must be a mailbox that actually receives, or replies bounce. |
 | `NETLIFY_API_TOKEN` | **yes, for reconciliation** | Read-only token so the sweep can compare Netlify Forms against the working records. Without it reconciliation is skipped and says so. |
 | `PUBLIC_META_PIXEL_ID` | when ads start | Meta Pixel. Unset = no pixel code at all. |
 | `LEAD_AGENTS` | optional | Who may open `/lead`. Defaults to David, Tony, Ryan. |

@@ -123,7 +123,15 @@ export async function acknowledgeBuyer(lead, { siteUrl }) {
     'Alot of Land LLC',
   ].join('\n');
   try {
-    const out = await sendEmail({ to: [lead.email], subject: `Sugar Tree Vista — ${lot}`, text });
+    // Reply-to a real mailbox, never the sending address. The from address may
+    // be a send-only alias; a buyer who replies to it would get a bounce, which
+    // is the worst possible answer to someone trying to buy a lot.
+    const out = await sendEmail({
+      to: [lead.email],
+      subject: `Sugar Tree Vista — ${lot}`,
+      text,
+      replyTo: env('LEAD_REPLY_TO', 'David@alot.land'),
+    });
     return { ...out, at: new Date().toISOString() };
   } catch (e) {
     return { status: 'failed', error: String(e.message ?? e).slice(0, 300), at: new Date().toISOString() };
