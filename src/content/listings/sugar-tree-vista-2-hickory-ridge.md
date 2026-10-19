@@ -14,7 +14,7 @@ address: 1767 Ray Miller Road, Sugar Tree, TN 38380
 zoning: Unrestricted / No HOA
 roadAccess: Graded driveway installed
 water: Drill your own well
-power: Power being run to the road
+power: Power is at the road - High Speed Internet available
 gps: 35.806230, -88.025481
 showSellerFinance: false
 photos:
@@ -31,4 +31,4 @@ This is the prime cut. A ridgeline meadow rolls back deep into the property — 
 Stand at the top and the meadow runs out ahead of you with woods closing in behind. It's the lot that makes people stop talking and start picturing the house.
 ***At a glance:* 6.22 acres · open ridgeline meadow · hardwood borders · Decatur County, TN**
 
-Part of **Sugar Tree Vista** — ten unrestricted ridgeline view tracts near the Tennessee River at Kentucky Lake in Decatur County, TN. Every lot includes a graded driveway, a soil map marking approved septic locations, wide road frontage, a new survey, and a warranty deed. Power is being run to the road. Unrestricted — no HOA, no build time-limit.
+Part of **Sugar Tree Vista** — ten unrestricted ridgeline view tracts near the Tennessee River at Kentucky Lake in Decatur County, TN. Every lot includes a graded driveway, a soil map marking approved septic locations, wide road frontage, a new survey, and a warranty deed. Power is at the road - High Speed Internet available. Unrestricted — no HOA, no build time-limit.
