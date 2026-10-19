@@ -650,7 +650,8 @@ const drives = [
 </style>
 <script type="application/ld+json" set:html={JSON.stringify(stvSchema)} />
 </head>
-<body data-sale-date={saleDate} data-prop-image={propImage}>
+<body data-sale-date={saleDate} data-prop-image={propImage} data-page-kind="sales">
+<script is:inline defer src="/js/track.js"></script>
 
 <div class="topbar">
 {on('topBar') && (
