@@ -45,7 +45,7 @@ test('problems appear under Needs Attention and are never called fine', () => {
     parkedJobs: 2,
   }, { siteUrl: 'https://alot.land' });
   assert.match(t, /Nobody has opened Marcus/);
-  assert.match(t, /Notification failed: Priya/);
+  assert.match(t, /AGENTS NOT ALERTED — call Tony yourself: Priya/);
   assert.match(t, /2 job\(s\) unresolved/);
   assert.doesNotMatch(t, /Nothing outstanding/);
 });

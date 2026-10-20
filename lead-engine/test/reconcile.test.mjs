@@ -45,3 +45,28 @@ test('dry-run reconciliation reports what it would rebuild without writing', asy
     .catch(e => ({ threw: String(e.message) }));
   assert.ok(out.threw || Array.isArray(out.repaired), 'returns a result rather than crashing the sweep');
 });
+
+// ── a delivery that did not happen must never fall between the lists ──────
+test('every shape of non-delivery is surfaced, and a replay is not noise', async () => {
+  const { classifyDeliveries } = await import('../reconcile.mjs?rx1');
+  const lead = (name, notifications) => ({ name, notifications });
+  const leads = [
+    lead('a', [{ channel: 'email', status: 'sent' }, { channel: 'sms', status: 'skipped' }]),
+    lead('b', [{ channel: 'email', status: 'failed', error: 'resend 503' }]),
+    lead('c', [{ channel: 'email', status: 'refused', reason: 'claim: claim store unavailable' }]),
+    lead('d', [{ channel: 'email', status: 'refused', reason: 'claim: already claimed — replay' }]),
+    lead('e', []),
+    lead('f', [{ channel: 'email', status: 'skipped', reason: 'eligibility: synthetic' }]),
+  ];
+  const { failed, neverSent } = classifyDeliveries(leads);
+  assert.deepEqual(failed.map(l => l.name), ['b', 'c', 'e'],
+    'a provider error, an unprovable claim, and no attempt at all each need a person');
+  assert.deepEqual(neverSent.map(l => l.name), ['f'], 'only the genuinely skipped');
+  const flagged = [...failed, ...neverSent].map(l => l.name);
+  assert.equal(flagged.includes('a'), false, 'a delivered lead is not an exception');
+  assert.equal(flagged.includes('d'), false, 'a duplicate platform event is not an incident');
+  // No lead may be in both buckets, and none may escape both.
+  assert.equal(new Set(flagged).size, flagged.length, 'buckets must not overlap');
+  const sent = leads.filter(l => !flagged.includes(l.name)).map(l => l.name);
+  assert.deepEqual(sent, ['a', 'd'], 'and the only unflagged leads are the ones agents heard about');
+});

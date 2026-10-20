@@ -112,13 +112,37 @@ export async function retryFailures() {
            policy: 'historical agent notifications are never automatically retried' };
 }
 
+/**
+ * Sort leads by whether an agent actually heard about them.
+ *
+ * Exported so it can be tested directly: every lead must land in exactly one
+ * bucket, because a delivery that falls between the lists is a buyer nobody
+ * follows up. The statuses come from dispatchAgentAlerts():
+ *
+ *   sent     — the provider accepted it
+ *   skipped  — deliberately not sent (ineligible, or SMS not enabled yet)
+ *   failed   — the provider errored; nobody was told
+ *   refused  — the claim could not be taken. A replay is benign, a duplicate
+ *              platform event. Anything else means the claim store was down,
+ *              so again nobody was told.
+ */
+export function classifyDeliveries(leads = []) {
+  const blocked = (n) => n.status === 'failed'
+    || (n.status === 'refused' && !/already claimed/.test(n.reason ?? ''));
+  return {
+    // No attempts at all is the worst case, not a quiet one: nothing was even
+    // tried. It belongs with the failures, never silently between the buckets.
+    failed: leads.filter(l => { const n = l.notifications || []; return n.length === 0 || n.some(blocked); }),
+    neverSent: leads.filter(l => { const n = l.notifications || []; return n.length > 0 && n.every(x => x.status === 'skipped'); }),
+  };
+}
+
 /** What a person needs to look at today. */
 export async function buildExceptionReport({ now = new Date(), siteUrl } = {}) {
   const leads = await store.listLeads({ limit: 500 });
   const unacknowledged = leads.filter(l => isUnacknowledged(l, { now }));
   const overdue = leads.filter(l => isOverdue(l, { now }));
-  const notifyBroken = leads.filter(l => (l.notifications || []).some(n => n.status === 'failed'));
-  const notifySkipped = leads.filter(l => (l.notifications || []).every(n => n.status === 'skipped'));
+  const { failed: notifyBroken, neverSent: notifySkipped } = classifyDeliveries(leads);
   const unassigned = leads.filter(l => !l.assignedTo);
   const failures = await store.listFailures();
   const spam = await store.listQuarantine();
@@ -186,10 +210,13 @@ export function dailyReport(leads, exceptions, { siteUrl, now = new Date() } = {
   }
 
   const attention = [];
+  // Failed deliveries lead the list. A buyer the agents were never told about
+  // is the worst thing in this report, and nothing retries it for you.
+  exceptions.notificationsFailed.forEach(x => attention.push(
+    `AGENTS NOT ALERTED — call Tony yourself: ${x.name} · ${x.lot} — ${siteUrl}/lead/?id=${x.id}`));
   exceptions.unacknowledged.forEach(x => attention.push(`Nobody has opened ${x.name} · ${x.lot} — ${siteUrl}/lead/?id=${x.id}`));
   exceptions.overdue.forEach(x => attention.push(`No contact in 24h: ${x.name} · ${x.lot}`));
-  exceptions.notificationsFailed.forEach(x => attention.push(`Notification failed: ${x.name} · ${x.lot}`));
-  exceptions.notificationsNeverSent.forEach(x => attention.push(`Never notified (no provider configured): ${x.name}`));
+  exceptions.notificationsNeverSent.forEach(x => attention.push(`Not sent to agents by policy (test record or ineligible lot): ${x.name}`));
   if (exceptions.parkedJobs) attention.push(`${exceptions.parkedJobs} job(s) unresolved — not retried to agents by policy`);
   exceptions.spamForReview.slice(0, 5).forEach(x => attention.push(`Held as spam, check it is not real: ${x.name} (${x.reason})`));
 

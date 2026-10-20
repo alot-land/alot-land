@@ -110,12 +110,25 @@ export async function listLeads({ limit = 200 } = {}) {
   return out;
 }
 
-/** Small durable flags — used for notification idempotency. */
+/** Small durable flags — used for alert and report deduplication. */
 export async function getFlag(key) {
   return await store(INDEX).get('flag:' + key, { type: 'json' });
 }
 export async function setFlag(key, value) {
   await store(INDEX).setJSON('flag:' + key, value);
+}
+
+/**
+ * Atomic create-only write. Returns true only for the caller that created it.
+ *
+ * This is what makes a notification claim safe under concurrency. A read then a
+ * write is not a claim: two events arriving together both read "nothing there",
+ * both write, and the buyer gets alerted twice. `onlyIfNew` is resolved by the
+ * store, so exactly one caller can ever win.
+ */
+export async function createFlagIfAbsent(key, value) {
+  const res = await store(INDEX).setJSON('flag:' + key, value, { onlyIfNew: true });
+  return res?.modified === true;
 }
 
 /** Remove a lead outright. Used to purge synthetic test records. */

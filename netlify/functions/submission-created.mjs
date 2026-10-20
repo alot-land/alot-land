@@ -13,8 +13,8 @@
  */
 import { validate, looksLikeSpam, dedupeKey, newLead } from '../../lead-engine/lead.mjs';
 import * as store from '../../lead-engine/store.mjs';
-import { notifyAgentsOfNewLead, acknowledgeBuyer } from '../../lead-engine/notify.mjs';
-import { assessEligibility, authorise, claimDelivery, AGENT_TRIGGER } from '../../lead-engine/policy.mjs';
+import { notifyAgentsOfNewLead, acknowledgeBuyer, notifyOwner } from '../../lead-engine/notify.mjs';
+import { dispatchAgentAlerts, assessEligibility } from '../../lead-engine/policy.mjs';
 
 // v2 function signature on purpose: the classic `handler` style does not get
 // the Netlify Blobs environment injected, which fails with "the environment has
@@ -97,32 +97,19 @@ export default async (req) => {
     return new Response('store failed: ' + String(e.message || e).slice(0, 160), { status: 200 });
   }
 
-  // Agents are notified only if this is an eligible new-buyer enquiry AND the
-  // delivery has not already been claimed for this submission. Both must pass;
-  // either failing means the lead is kept and the owner can act on it.
-  const eligibility = assessEligibility(lead, { formName: payload.form_name });
-  let attempts = [];
-  if (!eligibility.ok) {
-    attempts = [{ channel: 'all', to: '-', at: new Date().toISOString(), status: 'skipped',
-                  reason: 'not eligible: ' + eligibility.reasons.join('; ') }];
-  } else {
-    const claim = await safely(() => claimDelivery(store, { submissionId: payload.id, destination: 'agents' }),
-                               { claimed: false, reason: 'claim failed' });
-    if (!claim.claimed) {
-      attempts = [{ channel: 'all', to: '-', at: new Date().toISOString(), status: 'skipped', reason: claim.reason }];
-    } else {
-      const authorisation = authorise({
-        trigger: AGENT_TRIGGER, submissionId: payload.id, destinations: { email: true, sms: true },
-      });
-      attempts = await safely(() => notifyAgentsOfNewLead(lead, { siteUrl, authorisation }), []);
-    }
-  }
-  lead.eligibility = eligibility;
+  // Each channel is claimed, sent and settled independently, in the engine —
+  // see dispatchAgentAlerts(). A dead SMS provider must not suppress the email,
+  // and a failed send is reported to David rather than retried to an agent.
+  lead.eligibility = assessEligibility(lead, { formName: payload.form_name });
+  const attempts = await safely(() => dispatchAgentAlerts(lead, {
+    formName: payload.form_name, submissionId: payload.id, siteUrl, store,
+    send: notifyAgentsOfNewLead, alertOwner: notifyOwner,
+  }), []);
+  const broken = attempts.filter(a => a.status === 'failed');
 
   const ack = await safely(() => acknowledgeBuyer(lead, { siteUrl }), { status: 'failed', error: 'notify crashed' });
   await safely(() => store.putLead({ ...lead, notifications: attempts, acknowledgement: ack }));
 
-  const broken = (attempts || []).filter(a => a.status === 'failed');
   if (broken.length || ack?.status === 'failed') {
     await safely(() => store.queueFailure({ kind: 'notify', leadId: id, attempts: 1, detail: { broken, ack } }));
   }
