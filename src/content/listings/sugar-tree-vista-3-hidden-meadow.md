@@ -6,7 +6,7 @@ featured: true
 state: Tennessee
 county: Decatur
 acreage: "7.18"
-price: $79,900
+price: $69,900
 hidePrice: true
 listedBy: Tony Alcott, II
 listedByCompany: United Country Real Estate — River City Realty
