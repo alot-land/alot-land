@@ -1,5 +1,7 @@
 [build]
-  command = "node scripts/optimize-images.mjs && npm run build"
+  # eligible-lots runs first: the agent-notification policy reads the manifest
+  # it writes, and a stale manifest could mean notifying about a sold lot.
+  command = "node scripts/eligible-lots.mjs && node scripts/optimize-images.mjs && npm run build"
   publish = "dist"
 
 [[redirects]]

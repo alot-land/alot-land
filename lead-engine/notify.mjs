@@ -16,6 +16,7 @@
 
 import { agentAlertHtml, buyerAckHtml, escalationHtml, reportHtml } from './email.mjs';
 import { isTestLead } from './lead.mjs';
+import { isAuthorised } from './policy.mjs';
 
 const env = (k, d = '') => (process.env[k] ?? d).trim();
 
@@ -79,11 +80,24 @@ export function leadSummary(lead, siteUrl) {
  * Notify everyone. Always resolves; each attempt is recorded with its outcome
  * so nothing can look sent when it was not.
  */
-export async function notifyAll(lead, { siteUrl }) {
-  // A synthetic record must never reach a real agent. This is the last line of
-  // defence rather than the only one — tests use a mocked sender — but it is
-  // the one that holds if a test record ever reaches production.
-  if (isTestLead(lead)) return [{ channel: 'all', to: '-', at: new Date().toISOString(), status: 'skipped', reason: 'test lead' }];
+/**
+ * Notify the listing agents about a new buyer enquiry.
+ *
+ * The ONLY function in the codebase that can put a message in front of Tony or
+ * Ryan, and it refuses unless handed an authorisation minted by policy.mjs.
+ * That is deliberate: reconciliation once reached the agents indirectly through
+ * repairMissing() → notifyAll(), because the sender trusted its caller. It no
+ * longer trusts anyone.
+ */
+export async function notifyAgentsOfNewLead(lead, { siteUrl, authorisation }) {
+  if (!isAuthorised(authorisation)) {
+    return [{ channel: 'all', to: '-', at: new Date().toISOString(), status: 'refused',
+              reason: 'not authorised — only the new-buyer intake path may notify agents' }];
+  }
+  if (isTestLead(lead)) {
+    return [{ channel: 'all', to: '-', at: new Date().toISOString(), status: 'skipped', reason: 'test lead' }];
+  }
+
   const r = recipients();
   const attempts = [];
   const record = async (channel, to, fn) => {
@@ -95,17 +109,40 @@ export async function notifyAll(lead, { siteUrl }) {
     }
   };
 
-  const subject = `New Sugar Tree lead — ${lead.lotName || lead.lot} — ${lead.name}`;
-  const text = leadSummary(lead, siteUrl);
-  const html = agentAlertHtml(lead, siteUrl);
-  const to = [...r.owner, ...r.agents];
-  if (to.length) await record('email', to.join(','), () => sendEmail({ to, subject, text, html, replyTo: lead.email || undefined }));
+  const allowed = authorisation.destinations ?? { email: true, sms: true };
 
-  if (r.agentSms) {
+  if (allowed.email) {
+    const to = [...r.owner, ...r.agents];
+    if (to.length) {
+      await record('email', to.join(','), () => sendEmail({
+        to,
+        subject: `New Sugar Tree lead — ${lead.lotName || lead.lot} — ${lead.name}`,
+        text: leadSummary(lead, siteUrl),
+        html: agentAlertHtml(lead, siteUrl),
+        replyTo: lead.email || undefined,
+      }));
+    }
+  }
+
+  if (allowed.sms && r.agentSms) {
     const sms = `New Sugar Tree Vista lead — ${lead.lotName || lead.lot}. ${lead.name} ${lead.inquiryType === 'showing' ? 'requested a showing' : 'requested property details'}. View and respond: ${siteUrl}/lead/?id=${lead.id}`;
     await record('sms', r.agentSms, () => sendSms({ to: r.agentSms, body: sms }));
   }
   return attempts;
+}
+
+/**
+ * Anything that is not a new buyer enquiry. Owner only, always — reconciliation
+ * findings, escalations, health problems, reports.
+ */
+export async function notifyOwner({ subject, text, html }) {
+  const r = recipients();
+  if (!r.owner.length) return { status: 'skipped', reason: 'no owner address' };
+  try {
+    return await sendEmail({ to: r.owner, subject, text, ...(html ? { html } : {}) });
+  } catch (e) {
+    return { status: 'failed', error: String(e.message ?? e).slice(0, 300) };
+  }
 }
 
 /** Buyer auto-reply. Says only what is verified; promises nothing. */
@@ -152,35 +189,19 @@ export async function acknowledgeBuyer(lead, { siteUrl }) {
 /** Nobody picked a lead up inside the window — tell the owner, not just the agent. */
 export async function escalate(lead, { siteUrl }) {
   if (isTestLead(lead)) return { status: 'skipped', reason: 'test lead' };
-  const r = recipients();
-  // Owner only. An escalation is an internal diagnostic — chasing the listing
-  // agent with reminders is how a real lead alert stops being read.
-  const to = [...r.owner];
-  if (!to.length) return { status: 'skipped', reason: 'no recipients' };
-  const text = [
-    `Nobody has picked this lead up.`,
-    '',
-    leadSummary(lead, siteUrl),
-    '',
-    'This is the one-business-hour escalation. Opening the lead and marking it',
-    'acknowledged stops these.',
-  ].join('\n');
-  try {
-    return await sendEmail({ to, subject: `UNACKNOWLEDGED — ${lead.name} · ${lead.lotName || lead.lot}`,
-      text, html: escalationHtml(lead, siteUrl) });
-  } catch (e) {
-    return { status: 'failed', error: String(e.message ?? e).slice(0, 300) };
-  }
+  return await notifyOwner({
+    subject: `UNACKNOWLEDGED — ${lead.name} · ${lead.lotName || lead.lot}`,
+    text: ['Nobody has picked this lead up.', '', leadSummary(lead, siteUrl), '',
+           'This is the one-business-hour escalation. Opening the lead and marking it',
+           'acknowledged stops these.'].join('\n'),
+    html: escalationHtml(lead, siteUrl),
+  });
 }
 
 /** The daily exception summary. */
-export async function sendReport(text) {
-  const r = recipients();
-  if (!r.owner.length) return { status: 'skipped', reason: 'no owner address' };
-  try {
-    return await sendEmail({ to: r.owner, subject: 'Sugar Tree leads — daily exception report',
-      text, html: reportHtml(text, (process.env.URL || 'https://alot.land').replace(/\/$/, '')) });
-  } catch (e) {
-    return { status: 'failed', error: String(e.message ?? e).slice(0, 300) };
-  }
+export async function sendReport(text, { subject = 'Alot Of Land — Daily Sales & Lead Report' } = {}) {
+  return await notifyOwner({
+    subject, text,
+    html: reportHtml(text, (process.env.URL || 'https://alot.land').replace(/\/$/, '')),
+  });
 }

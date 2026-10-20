@@ -110,6 +110,14 @@ export async function listLeads({ limit = 200 } = {}) {
   return out;
 }
 
+/** Small durable flags — used for notification idempotency. */
+export async function getFlag(key) {
+  return await store(INDEX).get('flag:' + key, { type: 'json' });
+}
+export async function setFlag(key, value) {
+  await store(INDEX).setJSON('flag:' + key, value);
+}
+
 /** Remove a lead outright. Used to purge synthetic test records. */
 export async function removeLead(id) {
   if (!/^[a-f0-9]{32}$/.test(String(id ?? ''))) return;

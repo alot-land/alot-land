@@ -10,7 +10,8 @@
     "check:cms": "node scripts/check-cms-parity.mjs",
     "test:crm": "node --test crm-engine/test/*.test.mjs",
     "test:leads": "node --test lead-engine/test/*.test.mjs",
-    "test": "node --test lead-engine/test/*.test.mjs crm-engine/test/*.test.mjs"
+    "test": "node --test lead-engine/test/*.test.mjs crm-engine/test/*.test.mjs",
+    "prebuild": "node scripts/eligible-lots.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.1.6",

@@ -7,8 +7,8 @@
  * that cannot be repaired is reported, loudly, with what is still wrong.
  */
 import * as store from './store.mjs';
-import { validate, looksLikeSpam, dedupeKey, newLead, isUnacknowledged, isOverdue, STAGE_LABEL } from './lead.mjs';
-import { notifyAll, acknowledgeBuyer } from './notify.mjs';
+import { validate, looksLikeSpam, dedupeKey, newLead, isUnacknowledged, isOverdue, STAGE_LABEL, CLOSED_STAGES } from './lead.mjs';
+import { notifyOwner } from './notify.mjs';
 
 const FORM_NAME = 'stv-lead';
 
@@ -69,10 +69,22 @@ export async function repairMissing({ submissions, siteUrl, dryRun = false }) {
       await store.indexLead(id, lead.createdAt);
       await store.linkSubmission(sub.id, id);
 
-      const attempts = await notifyAll(lead, { siteUrl });
-      const ack = await acknowledgeBuyer(lead, { siteUrl });
-      await store.putLead({ ...lead, notifications: attempts, acknowledgement: ack });
-      repaired.push({ submissionId: sub.id, leadId: id });
+      // A rebuilt lead is NOT a new arrival. Agents are never told, and the
+      // buyer is not acknowledged either — an auto-reply days late reads worse
+      // than silence. The owner is told so a human can decide how to hand it on.
+      const told = await notifyOwner({
+        subject: `Recovered lead needing handoff — ${lead.name} · ${lead.lotName || lead.lot}`,
+        text: [`Reconciliation found a submission that was never processed into a lead.`,
+               `It has been rebuilt and is in the dashboard. Nobody has been contacted.`, '',
+               `${lead.name} · ${lead.phone || lead.email || 'no contact'} · ${lead.lotName || lead.lot}`,
+               `Submitted ${sub.created_at}`, '',
+               `${siteUrl}/lead/?id=${id}`, '',
+               `Decide whether to pass it to Tony — it is not new, and should not be`,
+               `presented to the buyer as though it just arrived.`].join('\n'),
+      }).catch(e => ({ status: 'failed', error: String(e.message ?? e) }));
+      await store.putLead({ ...lead, notifications: [{ channel: 'email', to: 'owner', at: new Date().toISOString(),
+        status: told?.status ?? 'unknown', reason: 'recovered lead — owner notified, agents not' }] });
+      repaired.push({ submissionId: sub.id, leadId: id, ownerNotified: told?.status });
     } catch (e) {
       failed.push({ submissionId: sub.id, error: String(e.message || e).slice(0, 200) });
     }
@@ -81,31 +93,23 @@ export async function repairMissing({ submissions, siteUrl, dryRun = false }) {
 }
 
 /** Retry parked notification jobs. Anything still broken stays parked. */
-export async function retryFailures({ siteUrl, maxAttempts = 4, dryRun = false }) {
+/**
+ * Historical notification failures are NOT retried to agents.
+ *
+ * A retry of a days-old alert reads to Tony as a brand-new buyer. The job is
+ * reported to the owner through the dashboard instead, and marked so it stops
+ * being counted as pending work forever.
+ */
+export async function retryFailures() {
   const jobs = await store.listFailures();
-  if (!jobs.length) return { retried: [], stillFailing: [], abandoned: [] };
-  const retried = [], stillFailing = [], abandoned = [], keep = [];
-
-  for (const job of jobs) {
-    if (job.kind !== 'notify' || !job.leadId) { keep.push(job); continue; }
-    if ((job.attempts || 1) >= maxAttempts) { abandoned.push(job); keep.push({ ...job, abandoned: true }); continue; }
-    if (dryRun) { retried.push({ leadId: job.leadId, dryRun: true }); keep.push(job); continue; }
-
-    const lead = await store.getLead(job.leadId);
-    if (!lead) { keep.push({ ...job, note: 'lead missing' }); stillFailing.push(job); continue; }
-    try {
-      const attempts = await notifyAll(lead, { siteUrl });
-      const broken = attempts.filter(a => a.status === 'failed');
-      await store.putLead({ ...lead, notifications: [...(lead.notifications || []), ...attempts] });
-      if (broken.length) { keep.push({ ...job, attempts: (job.attempts || 1) + 1 }); stillFailing.push({ leadId: job.leadId, broken }); }
-      else retried.push({ leadId: job.leadId });
-    } catch (e) {
-      keep.push({ ...job, attempts: (job.attempts || 1) + 1, lastError: String(e.message || e).slice(0, 200) });
-      stillFailing.push({ leadId: job.leadId, error: String(e.message || e).slice(0, 200) });
-    }
+  const agentJobs = jobs.filter(j => j.kind === 'notify');
+  if (agentJobs.length) {
+    await store.replaceFailures(jobs.map(j => j.kind === 'notify'
+      ? { ...j, abandoned: true, note: 'agent notification not retried by policy — see the dashboard' }
+      : j));
   }
-  if (!dryRun) await store.replaceFailures(keep);
-  return { retried, stillFailing, abandoned };
+  return { retried: [], stillFailing: [], abandoned: agentJobs.map(j => ({ leadId: j.leadId })),
+           policy: 'historical agent notifications are never automatically retried' };
 }
 
 /** What a person needs to look at today. */
@@ -138,6 +142,77 @@ const brief = l => ({
   id: l.id, name: l.name, lot: l.lotName || l.lot, stage: STAGE_LABEL[l.stage] || l.stage,
   createdAt: l.createdAt, source: l.attribution?.utm_source || 'direct',
 });
+
+/**
+ * The owner's daily report. Sales first, problems second — a report that opens
+ * with errors gets read as a system alert and stops being opened.
+ */
+export function dailyReport(leads, exceptions, { siteUrl, now = new Date() } = {}) {
+  const since = (h) => new Date(now.getTime() - h * 36e5);
+  const open = leads.filter(l => !CLOSED_STAGES.has(l.stage));
+  const inStage = (...st) => leads.filter(l => st.includes(l.stage));
+  const newToday = leads.filter(l => new Date(l.createdAt) >= since(24));
+
+  const bySource = {};
+  for (const l of newToday) {
+    const k = l.attribution?.utm_source || 'direct';
+    bySource[k] = (bySource[k] ?? 0) + 1;
+  }
+  const byLot = {};
+  for (const l of open) {
+    const k = l.lotName || l.lot || 'unknown';
+    byLot[k] = (byLot[k] ?? 0) + 1;
+  }
+
+  const L = [];
+  L.push('ALOT OF LAND — DAILY SALES & LEAD REPORT', fmtDay(now), '');
+  L.push(`New inquiries (24h):  ${newToday.length}`);
+  L.push(`Active prospects:     ${open.length}`);
+  L.push(`Contacted:            ${inStage('contacted', 'qualified').length}`);
+  L.push(`Showings scheduled:   ${inStage('showing_scheduled').length}`);
+  L.push(`Offers:               ${inStage('offer', 'under_contract').length}`);
+  L.push(`Closed:               ${inStage('closed').length}`);
+  L.push('');
+
+  if (Object.keys(byLot).length) {
+    L.push('BY LOT');
+    Object.entries(byLot).sort((a, b) => b[1] - a[1]).forEach(([k, n]) => L.push(`  ${String(n).padStart(3)}  ${k}`));
+    L.push('');
+  }
+  if (Object.keys(bySource).length) {
+    L.push('WHERE TODAY\'S INQUIRIES CAME FROM');
+    Object.entries(bySource).sort((a, b) => b[1] - a[1]).forEach(([k, n]) => L.push(`  ${String(n).padStart(3)}  ${k}`));
+    L.push('');
+  }
+
+  const attention = [];
+  exceptions.unacknowledged.forEach(x => attention.push(`Nobody has opened ${x.name} · ${x.lot} — ${siteUrl}/lead/?id=${x.id}`));
+  exceptions.overdue.forEach(x => attention.push(`No contact in 24h: ${x.name} · ${x.lot}`));
+  exceptions.notificationsFailed.forEach(x => attention.push(`Notification failed: ${x.name} · ${x.lot}`));
+  exceptions.notificationsNeverSent.forEach(x => attention.push(`Never notified (no provider configured): ${x.name}`));
+  if (exceptions.parkedJobs) attention.push(`${exceptions.parkedJobs} job(s) unresolved — not retried to agents by policy`);
+  exceptions.spamForReview.slice(0, 5).forEach(x => attention.push(`Held as spam, check it is not real: ${x.name} (${x.reason})`));
+
+  L.push('NEEDS ATTENTION');
+  if (attention.length) attention.forEach(a => L.push(`  · ${a}`));
+  else L.push('  Nothing outstanding.');
+  L.push('');
+  L.push(`Leads: ${siteUrl}/crm/`);
+  return L.join('\n');
+}
+
+const fmtDay = (d) => new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Chicago', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+}).format(d);
+
+/** Local wall-clock parts in Chicago, so DST is handled by the platform. */
+export function chicagoNow(now = new Date()) {
+  const p = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Chicago', hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit',
+  }).formatToParts(now).reduce((a, x) => (a[x.type] = x.value, a), {});
+  return { date: `${p.year}-${p.month}-${p.day}`, hour: Number(p.hour) % 24 };
+}
 
 export function reportToText(r) {
   const L = [];

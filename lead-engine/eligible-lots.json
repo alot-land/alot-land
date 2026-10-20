@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-10-20T17:55:26.615Z",
+  "lots": [
+    {
+      "slug": "sugar-tree-vista-4-whitetail-view",
+      "title": "Lot 4 — Whitetail Ridge",
+      "price": "$49,900"
+    },
+    {
+      "slug": "sugar-tree-vista-7-poplar-overlook",
+      "title": "Lot 7 — Poplar Overlook",
+      "price": "$59,900"
+    },
+    {
+      "slug": "sugar-tree-vista-8-sugar-tree-summit",
+      "title": "Lot 8 — Sugar Tree Summit",
+      "price": "$124,900"
+    }
+  ]
+}

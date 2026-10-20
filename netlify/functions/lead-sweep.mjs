@@ -1,65 +1,118 @@
 /**
- * Scheduled sweep: reconcile and record. It sends NOTHING.
+ * Hourly health check. Silent unless something needs a person.
  *
- * It used to escalate unacknowledged leads and mail an hourly report to the
- * owner and both agents. Running hourly, that meant three test records produced
- * a stream of reminders to Tony — who is a listing agent, not an operator. An
- * agent who learns that most mail from this system is noise stops opening the
- * one that is a real buyer, which is the only outcome that actually matters.
+ * It CANNOT notify an agent. Not by calling the sender — which refuses without
+ * an authorisation only the intake path can mint — and not indirectly, because
+ * reconciliation now reports to the owner alone. That indirect route,
+ * lead-sweep → repairMissing() → notifyAll(), is what reached Tony before.
  *
- * So the policy now, enforced here and in notify.mjs:
- *   · agents are emailed ONLY for a genuine new buyer lead, by
- *     submission-created — never by this function
- *   · this sweep performs no outbound email or SMS of any kind
- *   · the exception report is written to the store for the dashboard to read,
- *     not mailed; if it is ever mailed again it goes to the owner alone, daily
- *   · synthetic test records are purged and can never notify anyone
+ * What it does every hour, quietly:
+ *   · purge synthetic records so they cannot be counted or escalated
+ *   · reconcile Netlify Forms against the working records
+ *   · write health to the store for the dashboard
  *
- * Daily, not hourly: nothing here is urgent, and frequency was half the problem.
+ * What it sends:
+ *   · nothing at all, unless it is 08:00 in Chicago and today's report has not
+ *     gone out — then one report, to the owner
+ *   · an urgent alert to the owner only, deduplicated by problem signature so
+ *     an unchanged fault does not mail daily
  */
 import * as store from '../../lead-engine/store.mjs';
-import { fetchSubmissions, repairMissing, buildExceptionReport } from '../../lead-engine/reconcile.mjs';
+import {
+  fetchSubmissions, repairMissing, retryFailures,
+  buildExceptionReport, dailyReport, chicagoNow,
+} from '../../lead-engine/reconcile.mjs';
 import { isTestLead } from '../../lead-engine/lead.mjs';
+import { notifyOwner, sendReport } from '../../lead-engine/notify.mjs';
+
+const REPORT_HOUR = 8;   // 08:00 America/Chicago, DST handled by chicagoNow()
 
 export default async () => {
   const siteUrl = (process.env.URL || 'https://alot.land').replace(/\/$/, '');
-  const out = { at: new Date().toISOString(), sent: 'nothing — this job never emails or texts' };
+  const now = new Date();
+  const local = chicagoNow(now);
+  const out = { at: now.toISOString(), chicago: local, agentsNotified: 'never — this job cannot' };
 
-  // 1. Purge synthetic records so they cannot be escalated, counted or mailed.
+  // 1. Synthetic records: excluded from the working set, never deleted from
+  //    Netlify Forms, which keeps the audit evidence intact.
   const leads = await store.listLeads({ limit: 500 }).catch(() => []);
-  out.purgedTestLeads = [];
+  out.archivedTestLeads = [];
   for (const lead of leads) {
-    if (!isTestLead(lead)) continue;
-    await store.removeLead(lead.id).catch(() => {});
-    out.purgedTestLeads.push({ id: lead.id, name: lead.name });
+    if (!isTestLead(lead) || lead.archived) continue;
+    await store.putLead({ ...lead, archived: true, stage: 'lost',
+      history: [...(lead.history ?? []), { at: now.toISOString(), by: 'system', action: 'archived',
+        note: 'synthetic test record — excluded from reporting and notification' }] }).catch(() => {});
+    out.archivedTestLeads.push(lead.id);
   }
 
-  // 2. Rebuild anything Netlify accepted that never became a lead. Repair writes
-  //    records; notifyAll inside it is a no-op for test records and, for real
-  //    ones, is the single authorised new-lead notification.
+  // 2. Reconcile. Any rebuilt lead notifies the OWNER only, inside repairMissing.
   const subs = await fetchSubmissions({
     siteId: process.env.SITE_ID || process.env.NETLIFY_SITE_ID,
     token: process.env.NETLIFY_API_TOKEN,
   });
   out.reconciliation = subs.ok
     ? await repairMissing({ submissions: subs.submissions, siteUrl })
-    : { skipped: subs.reason };
+    : { skipped: subs.reason, healthy: false };
 
-  // 3. Record what needs attention. Stored, not sent.
-  const report = await buildExceptionReport({ siteUrl });
-  await store.putReport(report).catch(() => {});
-  out.report = {
-    unacknowledged: report.unacknowledged.length,
-    overdue: report.overdue.length,
-    notificationsFailed: report.notificationsFailed.length,
-    parkedJobs: report.parkedJobs,
-    where: 'readable on the dashboard; not emailed',
+  // 3. Park historical agent notifications rather than retrying them.
+  out.retries = await retryFailures();
+
+  // 4. Health, written for the dashboard rather than mailed.
+  const working = (await store.listLeads({ limit: 500 }).catch(() => [])).filter(l => !l.archived);
+  const exceptions = await buildExceptionReport({ siteUrl, now });
+  const health = {
+    at: now.toISOString(),
+    reconciliationHealthy: subs.ok,
+    reconciliationProblem: subs.ok ? null : subs.reason,
+    unacknowledged: exceptions.unacknowledged.length,
+    overdue: exceptions.overdue.length,
+    notificationsFailed: exceptions.notificationsFailed.length,
+    parkedJobs: exceptions.parkedJobs,
+    leads: working.length,
   };
+  await store.putReport({ ...exceptions, health }).catch(() => {});
+  out.health = health;
 
-  return new Response(JSON.stringify(out, null, 2), {
-    status: 200, headers: { 'content-type': 'application/json' },
-  });
+  // 5. Urgent only, owner only, deduplicated so an unchanged fault is not
+  //    mailed again tomorrow. A failure is never recorded as success.
+  const problems = [];
+  if (!subs.ok) problems.push(`reconciliation cannot run: ${subs.reason}`);
+  if (exceptions.notificationsFailed.length) problems.push(`${exceptions.notificationsFailed.length} notification(s) failed`);
+  out.alert = { sent: false };
+  if (problems.length) {
+    const signature = 'alert:' + problems.join('|').slice(0, 120);
+    const seen = await store.getFlag(signature).catch(() => null);
+    if (!seen) {
+      const res = await notifyOwner({
+        subject: 'Alot Of Land — lead system needs attention',
+        text: ['Something is wrong and is not fixing itself:', '', ...problems.map(p => `  · ${p}`), '',
+               'No agent has been contacted about this.', '', `${siteUrl}/crm/`].join('\n'),
+      }).catch(e => ({ status: 'failed', error: String(e.message ?? e) }));
+      await store.setFlag(signature, { at: now.toISOString() }).catch(() => {});
+      out.alert = { sent: true, problems, result: res?.status };
+    } else {
+      out.alert = { sent: false, reason: 'already reported', problems };
+    }
+  }
+
+  // 6. One report a day, at 08:00 Chicago, owner only, never twice.
+  out.dailyReport = { sent: false, reason: `not ${REPORT_HOUR}:00 in Chicago` };
+  if (local.hour === REPORT_HOUR) {
+    const key = `report:${local.date}`;
+    const already = await store.getFlag(key).catch(() => null);
+    if (already) {
+      out.dailyReport = { sent: false, reason: 'already sent today' };
+    } else {
+      const text = dailyReport(working, exceptions, { siteUrl, now });
+      const res = await sendReport(text).catch(e => ({ status: 'failed', error: String(e.message ?? e) }));
+      await store.setFlag(key, { at: now.toISOString(), status: res?.status }).catch(() => {});
+      out.dailyReport = { sent: true, to: 'owner only', result: res?.status };
+    }
+  }
+
+  return new Response(JSON.stringify(out, null, 2), { status: 200, headers: { 'content-type': 'application/json' } });
 };
 
-// Daily at 13:00 UTC (08:00 Central). Nothing here is urgent.
-export const config = { schedule: '0 13 * * *' };
+// Hourly, so health checks are frequent and the 08:00 Chicago report lands on
+// the right hour in both CST and CDT without a second schedule.
+export const config = { schedule: '0 * * * *' };
