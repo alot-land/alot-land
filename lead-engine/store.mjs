@@ -110,6 +110,23 @@ export async function listLeads({ limit = 200 } = {}) {
   return out;
 }
 
+/** Remove a lead outright. Used to purge synthetic test records. */
+export async function removeLead(id) {
+  if (!/^[a-f0-9]{32}$/.test(String(id ?? ''))) return;
+  await store(LEADS).delete(id);
+  const idx = store(INDEX);
+  const cur = (await idx.get('all', { type: 'json' })) ?? { ids: [] };
+  await idx.setJSON('all', { ids: cur.ids.filter(x => x.id !== id) });
+}
+
+/** The latest exception report, for the dashboard to read instead of email. */
+export async function putReport(report) {
+  await store(INDEX).setJSON('report', report);
+}
+export async function getReport() {
+  return await store(INDEX).get('report', { type: 'json' });
+}
+
 /**
  * Failed downstream work (an email that would not send, an SMS provider that
  * was down) is parked here rather than thrown away, so it can be retried and

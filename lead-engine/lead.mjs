@@ -173,3 +173,19 @@ export function applyStage(lead, { stage, by, note, now = new Date() }) {
     history: [...lead.history, { at: ts, by, action: 'stage', from: lead.stage, to: stage, ...(note ? { note } : {}) }],
   };
 }
+
+
+/**
+ * Is this a synthetic record from testing rather than a real buyer?
+ *
+ * Deliberately narrow. A false positive here silences a genuine enquiry, which
+ * is far worse than a stray test record surviving — so it matches only an
+ * explicit flag or a name that begins with TEST, never anything in the message
+ * body, which a real buyer could write.
+ */
+export function isTestLead(lead) {
+  if (!lead) return false;
+  if (lead.test === true) return true;
+  const name = String(lead.name ?? '').trim();
+  return /^test\b/i.test(name) || /\blog probe\b/i.test(name);
+}

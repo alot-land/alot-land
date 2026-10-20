@@ -15,6 +15,7 @@
  */
 
 import { agentAlertHtml, buyerAckHtml, escalationHtml, reportHtml } from './email.mjs';
+import { isTestLead } from './lead.mjs';
 
 const env = (k, d = '') => (process.env[k] ?? d).trim();
 
@@ -79,6 +80,10 @@ export function leadSummary(lead, siteUrl) {
  * so nothing can look sent when it was not.
  */
 export async function notifyAll(lead, { siteUrl }) {
+  // A synthetic record must never reach a real agent. This is the last line of
+  // defence rather than the only one — tests use a mocked sender — but it is
+  // the one that holds if a test record ever reaches production.
+  if (isTestLead(lead)) return [{ channel: 'all', to: '-', at: new Date().toISOString(), status: 'skipped', reason: 'test lead' }];
   const r = recipients();
   const attempts = [];
   const record = async (channel, to, fn) => {
@@ -105,6 +110,7 @@ export async function notifyAll(lead, { siteUrl }) {
 
 /** Buyer auto-reply. Says only what is verified; promises nothing. */
 export async function acknowledgeBuyer(lead, { siteUrl }) {
+  if (isTestLead(lead)) return { status: 'skipped', reason: 'test lead' };
   if (!lead.email) return { status: 'skipped', reason: 'no email given' };
   const lot = lead.lotName || lead.lot;
   const text = [
@@ -145,8 +151,11 @@ export async function acknowledgeBuyer(lead, { siteUrl }) {
 
 /** Nobody picked a lead up inside the window — tell the owner, not just the agent. */
 export async function escalate(lead, { siteUrl }) {
+  if (isTestLead(lead)) return { status: 'skipped', reason: 'test lead' };
   const r = recipients();
-  const to = [...r.owner, ...r.agents];
+  // Owner only. An escalation is an internal diagnostic — chasing the listing
+  // agent with reminders is how a real lead alert stops being read.
+  const to = [...r.owner];
   if (!to.length) return { status: 'skipped', reason: 'no recipients' };
   const text = [
     `Nobody has picked this lead up.`,
