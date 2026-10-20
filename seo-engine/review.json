@@ -1,6 +1,15 @@
 {
-  "updated": "2026-10-19T23:44:13Z",
+  "updated": "2026-10-20T00:02:02Z",
   "open": [
+    {
+      "number": 25,
+      "title": "Ready-to-post copy for the free channels",
+      "url": "https://github.com/alot-land/alot-land/pull/25",
+      "opened": "2026-10-20",
+      "additions": 155,
+      "deletions": 1,
+      "isCycle": false
+    },
     {
       "number": 21,
       "title": "Sugar Tree Vista sales funnel — lead capture, agent workflow, campaign tracking",
