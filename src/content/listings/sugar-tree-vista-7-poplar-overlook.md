@@ -6,7 +6,7 @@ featured: true
 state: Tennessee
 county: Decatur
 acreage: "5.94"
-price: $59,900
+price: $49,900
 listedBy: Tony Alcott, II
 listedByCompany: United Country Real Estate — River City Realty
 address: 2026 Low Gap Road, Sugar Tree, TN 38380
