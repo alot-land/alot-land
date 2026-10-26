@@ -24,6 +24,8 @@
 - https://alot.land/listings — every parcel currently for sale
 - https://alot.land/sell-land — request a cash offer on land you own
 - https://alot.land/find-land — tell us the land you are looking for
+- https://alot.land/guides/how-to-buy-land — how to buy land: access, septic,
+  zoning, closing and financing, checked in that order
 - https://alot.land/sugar-tree-vista — the Sugar Tree Vista community
 - https://alot.land/communities — land communities we develop
 - https://alot.land/videos — land tours and buying guidance on video
