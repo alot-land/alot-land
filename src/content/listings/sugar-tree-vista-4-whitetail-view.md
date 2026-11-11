@@ -15,6 +15,8 @@ roadAccess: Graded driveway installed
 water: Drill your own well
 power: Power is at the road - High Speed Internet available
 gps: 35.806606, -88.028695
+zillowUrl: https://www.zillow.com/homedetails/1526-Ray-Miller-Rd-Sugar-Tree-TN-38380/465462523_zpid/
+showZillow: true
 showSellerFinance: false
 photos:
   - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783714803/_IMG_1123_vjjw23.jpg
