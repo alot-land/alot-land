@@ -1,13 +1,13 @@
 ---
 visible: true
 title: Lot 3 — Hidden Meadow
-status: coming-soon
+status: available
 featured: true
 state: Tennessee
 county: Decatur
 acreage: "7.18"
 price: $69,900
-hidePrice: true
+hidePrice: false
 listedBy: Tony Alcott, II
 listedByCompany: United Country Real Estate — River City Realty
 address: 1716 Ray Miller Road, Sugar Tree, TN 38380
@@ -16,6 +16,8 @@ roadAccess: Graded driveway installed
 water: Drill your own well
 power: Power is at the road - High Speed Internet available
 gps: 35.805966, -88.026394
+zillowUrl: https://www.zillow.com/homedetails/1716-Ray-Miller-Rd-LOT-3-Sugar-Tree-TN-38380/466186460_zpid/
+showZillow: true
 showSellerFinance: false
 photos:
   - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783714757/1_IMG_1116_cyd8vy.heic
