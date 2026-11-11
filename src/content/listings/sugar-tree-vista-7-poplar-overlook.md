@@ -15,6 +15,8 @@ roadAccess: Graded driveway installed
 water: Drill your own well
 power: Power is at the road - High Speed Internet available
 gps: "35.802571, -88.030696 "
+zillowUrl: https://www.zillow.com/homedetails/2026-Low-Gap-Rd-Sugar-Tree-TN-38380/465465019_zpid/
+showZillow: true
 showSellerFinance: false
 photos:
   - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783715025/IMG_1187_lrczgz.jpg
