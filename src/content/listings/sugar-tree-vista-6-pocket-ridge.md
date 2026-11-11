@@ -1,13 +1,13 @@
 ---
 visible: true
 title: Lot 6 — Pocket Ridge
-status: coming-soon
+status: available
 featured: true
 state: Tennessee
 county: Decatur
 acreage: "5.38"
 price: $59,900
-hidePrice: true
+hidePrice: false
 listedBy: Tony Alcott, II
 listedByCompany: United Country Real Estate — River City Realty
 address: 2128 Low Gap Road, Sugar Tree, TN, 38380
@@ -16,6 +16,8 @@ roadAccess: Graded driveway installed
 water: Drill your own well
 power: Power is at the road - High Speed Internet available
 gps: 35.804494, -88.029340
+zillowUrl: https://www.zillow.com/homedetails/2128-Low-Gap-Rd-LOT-6-Sugar-Tree-TN-38380/466183876_zpid/
+showZillow: true
 showSellerFinance: false
 photos:
   - https://res.cloudinary.com/doex0egtl/image/upload/f_auto,q_auto,w_1600,c_limit/v1783714975/_IMG_1212_w6bv4n.jpg
