@@ -5,6 +5,25 @@ Anything needing David's review is listed under *Needs you*.
 
 ---
 
+## Cycle 4 — 13 Oct 2026
+**Move:** internal-linking pass. No new pages.
+
+- Found `/guides/how-to-buy-land/` — the only guide, aimed at "how to buy land"
+  (4,400/mo, difficulty 0) — had **zero inbound internal links**. Only the
+  sitemap pointed at it. Crawlers and models weigh an orphan page as unimportant.
+- Linked it in context from `/listings` (intro), `/find-land` (hero), every
+  listing page (under the description), and `llms.txt` → Key pages.
+- Indexed pages: **29**. The drop from 30 on 16 Sep is the Chapel Hill listing
+  being hidden — explained.
+- AI mentions still **0**; control healthy (landwatch.com = 15,730).
+- Note: no cycle pull request had opened since 27 Aug. This run treats itself
+  as the current week, not a make-up of the missed ones.
+
+**Needs you:** the FAQ videos are still the biggest lever. Nothing in the
+transcript pipeline has arrived yet.
+
+---
+
 ## Cycle 2 — 19 Aug 2026
 **Moves:** retarget `/listings`; publish one new guide.
 
