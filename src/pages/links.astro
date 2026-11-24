@@ -16,6 +16,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BackendNav from '../components/BackendNav.astro';
 import { getCollection } from 'astro:content';
+import { marketplaceListing, groupPost, agentBrief } from '../lib/postcopy.js';
 
 const CAMPAIGN = 'sugartree-launch';
 const SITE = 'https://alot.land';
@@ -50,6 +51,21 @@ const shortName = (l: any) => l.data.title.replace(/^Lot\s+\d+\s*[—-]\s*/i, ''
 
 const build = (path: string, c: any, content: string) =>
   `${SITE}${path}?utm_source=${c.source}&utm_medium=${c.medium}&utm_campaign=${CAMPAIGN}&utm_content=${content}`;
+
+const postLink = (slug: string, source: string, medium: string, content: string) =>
+  `${SITE}/listings/${slug}/?utm_source=${source}&utm_medium=${medium}&utm_campaign=${CAMPAIGN}&utm_content=${content}`;
+
+const copyFor = lots.map(l => {
+  const c = `lot-${lotNum(l)}`;
+  return {
+    slug: l.slug,
+    label: `Lot ${lotNum(l)} — ${shortName(l)}`,
+    marketplace: marketplaceListing(l, postLink(l.slug, 'marketplace', 'social', c)),
+    group: groupPost(l, postLink(l.slug, 'facebook-group', 'social', c)),
+    brief: agentBrief(l, postLink(l.slug, 'tony', 'agent', c)),
+    photos: (l.data.photos || []).length,
+  };
+});
 
 const targets = [
   { id: 'all',  label: 'The sales page', path: '/sugar-tree-vista/', content: 'all-lots' },
@@ -104,6 +120,49 @@ const targets = [
       </section>
     ))}
 
+    <h2 class="font-display font-black text-2xl text-bg-dark mt-12 mb-1">Ready to post</h2>
+    <p class="text-gray-500 text-sm mb-5">
+      Written from each listing, so it changes when the listing does. Marketplace and groups cannot be
+      posted automatically — Meta has no API for Marketplace and removed group publishing, and bots that
+      claim otherwise get accounts banned. This makes it copy-and-paste instead.
+    </p>
+
+    {copyFor.map(c => (
+      <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-5">
+        <h3 class="font-display font-bold text-lg text-bg-dark mb-1">{c.label}</h3>
+        <p class="text-xs text-text-muted mb-4">{c.photos} photos on this listing — download them from the lot page to upload.</p>
+
+        <div class="mb-5">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs font-bold uppercase tracking-widest text-text-muted">Facebook Marketplace</span>
+            <button class="copy ml-auto bg-bg-dark text-white text-xs font-bold px-3 py-1.5 rounded-lg" data-copy={c.marketplace.body}>Copy description</button>
+          </div>
+          <dl class="text-sm mb-2 grid grid-cols-[88px_1fr] gap-y-1">
+            <dt class="text-text-muted">Title</dt><dd class="font-semibold text-bg-dark">{c.marketplace.title}</dd>
+            <dt class="text-text-muted">Price</dt><dd class="font-semibold text-bg-dark">{c.marketplace.price || 'Call for pricing'}</dd>
+            <dt class="text-text-muted">Category</dt><dd class="text-bg-dark">{c.marketplace.category}</dd>
+          </dl>
+          <pre class="text-xs bg-bg-light border border-gray-200 rounded-lg p-3 whitespace-pre-wrap text-gray-700">{c.marketplace.body}</pre>
+        </div>
+
+        <div class="mb-5">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs font-bold uppercase tracking-widest text-text-muted">Facebook group post</span>
+            <button class="copy ml-auto bg-bg-dark text-white text-xs font-bold px-3 py-1.5 rounded-lg" data-copy={c.group}>Copy</button>
+          </div>
+          <pre class="text-xs bg-bg-light border border-gray-200 rounded-lg p-3 whitespace-pre-wrap text-gray-700">{c.group}</pre>
+        </div>
+
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs font-bold uppercase tracking-widest text-text-muted">Brief for Tony / United Country</span>
+            <button class="copy ml-auto bg-bg-dark text-white text-xs font-bold px-3 py-1.5 rounded-lg" data-copy={c.brief}>Copy</button>
+          </div>
+          <pre class="text-xs bg-bg-light border border-gray-200 rounded-lg p-3 whitespace-pre-wrap text-gray-700">{c.brief}</pre>
+        </div>
+      </section>
+    ))}
+
     <p class="text-xs text-gray-400">
       Campaign tag: <code class="bg-gray-100 px-1 rounded">{CAMPAIGN}</code>. Links are built from the
       available lots, so a lot that sells out or is hidden disappears from this page by itself.
@@ -121,7 +180,7 @@ const targets = [
       };
       // The clipboard API needs a secure context and can be refused. If it is,
       // select the text so there is always a way to get the link out.
-      var field = b.parentElement.querySelector('input[readonly]');
+      var field = b.parentElement.querySelector('input[readonly]') || b.closest('section,div').querySelector('input[readonly]');
       if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(link).then(ok, function () { if (field) { field.select(); } b.textContent = 'Press ⌘C'; });
       } else if (field) {
